@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serviços — Studio Corte Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <a href="../index.html" class="logo">Studio<span>Corte</span></a>
+      <nav class="sidebar-nav">
+        <a href="index.html" class="sidebar-link">🏠 Dashboard</a>
+        <a href="servicos.html" class="sidebar-link active">✂️ Serviços</a>
+        <a href="clientes.html" class="sidebar-link">👥 Clientes</a>
+        <a href="produtos.html" class="sidebar-link">🛍️ Produtos</a>
+        <a href="agendamentos.html" class="sidebar-link">📅 Atendimentos</a>
+        <a href="configuracoes.html" class="sidebar-link">⚙️ Configurações</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <img class="avatar" src="https://i.pravatar.cc/100?u=admin" alt="Admin">
+          <div><div class="name">Carlos Admin</div><div class="role">Proprietário</div></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="logout()" style="width:100%;">Sair da Conta</button>
+      </div>
+    </aside>
+    <main class="admin-main">
+      <div class="admin-header">
+        <div>
+          <h1>Serviços</h1>
+          <p class="sub">Gerencie os serviços oferecidos e seus valores.</p>
+        </div>
+        <button class="btn btn-primary">+ Novo Serviço</button>
+      </div>
+      <div class="admin-card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Serviço</th><th>Descrição</th><th>Preço</th><th>Ações</th></tr></thead>
+            <tbody id="servicosBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="../js/data.js"></script>
+  <script>
+    if (!getUser() || getUser().role !== "admin") location.href = "../login.html";
+    document.getElementById("servicosBody").innerHTML = SERVICOS.map(s => `
+      <tr>
+        <td>${s.icon} ${s.nome}</td>
+        <td style="max-width:320px;">${s.desc}</td>
+        <td style="color:var(--accent);font-weight:600;">${s.preco}</td>
+        <td><button class="btn btn-ghost btn-sm">Editar</button></td>
+      </tr>
+    `).join("");
+  </script>
+</body>
+</html>

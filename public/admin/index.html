@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Controle — Studio Corte</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <a href="../index.html" class="logo">Studio<span>Corte</span></a>
+      <nav class="sidebar-nav">
+        <a href="index.html" class="sidebar-link active">🏠 Dashboard</a>
+        <a href="servicos.html" class="sidebar-link">✂️ Serviços</a>
+        <a href="clientes.html" class="sidebar-link">👥 Clientes</a>
+        <a href="produtos.html" class="sidebar-link">🛍️ Produtos</a>
+        <a href="agendamentos.html" class="sidebar-link">📅 Atendimentos</a>
+        <a href="configuracoes.html" class="sidebar-link">⚙️ Configurações</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <img class="avatar" src="https://i.pravatar.cc/100?u=admin" alt="Admin">
+          <div>
+            <div class="name">Carlos Admin</div>
+            <div class="role">Proprietário</div>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="logout()" style="width:100%;">Sair da Conta</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="admin-main">
+      <div class="admin-header">
+        <div>
+          <h1>Painel de Controle</h1>
+          <p class="sub">Acompanhe as métricas de desempenho e serviços do salão.</p>
+        </div>
+        <div class="admin-header-actions">
+          <div class="search-box">
+            <span>🔍</span>
+            <input type="text" placeholder="Buscar agendamento...">
+          </div>
+          <button class="btn btn-ghost btn-icon" title="Notificações" id="btnNotif">🔔</button>
+          <span class="badge badge-info">Hoje · 02/09</span>
+        </div>
+      </div>
+
+      <!-- Métricas -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="label">Total Clientes <span>👤</span></div>
+          <div class="valor">247</div>
+          <div class="delta">▲ +18 novos este mês</div>
+        </div>
+        <div class="metric-card">
+          <div class="label">Atendimentos Hoje <span>📅</span></div>
+          <div class="valor">12</div>
+          <div class="delta">▲ 8 confirmados</div>
+        </div>
+        <div class="metric-card">
+          <div class="label">Faturamento Mensal <span>💰</span></div>
+          <div class="valor">R$ 18.450</div>
+          <div class="delta">▲ +12.4% vs mês anterior</div>
+        </div>
+        <div class="metric-card">
+          <div class="label">Avaliação Média <span>⭐</span></div>
+          <div class="valor">4.8 ★</div>
+          <div class="delta">▲ Baseado em 94 avaliações</div>
+        </div>
+      </div>
+
+      <div class="admin-grid">
+        <!-- Próximos agendamentos -->
+        <div class="admin-card">
+          <h3>Próximos Agendamentos <span class="badge badge-accent">HOJE</span></h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Horário</th>
+                  <th>Cliente</th>
+                  <th>Serviço</th>
+                  <th>Profissional</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="agendamentosBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Lateral -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <div class="admin-card">
+            <h3>Atividade Recente</h3>
+            <div id="atividadeList">
+              <div class="atividade-item">
+                <span>❤️</span>
+                <div>
+                  <div><strong>Felipe Melo</strong> curtiu o corte <span class="text-accent">Mullet Moderno</span></div>
+                  <div class="time">Há 5 min</div>
+                </div>
+              </div>
+              <div class="atividade-item">
+                <span>⭐</span>
+                <div>
+                  <div><strong>Rodrigo Faro</strong> avaliou o serviço 5★ Excelente — João Barbeiro!</div>
+                  <div class="time">Há 12 min</div>
+                </div>
+              </div>
+              <div class="atividade-item">
+                <span>📅</span>
+                <div>
+                  <div><strong>Gabriel Silva</strong> agendou Degradê p/ amanhã às 10:00</div>
+                  <div class="time">Há 1h</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-card">
+            <h3>Serviços Mais Populares</h3>
+            <div class="popular-item">
+              <span style="width:140px;">1. Degradê Americano</span>
+              <div class="popular-bar"><span style="width:90%"></span></div>
+              <span style="width:70px;text-align:right;color:var(--text-muted);font-size:0.8rem;">142 cortes</span>
+            </div>
+            <div class="popular-item">
+              <span style="width:140px;">2. Corte Social</span>
+              <div class="popular-bar"><span style="width:65%"></span></div>
+              <span style="width:70px;text-align:right;color:var(--text-muted);font-size:0.8rem;">98 cortes</span>
+            </div>
+            <div class="popular-item">
+              <span style="width:140px;">3. Barba Completa</span>
+              <div class="popular-bar"><span style="width:50%"></span></div>
+              <span style="width:70px;text-align:right;color:var(--text-muted);font-size:0.8rem;">74 barbas</span>
+            </div>
+            <div class="popular-item">
+              <span style="width:140px;">4. Hidratação Capilar</span>
+              <div class="popular-bar"><span style="width:25%"></span></div>
+              <span style="width:70px;text-align:right;color:var(--text-muted);font-size:0.8rem;">32 tratam.</span>
+            </div>
+          </div>
+
+          <!-- Avisos de recuperação de senha -->
+          <div class="admin-card" id="avisosCard" style="display:none;">
+            <h3>🔔 Solicitações de Senha</h3>
+            <div id="avisosList"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script>
+    // Proteção admin
+    const user = getUser();
+    if (!user || user.role !== "admin") {
+      alert("Acesso restrito ao proprietário.");
+      window.location.href = "../login.html";
+    }
+
+    // Agendamentos
+    const statusMap = {
+      "CONFIRMADO": "badge-success",
+      "EM ESPERA": "badge-warning",
+      "PENDENTE": "badge-pending"
+    };
+    document.getElementById("agendamentosBody").innerHTML = AGENDAMENTOS.map(a => `
+      <tr>
+        <td style="color:var(--accent);font-weight:600;">${a.hora}</td>
+        <td>${a.cliente}</td>
+        <td>${a.servico}</td>
+        <td>${a.profissional}</td>
+        <td><span class="badge ${statusMap[a.status] || 'badge-info'}">${a.status}</span></td>
+      </tr>
+    `).join("");
+
+    // Avisos de senha
+    const avisos = JSON.parse(localStorage.getItem("sc_avisos_admin") || "[]");
+    if (avisos.length) {
+      document.getElementById("avisosCard").style.display = "block";
+      document.getElementById("avisosList").innerHTML = avisos.slice(0, 5).map(a => `
+        <div class="atividade-item">
+          <span>🔑</span>
+          <div>
+            <div>Solicitação de <strong>${a.email}</strong></div>
+            <div class="time">${a.data}</div>
+          </div>
+        </div>
+      `).join("");
+    }
+  </script>
+</body>
+</html>

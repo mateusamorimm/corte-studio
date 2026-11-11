@@ -1,0 +1,307 @@
+// Studio Corte — modelo de dados (PostgreSQL / Neon)
+// Restrições que o Prisma não expressa (CHECK, EXCLUDE) estão na migration inicial:
+// prisma/migrations/20261111000000_init/migration.sql
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // Neon — conexão com pooler (aplicação)
+  directUrl = env("DIRECT_URL") // Neon — conexão direta (migrations)
+}
+
+// ───────────── ENUMS ─────────────
+
+enum TipoPerfil {
+  CLIENTE
+  BARBEIRO
+  ADMIN
+}
+
+enum StatusAgendamento {
+  PENDENTE
+  CONFIRMADO
+  CONCLUIDO
+  CANCELADO
+  NAO_COMPARECEU
+}
+
+enum StatusPedido {
+  PENDENTE
+  PRONTO_PARA_RETIRADA
+  CONCLUIDO
+  CANCELADO
+}
+
+// ───────────── USUÁRIOS E AUTENTICAÇÃO ─────────────
+
+model Usuario {
+  id_usuario       Int        @id @default(autoincrement())
+  nome_completo    String     @db.VarChar(120)
+  email            String     @unique @db.VarChar(160) // sempre minúsculo (CHECK)
+  cpf              String?    @unique @db.Char(11) // só dígitos; único quando informado
+  telefone         String?    @db.VarChar(20)
+  data_nascimento  DateTime?  @db.Date
+  senha_hash       String?    @db.VarChar(255) // NULL = conta aguardando definição de senha
+  tipo_perfil      TipoPerfil @default(CLIENTE)
+  avatar_url       String?    @db.VarChar(500)
+  ativo            Boolean    @default(true)
+  data_cadastro    DateTime   @default(now()) @db.Timestamptz(3)
+  data_atualizacao DateTime   @updatedAt @db.Timestamptz(3)
+
+  agendamentos_cliente  Agendamento[]             @relation("AgendamentoCliente")
+  agendamentos_barbeiro Agendamento[]             @relation("AgendamentoBarbeiro")
+  disponibilidades      DisponibilidadeBarbeiro[]
+  bloqueios             BloqueioAgenda[]
+  servicos_oferecidos   BarbeiroServico[]
+  pedidos               Pedido[]
+  itens_carrinho        ItemCarrinho[]
+  favoritos             Favorito[]
+  tokens_senha          TokenRedefinicaoSenha[]
+
+  @@index([tipo_perfil, ativo])
+  @@map("usuario")
+}
+
+model TokenRedefinicaoSenha {
+  id_token     Int       @id @default(autoincrement())
+  id_usuario   Int
+  token_hash   String    @unique @db.Char(64) // SHA-256 do token enviado por e-mail
+  expira_em    DateTime  @db.Timestamptz(3)
+  usado_em     DateTime? @db.Timestamptz(3)
+  data_criacao DateTime  @default(now()) @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+
+  @@index([id_usuario])
+  @@map("token_redefinicao_senha")
+}
+
+// ───────────── SERVIÇOS E AGENDA ─────────────
+
+model Servico {
+  id_servico        Int      @id @default(autoincrement())
+  nome_servico      String   @unique @db.VarChar(100)
+  descricao         String?  @db.VarChar(500)
+  icone             String?  @db.VarChar(16)
+  preco             Decimal  @db.Decimal(10, 2)
+  preco_a_partir_de Boolean  @default(false)
+  duracao_minutos   Int
+  imagem_url        String?  @db.VarChar(500)
+  ordem_exibicao    Int      @default(0)
+  ativo             Boolean  @default(true)
+  data_cadastro     DateTime @default(now()) @db.Timestamptz(3)
+  data_atualizacao  DateTime @updatedAt @db.Timestamptz(3)
+
+  barbeiros    BarbeiroServico[]
+  agendamentos Agendamento[]
+
+  @@index([ativo, ordem_exibicao])
+  @@map("servico")
+}
+
+model BarbeiroServico {
+  id_barbeiro Int
+  id_servico  Int
+
+  barbeiro Usuario @relation(fields: [id_barbeiro], references: [id_usuario], onDelete: Cascade)
+  servico  Servico @relation(fields: [id_servico], references: [id_servico], onDelete: Cascade)
+
+  @@id([id_barbeiro, id_servico])
+  @@index([id_servico])
+  @@map("barbeiro_servico")
+}
+
+model DisponibilidadeBarbeiro {
+  id_disponibilidade Int      @id @default(autoincrement())
+  id_barbeiro        Int
+  dia_semana         Int      @db.SmallInt // 0 = domingo … 6 = sábado
+  hora_inicio        DateTime @db.Time(0) // horário local do salão
+  hora_fim           DateTime @db.Time(0)
+
+  barbeiro Usuario @relation(fields: [id_barbeiro], references: [id_usuario], onDelete: Cascade)
+
+  @@index([id_barbeiro, dia_semana])
+  @@map("disponibilidade_barbeiro")
+}
+
+model BloqueioAgenda {
+  id_bloqueio      Int      @id @default(autoincrement())
+  id_barbeiro      Int
+  data_hora_inicio DateTime @db.Timestamptz(3)
+  data_hora_fim    DateTime @db.Timestamptz(3)
+  motivo           String?  @db.VarChar(200)
+  data_criacao     DateTime @default(now()) @db.Timestamptz(3)
+
+  barbeiro Usuario @relation(fields: [id_barbeiro], references: [id_usuario], onDelete: Cascade)
+
+  @@index([id_barbeiro, data_hora_inicio])
+  @@map("bloqueio_agenda")
+}
+
+model Agendamento {
+  id_agendamento      Int               @id @default(autoincrement())
+  id_cliente          Int
+  id_barbeiro         Int
+  id_servico          Int
+  data_hora_inicio    DateTime          @db.Timestamptz(3)
+  data_hora_fim       DateTime          @db.Timestamptz(3) // início + duração (calculado no servidor)
+  preco_registrado    Decimal           @db.Decimal(10, 2)
+  status              StatusAgendamento @default(PENDENTE)
+  observacao_cliente  String?           @db.VarChar(500)
+  cancelado_em        DateTime?         @db.Timestamptz(3)
+  motivo_cancelamento String?           @db.VarChar(200)
+  data_criacao        DateTime          @default(now()) @db.Timestamptz(3)
+  data_atualizacao    DateTime          @updatedAt @db.Timestamptz(3)
+
+  cliente   Usuario    @relation("AgendamentoCliente", fields: [id_cliente], references: [id_usuario], onDelete: Restrict)
+  barbeiro  Usuario    @relation("AgendamentoBarbeiro", fields: [id_barbeiro], references: [id_usuario], onDelete: Restrict)
+  servico   Servico    @relation(fields: [id_servico], references: [id_servico], onDelete: Restrict)
+  avaliacao Avaliacao?
+
+  @@index([id_barbeiro, data_hora_inicio])
+  @@index([id_cliente, data_hora_inicio])
+  @@index([status, data_hora_inicio])
+  @@map("agendamento")
+}
+
+model Avaliacao {
+  id_avaliacao   Int      @id @default(autoincrement())
+  id_agendamento Int      @unique
+  nota           Int      @db.SmallInt // 1 a 5
+  comentario     String?  @db.VarChar(1000)
+  visivel        Boolean  @default(true)
+  data_avaliacao DateTime @default(now()) @db.Timestamptz(3)
+
+  agendamento Agendamento @relation(fields: [id_agendamento], references: [id_agendamento], onDelete: Cascade)
+
+  @@index([visivel, data_avaliacao])
+  @@map("avaliacao")
+}
+
+// ───────────── GALERIA ─────────────
+
+model CorteGaleria {
+  id_corte       Int      @id @default(autoincrement())
+  nome_corte     String   @db.VarChar(100)
+  imagem_url     String   @db.VarChar(500)
+  ordem_exibicao Int      @default(0)
+  ativo          Boolean  @default(true)
+  data_cadastro  DateTime @default(now()) @db.Timestamptz(3)
+
+  favoritos Favorito[]
+
+  @@index([ativo, ordem_exibicao])
+  @@map("corte_galeria")
+}
+
+model Favorito {
+  id_favorito   Int      @id @default(autoincrement())
+  id_cliente    Int
+  id_corte      Int
+  data_favorito DateTime @default(now()) @db.Timestamptz(3)
+
+  cliente Usuario      @relation(fields: [id_cliente], references: [id_usuario], onDelete: Cascade)
+  corte   CorteGaleria @relation(fields: [id_corte], references: [id_corte], onDelete: Cascade)
+
+  @@unique([id_cliente, id_corte])
+  @@index([id_corte])
+  @@map("favorito")
+}
+
+// ───────────── PRODUTOS, CARRINHO E PEDIDOS ─────────────
+
+model Produto {
+  id_produto         Int      @id @default(autoincrement())
+  nome_produto       String   @db.VarChar(120)
+  descricao          String?  @db.VarChar(500)
+  categoria          String?  @db.VarChar(60)
+  preco              Decimal  @db.Decimal(10, 2)
+  quantidade_estoque Int      @default(0)
+  imagem_url         String?  @db.VarChar(500)
+  ativo              Boolean  @default(true)
+  data_cadastro      DateTime @default(now()) @db.Timestamptz(3)
+  data_atualizacao   DateTime @updatedAt @db.Timestamptz(3)
+
+  itens_carrinho ItemCarrinho[]
+  itens_pedido   ItemPedido[]
+
+  @@index([ativo, categoria])
+  @@map("produto")
+}
+
+model ItemCarrinho {
+  id_item_carrinho Int      @id @default(autoincrement())
+  id_cliente       Int
+  id_produto       Int
+  quantidade       Int      @default(1)
+  data_adicao      DateTime @default(now()) @db.Timestamptz(3)
+
+  cliente Usuario @relation(fields: [id_cliente], references: [id_usuario], onDelete: Cascade)
+  produto Produto @relation(fields: [id_produto], references: [id_produto], onDelete: Cascade)
+
+  @@unique([id_cliente, id_produto])
+  @@map("item_carrinho")
+}
+
+model Pedido {
+  id_pedido        Int          @id @default(autoincrement())
+  id_cliente       Int
+  valor_total      Decimal      @db.Decimal(10, 2)
+  status           StatusPedido @default(PENDENTE)
+  observacao       String?      @db.VarChar(500)
+  cancelado_em     DateTime?    @db.Timestamptz(3)
+  data_pedido      DateTime     @default(now()) @db.Timestamptz(3)
+  data_atualizacao DateTime     @updatedAt @db.Timestamptz(3)
+
+  cliente Usuario      @relation(fields: [id_cliente], references: [id_usuario], onDelete: Restrict)
+  itens   ItemPedido[]
+
+  @@index([id_cliente, data_pedido])
+  @@index([status, data_pedido])
+  @@map("pedido")
+}
+
+model ItemPedido {
+  id_item                 Int     @id @default(autoincrement())
+  id_pedido               Int
+  id_produto              Int
+  nome_produto_registrado String  @db.VarChar(120)
+  quantidade              Int
+  preco_unitario          Decimal @db.Decimal(10, 2)
+
+  pedido  Pedido  @relation(fields: [id_pedido], references: [id_pedido], onDelete: Cascade)
+  produto Produto @relation(fields: [id_produto], references: [id_produto], onDelete: Restrict)
+
+  @@unique([id_pedido, id_produto])
+  @@index([id_produto])
+  @@map("item_pedido")
+}
+
+// ───────────── CONFIGURAÇÕES (linha única, id = 1) ─────────────
+
+model ConfiguracaoSalao {
+  id                            Int      @id @default(1)
+  nome_salao                    String   @default("Studio Corte") @db.VarChar(100)
+  endereco                      String?  @db.VarChar(200)
+  telefone                      String?  @db.VarChar(20)
+  whatsapp                      String?  @db.VarChar(20)
+  email_contato                 String?  @db.VarChar(160)
+  horario_funcionamento_texto   String?  @db.VarChar(120)
+  url_mapa                      String?  @db.VarChar(500)
+  instagram_url                 String?  @db.VarChar(300)
+  tiktok_url                    String?  @db.VarChar(300)
+  hero_titulo                   String?  @db.VarChar(160)
+  hero_subtitulo                String?  @db.VarChar(400)
+  hero_imagem_url               String?  @db.VarChar(500)
+  fuso_horario                  String   @default("America/Sao_Paulo") @db.VarChar(50)
+  intervalo_slots_minutos       Int      @default(15)
+  antecedencia_minima_minutos   Int      @default(60)
+  antecedencia_cancelamento_hrs Int      @default(2)
+  janela_agendamento_dias       Int      @default(30)
+  data_atualizacao              DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("configuracao_salao")
+}

@@ -1,0 +1,308 @@
+/* ========== HERO ========== */
+.hero {
+  padding: 80px 0 60px;
+  position: relative;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+.hero-content h1 {
+  font-size: clamp(2.2rem, 4vw, 3.2rem);
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 20px;
+}
+
+.hero-content h1 .highlight {
+  color: var(--accent);
+}
+
+.hero-content p {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  max-width: 480px;
+  margin-bottom: 32px;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.hero-image {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  aspect-ratio: 4/3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-image .placeholder-icon {
+  font-size: 3rem;
+  opacity: 0.4;
+}
+
+.hero-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ========== CORTES GRID ========== */
+.cortes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.corte-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: all var(--transition);
+  cursor: pointer;
+}
+
+.corte-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-border);
+  box-shadow: var(--shadow);
+}
+
+.corte-card img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+}
+
+.corte-card .info {
+  padding: 14px 16px;
+}
+
+.corte-card .info h3 {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* ========== SERVIÇOS ========== */
+.servicos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.servico-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  transition: all var(--transition);
+}
+
+.servico-card:hover {
+  border-color: var(--accent-border);
+  background: var(--bg-card-hover);
+}
+
+.servico-card .icon {
+  font-size: 1.6rem;
+  margin-bottom: 16px;
+}
+
+.servico-card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+
+.servico-card p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.servico-card .preco {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ========== LOCALIZAÇÃO ========== */
+.local-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+
+.local-info h2 {
+  font-size: 1.8rem;
+  margin-bottom: 16px;
+}
+
+.local-info p {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.local-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.local-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.local-item strong {
+  color: var(--text-primary);
+}
+
+.map-placeholder {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  aspect-ratio: 16/10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+/* ========== COMENTÁRIOS ========== */
+.comentarios-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.comentario-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.comentario-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.comentario-header .avatar {
+  width: 44px;
+  height: 44px;
+}
+
+.comentario-header .name {
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.comentario-header .meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.stars {
+  color: #fbbf24;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.comentario-card p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+/* ========== PRODUTOS (condicional) ========== */
+.produtos-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.produto-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: all var(--transition);
+}
+
+.produto-card:hover {
+  border-color: var(--accent-border);
+  transform: translateY(-3px);
+}
+
+.produto-card img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: var(--bg-input);
+}
+
+.produto-card .info {
+  padding: 16px;
+}
+
+.produto-card h3 {
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.produto-card .preco {
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 900px) {
+  .hero-grid,
+  .local-grid {
+    grid-template-columns: 1fr;
+  }
+  .cortes-grid,
+  .servicos-grid,
+  .comentarios-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .produtos-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .cortes-grid,
+  .servicos-grid,
+  .comentarios-grid,
+  .produtos-grid {
+    grid-template-columns: 1fr;
+  }
+  .hero {
+    padding: 48px 0 40px;
+  }
+  .section {
+    padding: 48px 0;
+  }
+}

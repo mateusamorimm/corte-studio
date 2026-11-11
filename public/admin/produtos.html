@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produtos — Studio Corte Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <a href="../index.html" class="logo">Studio<span>Corte</span></a>
+      <nav class="sidebar-nav">
+        <a href="index.html" class="sidebar-link">🏠 Dashboard</a>
+        <a href="servicos.html" class="sidebar-link">✂️ Serviços</a>
+        <a href="clientes.html" class="sidebar-link">👥 Clientes</a>
+        <a href="produtos.html" class="sidebar-link active">🛍️ Produtos</a>
+        <a href="agendamentos.html" class="sidebar-link">📅 Atendimentos</a>
+        <a href="configuracoes.html" class="sidebar-link">⚙️ Configurações</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <img class="avatar" src="https://i.pravatar.cc/100?u=admin" alt="Admin">
+          <div>
+            <div class="name">Carlos Admin</div>
+            <div class="role">Proprietário</div>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="logout()" style="width:100%;">Sair da Conta</button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <div class="admin-header">
+        <div>
+          <h1>Gerenciamento de Produtos</h1>
+          <p class="sub">Adicione, edite e controle o estoque dos produtos do salão.</p>
+        </div>
+        <button class="btn btn-primary" id="btnNovoProduto">+ Novo Produto</button>
+      </div>
+
+      <div class="admin-card" style="margin-bottom:24px;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Produto</th>
+                <th>Preço</th>
+                <th>Estoque</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="produtosBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Form novo/editar -->
+      <div class="admin-card" id="formProduto" style="display:none;max-width:480px;">
+        <h3 id="formTitle">Novo Produto</h3>
+        <form id="produtoForm">
+          <input type="hidden" id="prodId">
+          <div class="form-group">
+            <label class="form-label">Nome</label>
+            <input type="text" class="form-input" id="prodNome" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Preço (R$)</label>
+            <input type="number" step="0.01" class="form-input" id="prodPreco" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Estoque</label>
+            <input type="number" class="form-input" id="prodEstoque" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">URL da imagem</label>
+            <input type="url" class="form-input" id="prodImg" placeholder="https://...">
+          </div>
+          <div style="display:flex;gap:12px;">
+            <button type="submit" class="btn btn-primary">Salvar</button>
+            <button type="button" class="btn btn-outline" id="btnCancelar">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script>
+    const user = getUser();
+    if (!user || user.role !== "admin") {
+      window.location.href = "../login.html";
+    }
+
+    // Carrega produtos do localStorage ou usa os padrão
+    let produtos = JSON.parse(localStorage.getItem("sc_produtos")) || [...PRODUTOS];
+
+    function saveProdutos() {
+      localStorage.setItem("sc_produtos", JSON.stringify(produtos));
+      // Atualiza também a constante usada na home (via localStorage)
+    }
+
+    function render() {
+      document.getElementById("produtosBody").innerHTML = produtos.map(p => `
+        <tr>
+          <td>#${p.id}</td>
+          <td>${p.nome}</td>
+          <td>R$ ${Number(p.preco).toFixed(2)}</td>
+          <td>${p.estoque}</td>
+          <td>
+            <button class="btn btn-ghost btn-sm" onclick="editar(${p.id})">Editar</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--accent)" onclick="remover(${p.id})">Excluir</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    document.getElementById("btnNovoProduto").addEventListener("click", () => {
+      document.getElementById("formTitle").textContent = "Novo Produto";
+      document.getElementById("prodId").value = "";
+      document.getElementById("produtoForm").reset();
+      document.getElementById("formProduto").style.display = "block";
+    });
+
+    document.getElementById("btnCancelar").addEventListener("click", () => {
+      document.getElementById("formProduto").style.display = "none";
+    });
+
+    document.getElementById("produtoForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const id = document.getElementById("prodId").value;
+      const data = {
+        nome: document.getElementById("prodNome").value,
+        preco: parseFloat(document.getElementById("prodPreco").value),
+        estoque: parseInt(document.getElementById("prodEstoque").value),
+        img: document.getElementById("prodImg").value || "https://placehold.co/300x300/1a1a24/71717a?text=Produto"
+      };
+
+      if (id) {
+        const idx = produtos.findIndex(p => p.id == id);
+        if (idx >= 0) produtos[idx] = { ...produtos[idx], ...data };
+      } else {
+        const newId = produtos.length ? Math.max(...produtos.map(p => p.id)) + 1 : 1;
+        produtos.push({ id: newId, ...data });
+      }
+      saveProdutos();
+      render();
+      document.getElementById("formProduto").style.display = "none";
+    });
+
+    function editar(id) {
+      const p = produtos.find(x => x.id === id);
+      if (!p) return;
+      document.getElementById("formTitle").textContent = "Editar Produto";
+      document.getElementById("prodId").value = p.id;
+      document.getElementById("prodNome").value = p.nome;
+      document.getElementById("prodPreco").value = p.preco;
+      document.getElementById("prodEstoque").value = p.estoque;
+      document.getElementById("prodImg").value = p.img || "";
+      document.getElementById("formProduto").style.display = "block";
+    }
+
+    function remover(id) {
+      if (!confirm("Excluir este produto?")) return;
+      produtos = produtos.filter(p => p.id !== id);
+      saveProdutos();
+      render();
+    }
+
+    render();
+  </script>
+</body>
+</html>

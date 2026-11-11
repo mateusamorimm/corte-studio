@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recuperar senha — Studio Corte</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-visual">
+      <div class="login-visual-content">
+        <span class="tag">RECUPERAÇÃO</span>
+        <h2>Esqueceu a senha? Sem problema.</h2>
+        <p>Informe o e-mail da sua conta. Enviaremos um link seguro, válido por 60 minutos, para você criar uma nova senha.</p>
+      </div>
+    </div>
+
+    <main class="login-form-side">
+      <div class="login-box">
+        <a href="index.html" class="logo">Studio<span>Corte</span></a>
+        <p class="tagline">Recuperação de acesso</p>
+
+        <div id="alerta" class="form-alert" hidden></div>
+
+        <form id="recoveryForm" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="email">E-mail cadastrado</label>
+            <div class="input-with-icon">
+              <span class="icon" aria-hidden="true">✉️</span>
+              <input type="email" class="form-input" id="email" name="email" placeholder="seu.email@exemplo.com" autocomplete="email" required>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-full">Enviar link de redefinição</button>
+        </form>
+
+        <p class="login-footer">
+          Lembrou a senha? <a href="login.html">Voltar ao login</a>
+        </p>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="js/pages/recuperar-senha.js"></script>
+</body>
+</html>

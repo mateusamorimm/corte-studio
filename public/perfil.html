@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meu Perfil — Studio Corte</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/perfil.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">Studio<span>Corte</span></a>
+      <nav class="nav">
+        <a href="index.html" class="nav-link">Início</a>
+        <a href="perfil.html" class="nav-link active">Perfil</a>
+        <a href="#agendamentos" class="nav-link">Agendamentos</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="btn btn-ghost btn-sm" onclick="logout()">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top:24px;padding-bottom:60px;">
+    <!-- Hero do perfil -->
+    <div class="perfil-hero">
+      <div class="perfil-hero-actions">
+        <button class="btn btn-outline btn-sm">📷 Editar Capa</button>
+        <button class="btn btn-primary btn-sm">✏️ Editar Perfil</button>
+      </div>
+      <div class="perfil-info">
+        <img class="avatar avatar-lg" id="userAvatar" src="https://i.pravatar.cc/150?u=cliente" alt="Avatar">
+        <div class="perfil-meta">
+          <h1 id="userNome">Carlos Silva <span class="badge badge-accent">FIDELIDADE</span></h1>
+          <div class="username" id="userHandle">@carlossilva</div>
+          <p class="perfil-bio">Amante de cortes clássicos e modernos. Cliente fiel do Studio Corte desde 2021.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Informações + Redes -->
+    <div class="perfil-grid" style="margin-top:48px;">
+      <div class="card">
+        <h2 style="font-size:1rem;margin-bottom:16px;">👤 Informações Pessoais</h2>
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:0.9rem;">
+          <div><span class="text-muted">E-MAIL</span><br><span id="userEmail">carlos.silva@email.com</span></div>
+          <div><span class="text-muted">TELEFONE</span><br><span id="userTel">+55 11 99999-0000</span></div>
+          <div><span class="text-muted">DATA DE NASCIMENTO</span><br>15/03/1992</div>
+          <div><span class="text-muted">ENDEREÇO</span><br><span id="userEnd">São Paulo, SP</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2 style="font-size:1rem;margin-bottom:16px;">🌐 Redes Sociais</h2>
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:0.9rem;">
+          <div>📷 Instagram · @carlos.cuts</div>
+          <div>🎵 TikTok · @carlos.cuts</div>
+          <div>💬 WhatsApp · +55 11 99999-0000</div>
+          <button class="btn btn-outline btn-sm" style="margin-top:8px;align-self:flex-start;">+ Adicionar rede social</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cortes Favoritos -->
+    <section class="perfil-section">
+      <div class="flex justify-between items-center" style="margin-bottom:16px;">
+        <h2>❤️ Cortes Favoritos</h2>
+        <button class="btn btn-outline btn-sm">⬆ Enviar imagem de corte</button>
+      </div>
+      <div class="favoritos-grid" id="favoritosGrid"></div>
+    </section>
+
+    <!-- Histórico de Serviços -->
+    <section class="perfil-section">
+      <h2>📅 Histórico de Serviços</h2>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Serviço</th>
+                <th>Profissional</th>
+                <th>Avaliação</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>02/09/2026</td><td>Corte + Barba</td><td>João Barbeiro</td><td>★★★★★</td><td>R$ 75,00</td></tr>
+              <tr><td>15/08/2026</td><td>Degradê</td><td>Pedro Stylist</td><td>★★★★☆</td><td>R$ 55,00</td></tr>
+              <tr><td>01/08/2026</td><td>Corte Social</td><td>João Barbeiro</td><td>★★★★★</td><td>R$ 45,00</td></tr>
+              <tr><td>20/07/2026</td><td>Hidratação Capilar</td><td>Ana Hair</td><td>★★★★☆</td><td>R$ 90,00</td></tr>
+              <tr><td>05/07/2026</td><td>Corte + Sobrancelha</td><td>Pedro Stylist</td><td>★★★★★</td><td>R$ 65,00</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Histórico de Compras -->
+    <section class="perfil-section">
+      <h2>🛒 Histórico de Compras</h2>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Data</th><th>Produto</th><th>Qtd</th><th>Valor</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>25/08/2026</td><td>Pomada Modeladora</td><td>1x</td><td>R$ 45,00</td></tr>
+              <tr><td>10/08/2026</td><td>Shampoo Anticaspa</td><td>2x</td><td>R$ 70,00</td></tr>
+              <tr><td>28/07/2026</td><td>Óleo para Barba</td><td>1x</td><td>R$ 35,00</td></tr>
+              <tr><td>15/07/2026</td><td>Kit Pente + Escova</td><td>1x</td><td>R$ 55,00</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Carrinho -->
+    <section class="perfil-section" id="carrinhoSection">
+      <h2>🛍️ Meu Carrinho</h2>
+      <div id="carrinhoContent" class="carrinho-lista"></div>
+    </section>
+
+    <!-- Estatísticas -->
+    <section class="perfil-section">
+      <h2>📊 Resumo Geral / Estatísticas</h2>
+      <div class="stats-row">
+        <div class="stat-item"><div class="valor">24</div><div class="label">Visitas</div></div>
+        <div class="stat-item"><div class="valor" style="color:var(--accent)">Degradê</div><div class="label">Favorito</div></div>
+        <div class="stat-item"><div class="valor">João</div><div class="label">Profissional</div></div>
+        <div class="stat-item"><div class="valor">Mar 2021</div><div class="label">Membro desde</div></div>
+        <div class="stat-item"><div class="valor" style="color:var(--success)">R$ 2.450</div><div class="label">Total gasto</div></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <a href="index.html" class="logo">Studio<span>Corte</span></a>
+        <p class="footer-copy" style="margin:0;border:0;padding:0;">© 2026 Studio Corte</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script>
+    const user = getUser();
+    if (!user) {
+      window.location.href = "login.html";
+    } else {
+      document.getElementById("userNome").innerHTML = `${user.nome} <span class="badge badge-accent">FIDELIDADE</span>`;
+      document.getElementById("userEmail").textContent = user.email;
+      document.getElementById("userAvatar").src = user.avatar || "https://i.pravatar.cc/150?u=cliente";
+      if (user.telefone) document.getElementById("userTel").textContent = user.telefone;
+      if (user.endereco) document.getElementById("userEnd").textContent = user.endereco;
+    }
+
+    // Favoritos
+    const favoritos = [
+      { nome: "Degradê Americano", data: "12/09/2026", img: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=400&h=250&fit=crop" },
+      { nome: "Corte Social", data: "01/09/2026", img: "https://images.unsplash.com/photo-1503951914875-452466b2d363?w=400&h=250&fit=crop" },
+      { nome: "Fade Médio", data: "25/08/2026", img: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400&h=250&fit=crop" },
+      { nome: "Mullet Moderno", data: "15/08/2026", img: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=400&h=250&fit=crop" },
+      { nome: "Buzz Cut", data: "08/08/2026", img: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=400&h=250&fit=crop" },
+      { nome: "Undercut", data: "29/07/2026", img: "https://images.unsplash.com/photo-1503951914875-452466b2d363?w=400&h=250&fit=crop" },
+    ];
+    document.getElementById("favoritosGrid").innerHTML = favoritos.map(f => `
+      <article class="favorito-card">
+        <img src="${f.img}" alt="${f.nome}" loading="lazy">
+        <div class="heart">❤️</div>
+        <div class="info">
+          <strong>${f.nome}</strong>
+          <div class="data">Salvo em: ${f.data}</div>
+        </div>
+      </article>
+    `).join("");
+
+    // Carrinho
+    function renderCarrinho() {
+      const cart = getCart();
+      const el = document.getElementById("carrinhoContent");
+      if (!cart.length) {
+        el.innerHTML = `<p class="text-muted">Seu carrinho está vazio. Adicione produtos na página inicial.</p>`;
+        return;
+      }
+      let total = 0;
+      el.innerHTML = cart.map(item => {
+        total += item.preco * item.qtd;
+        return `
+          <div class="carrinho-item">
+            <div class="info">
+              <strong>${item.nome}</strong>
+              <span class="text-muted">${item.qtd}x · R$ ${item.preco.toFixed(2)}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="preco">R$ ${(item.preco * item.qtd).toFixed(2)}</span>
+              <button class="btn btn-ghost btn-sm" onclick="removerItem(${item.id})">Remover</button>
+            </div>
+          </div>
+        `;
+      }).join("") + `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;">
+          <strong>Total: R$ ${total.toFixed(2)}</strong>
+          <button class="btn btn-primary" onclick="finalizarCompra()">Finalizar compra</button>
+        </div>
+      `;
+    }
+
+    function removerItem(id) {
+      removeFromCart(id);
+      renderCarrinho();
+    }
+
+    function finalizarCompra() {
+      alert("Compra simulada com sucesso! Em produção integraria com pagamento.");
+      saveCart([]);
+      renderCarrinho();
+    }
+
+    renderCarrinho();
+  </script>
+</body>
+</html>

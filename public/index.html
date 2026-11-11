@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Studio Corte — Cortes com precisão • Agende com confiança</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/home.css">
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">Studio<span>Corte</span></a>
+
+      <nav class="nav" id="mainNav">
+        <a href="#servicos" class="nav-link">Serviços</a>
+        <a href="#cortes" class="nav-link">Galeria / Cortes</a>
+        <a href="#localizacao" class="nav-link">Informações</a>
+        <a href="#agendar" class="nav-link">Marcar Horário</a>
+        <a href="#avaliacoes" class="nav-link">Avaliações</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="login.html" class="btn btn-ghost btn-sm" id="btnLogin">Entrar na Conta</a>
+        <a href="#agendar" class="btn btn-primary btn-sm">Agendar agora</a>
+        <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <h1>Seu próximo corte,<br><span class="highlight">pensado</span> antes de sentar<br>na cadeira.</h1>
+        <p>Descrição inicial leve: veja os serviços, escolha o estilo na galeria, confira o mapa e marque o horário. Tudo em uma página clara e escura.</p>
+        <div class="hero-actions">
+          <a href="#servicos" class="btn btn-primary">Ver serviços</a>
+          <a href="#agendar" class="btn btn-outline">Marcar horário</a>
+        </div>
+      </div>
+      <div class="hero-image">
+        <div class="placeholder-icon">✂️</div>
+        <span style="position:absolute;bottom:16px;left:16px;font-size:0.8rem;color:var(--text-muted)">IMG do salão / corte</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALERIA DE CORTES -->
+  <section class="section" id="cortes">
+    <div class="container">
+      <h2 class="section-title">Lista de cortes</h2>
+      <p class="section-subtitle">Alguns dos resultados que você pode escolher. Clique e imagine no seu visual.</p>
+
+      <div class="cortes-grid" id="cortesGrid">
+        <!-- preenchido via JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVIÇOS -->
+  <section class="section" id="servicos" style="background: var(--bg-secondary);">
+    <div class="container">
+      <span class="section-label">Serviços</span>
+      <h2 class="section-title">O que fazemos e quanto custa</h2>
+      <p class="section-subtitle">Lista clara de cada opção com valores. Sem surpresa na hora de pagar.</p>
+
+      <div class="servicos-grid" id="servicosGrid">
+        <!-- preenchido via JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUTOS (só aparece se houver) -->
+  <section class="section" id="produtos" style="display: none;">
+    <div class="container">
+      <span class="section-label">Produtos</span>
+      <h2 class="section-title">Produtos do salão</h2>
+      <p class="section-subtitle">Itens selecionados para você levar o visual perfeito para casa.</p>
+      <div class="produtos-grid" id="produtosGrid"></div>
+    </div>
+  </section>
+
+  <!-- LOCALIZAÇÃO -->
+  <section class="section" id="localizacao">
+    <div class="container local-grid">
+      <div class="local-info">
+        <h2>Onde estamos</h2>
+        <p>Venha nos visitar. Ambiente confortável, profissionais experientes e o melhor café da região enquanto você espera.</p>
+        <div class="local-details">
+          <div class="local-item">📍 <strong>Endereço:</strong> Rua das Tesouras, 123 — Centro, São Paulo/SP</div>
+          <div class="local-item">🕐 <strong>Horário:</strong> Seg–Sáb 09h–20h | Dom 10h–16h</div>
+          <div class="local-item">📞 <strong>Telefone:</strong> (11) 99999-0000</div>
+          <div class="local-item">💬 <strong>WhatsApp:</strong> (11) 99999-0000</div>
+        </div>
+        <div style="margin-top: 28px;">
+          <a href="https://maps.google.com" target="_blank" class="btn btn-primary">Ver no mapa</a>
+        </div>
+      </div>
+      <div class="map-placeholder">
+        🗺️ Mapa interativo (Google Maps embed)
+      </div>
+    </div>
+  </section>
+
+  <!-- AVALIAÇÕES / COMENTÁRIOS -->
+  <section class="section" id="avaliacoes" style="background: var(--bg-secondary);">
+    <div class="container">
+      <span class="section-label">Avaliações</span>
+      <h2 class="section-title">O que nossos clientes dizem</h2>
+      <p class="section-subtitle">Atualizado em tempo real conforme as avaliações chegam.</p>
+
+      <div class="comentarios-grid" id="comentariosGrid">
+        <!-- preenchido via JS -->
+      </div>
+
+      <div style="text-align:center;margin-top:32px;">
+        <button class="btn btn-outline" id="btnVerTodosComentarios">Ver todos os comentários</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- AGENDAR / CONTATO COM O CABELEIREIRO -->
+  <section class="section" id="agendar">
+    <div class="container" style="max-width:560px;">
+      <div style="text-align:center;margin-bottom:32px;">
+        <h2 class="section-title">Marque seu horário</h2>
+        <p class="section-subtitle">Preencha o formulário abaixo. O cabeleireiro receberá sua solicitação e entrará em contato para confirmar.</p>
+      </div>
+
+      <form id="formAgendamento" class="card" style="padding:32px;">
+        <div class="form-group">
+          <label class="form-label">Nome completo</label>
+          <input type="text" class="form-input" id="agNome" placeholder="Seu nome" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Telefone / WhatsApp</label>
+          <input type="tel" class="form-input" id="agTel" placeholder="(11) 99999-0000" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">E-mail (opcional)</label>
+          <input type="email" class="form-input" id="agEmail" placeholder="seu@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Serviço desejado</label>
+          <select class="form-input" id="agServico" required>
+            <option value="">Selecione...</option>
+            <option>Corte Masculino</option>
+            <option>Fade / Degradê</option>
+            <option>Barba + Contorno</option>
+            <option>Corte Feminino</option>
+            <option>Coloração / Luzes</option>
+            <option>Corte Infantil</option>
+            <option>Outro (descrever na mensagem)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Preferência de data / horário</label>
+          <input type="text" class="form-input" id="agHorario" placeholder="Ex: Terça à tarde, ou 15/09 às 14h" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mensagem (opcional)</label>
+          <textarea class="form-input" id="agMsg" rows="3" placeholder="Alguma observação, preferência de profissional, etc."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Enviar solicitação</button>
+        <p style="margin-top:16px;text-align:center;color:var(--text-muted);font-size:0.85rem;">
+          Já tem conta? <a href="login.html" style="color:var(--accent);">Entre</a> para salvar favoritos e histórico.
+        </p>
+      </form>
+
+      <div id="agSucesso" style="display:none;margin-top:24px;padding:20px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);border-radius:var(--radius);text-align:center;">
+        ✅ Solicitação enviada!<br>
+        O cabeleireiro recebeu seus dados e entrará em contato em breve.
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER (ajustado - menor) -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <a href="index.html" class="logo">Studio<span>Corte</span></a>
+        <div class="footer-links">
+          <a href="#servicos">Serviços</a>
+          <a href="#cortes">Galeria</a>
+          <a href="#localizacao">Localização</a>
+          <a href="login.html">Entrar</a>
+        </div>
+        <div style="display:flex;gap:16px;">
+          <a href="#" aria-label="Instagram">📷</a>
+          <a href="#" aria-label="TikTok">🎵</a>
+          <a href="#" aria-label="WhatsApp">💬</a>
+        </div>
+      </div>
+      <p class="footer-copy">© 2026 Studio Corte — Layout conforme o esboço desenhado.</p>
+    </div>
+  </footer>
+
+  <!-- Chat flutuante -->
+  <a href="https://wa.me/5511999990000" class="chat-float" target="_blank" aria-label="WhatsApp">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.8.48 3.48 1.32 4.94L2 22l5.2-1.28A9.96 9.96 0 0012 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.56 0-3.02-.42-4.28-1.14l-.3-.18-3.16.78.8-3.08-.2-.32A7.94 7.94 0 014 12c0-4.42 3.58-8 8-8s8 3.58 8 8-3.58 8-8 8z"/></svg>
+  </a>
+
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    document.getElementById("formAgendamento").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const solicitacao = {
+        id: Date.now(),
+        nome: document.getElementById("agNome").value.trim(),
+        telefone: document.getElementById("agTel").value.trim(),
+        email: document.getElementById("agEmail").value.trim() || null,
+        servico: document.getElementById("agServico").value,
+        horario: document.getElementById("agHorario").value.trim(),
+        mensagem: document.getElementById("agMsg").value.trim() || null,
+        data: new Date().toLocaleString("pt-BR"),
+        status: "PENDENTE"
+      };
+
+      // Salva solicitação para o admin ver
+      const lista = JSON.parse(localStorage.getItem("sc_solicitacoes") || "[]");
+      lista.unshift(solicitacao);
+      localStorage.setItem("sc_solicitacoes", JSON.stringify(lista));
+
+      // Também grava como aviso no painel admin
+      const avisos = JSON.parse(localStorage.getItem("sc_avisos_admin") || "[]");
+      avisos.unshift({
+        tipo: "agendamento",
+        email: solicitacao.email || solicitacao.telefone,
+        data: solicitacao.data,
+        lido: false,
+        detalhe: `${solicitacao.nome} — ${solicitacao.servico} (${solicitacao.horario})`
+      });
+      localStorage.setItem("sc_avisos_admin", JSON.stringify(avisos));
+
+      document.getElementById("formAgendamento").style.display = "none";
+      document.getElementById("agSucesso").style.display = "block";
+    });
+  </script>
+</body>
+</html>

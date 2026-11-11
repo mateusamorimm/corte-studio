@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atendimentos — Studio Corte Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <a href="../index.html" class="logo">Studio<span>Corte</span></a>
+      <nav class="sidebar-nav">
+        <a href="index.html" class="sidebar-link">🏠 Dashboard</a>
+        <a href="servicos.html" class="sidebar-link">✂️ Serviços</a>
+        <a href="clientes.html" class="sidebar-link">👥 Clientes</a>
+        <a href="produtos.html" class="sidebar-link">🛍️ Produtos</a>
+        <a href="agendamentos.html" class="sidebar-link active">📅 Atendimentos</a>
+        <a href="configuracoes.html" class="sidebar-link">⚙️ Configurações</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <img class="avatar" src="https://i.pravatar.cc/100?u=admin" alt="Admin">
+          <div><div class="name">Carlos Admin</div><div class="role">Proprietário</div></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="logout()" style="width:100%;">Sair da Conta</button>
+      </div>
+    </aside>
+    <main class="admin-main">
+      <div class="admin-header">
+        <div>
+          <h1>Atendimentos / Agendamentos</h1>
+          <p class="sub">Todos os horários marcados e status em tempo real.</p>
+        </div>
+      </div>
+      <div class="admin-card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Horário</th><th>Cliente</th><th>Serviço</th><th>Profissional</th><th>Status</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="body"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="../js/data.js"></script>
+  <script>
+    if (!getUser() || getUser().role !== "admin") location.href = "../login.html";
+    const map = { "CONFIRMADO": "badge-success", "EM ESPERA": "badge-warning", "PENDENTE": "badge-pending" };
+    document.getElementById("body").innerHTML = AGENDAMENTOS.map(a => `
+      <tr>
+        <td style="color:var(--accent);font-weight:600;">${a.hora}</td>
+        <td>${a.cliente}</td>
+        <td>${a.servico}</td>
+        <td>${a.profissional}</td>
+        <td><span class="badge ${map[a.status]}">${a.status}</span></td>
+        <td><button class="btn btn-ghost btn-sm">Alterar</button></td>
+      </tr>
+    `).join("");
+  </script>
+</body>
+</html>
