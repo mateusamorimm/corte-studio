@@ -40,13 +40,19 @@ enum StatusPedido {
 model Usuario {
   id_usuario       Int        @id @default(autoincrement())
   nome_completo    String     @db.VarChar(120)
-  email            String     @unique @db.VarChar(160) // sempre minúsculo (CHECK)
+  email            String?    @unique @db.VarChar(160) // sempre minúsculo (CHECK); NULL = cliente de balcão sem acesso
   cpf              String?    @unique @db.Char(11) // só dígitos; único quando informado
   telefone         String?    @db.VarChar(20)
   data_nascimento  DateTime?  @db.Date
   senha_hash       String?    @db.VarChar(255) // NULL = conta aguardando definição de senha
   tipo_perfil      TipoPerfil @default(CLIENTE)
   avatar_url       String?    @db.VarChar(500)
+  capa_url         String?    @db.VarChar(500)
+  bio              String?    @db.VarChar(300)
+  endereco         String?    @db.VarChar(200)
+  instagram        String?    @db.VarChar(60)
+  tiktok           String?    @db.VarChar(60)
+  whatsapp         String?    @db.VarChar(20) // só dígitos
   ativo            Boolean    @default(true)
   data_cadastro    DateTime   @default(now()) @db.Timestamptz(3)
   data_atualizacao DateTime   @updatedAt @db.Timestamptz(3)
@@ -60,6 +66,8 @@ model Usuario {
   itens_carrinho        ItemCarrinho[]
   favoritos             Favorito[]
   tokens_senha          TokenRedefinicaoSenha[]
+  cortes_enviados       CorteEnviado[]
+  imagens               Imagem[]
 
   @@index([tipo_perfil, ativo])
   @@map("usuario")
@@ -209,6 +217,36 @@ model Favorito {
   @@unique([id_cliente, id_corte])
   @@index([id_corte])
   @@map("favorito")
+}
+
+// Imagem de referência enviada pelo cliente ("Enviar imagem de corte" no perfil).
+model CorteEnviado {
+  id_corte_enviado Int      @id @default(autoincrement())
+  id_cliente       Int
+  nome             String   @db.VarChar(100)
+  imagem_url       String   @db.VarChar(500)
+  data_envio       DateTime @default(now()) @db.Timestamptz(3)
+
+  cliente Usuario @relation(fields: [id_cliente], references: [id_usuario], onDelete: Cascade)
+
+  @@index([id_cliente, data_envio])
+  @@map("corte_enviado")
+}
+
+// ───────────── IMAGENS (upload armazenado no próprio banco) ─────────────
+
+model Imagem {
+  id_imagem    String   @id @db.Uuid
+  id_usuario   Int? // quem enviou
+  mime         String   @db.VarChar(20) // image/jpeg | image/png | image/webp (CHECK)
+  tamanho      Int // bytes (CHECK: até 3 MB)
+  dados        Bytes
+  data_criacao DateTime @default(now()) @db.Timestamptz(3)
+
+  usuario Usuario? @relation(fields: [id_usuario], references: [id_usuario], onDelete: SetNull)
+
+  @@index([id_usuario])
+  @@map("imagem")
 }
 
 // ───────────── PRODUTOS, CARRINHO E PEDIDOS ─────────────

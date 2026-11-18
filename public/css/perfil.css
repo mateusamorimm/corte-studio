@@ -3,7 +3,8 @@
   height: 220px;
   background: linear-gradient(135deg, #1a1a28 0%, #0d0d14 100%);
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  overflow: hidden;
+  /* visível: avatar e nome ficam sobrepostos à borda inferior da capa (antes eram cortados) */
+  overflow: visible;
   margin-bottom: 60px;
 }
 
@@ -11,7 +12,9 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: url("https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=1400&h=400&fit=crop") center/cover;
+  /* --capa: imagem de capa escolhida pelo usuário (definida via JS); sem ela, a capa padrão */
+  background: var(--capa, url("https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=1400&h=400&fit=crop")) center/cover;
+  border-radius: inherit;
   opacity: 0.4;
 }
 

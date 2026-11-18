@@ -59,3 +59,120 @@ export const opcional = (schema) =>
   z.preprocess((v) => (v === "" || v === undefined ? undefined : v), schema.nullable().optional());
 
 export const idParam = z.object({ id: z.coerce.number().int().positive("ID inválido.") });
+
+export const id = z.coerce.number({ error: "ID inválido." }).int("ID inválido.").positive("ID inválido.");
+
+// Texto livre opcional: "" ou só espaços → null.
+export const textoOpcional = (max, rotulo = "Texto") =>
+  z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? null : v === undefined ? undefined : v),
+    z.string().trim().max(max, `${rotulo}: máximo de ${max} caracteres.`).nullable().optional()
+  );
+
+export const textoObrigatorio = (max, rotulo) =>
+  z
+    .string({ error: `Informe ${rotulo}.` })
+    .trim()
+    .min(1, `Informe ${rotulo}.`)
+    .max(max, `${rotulo[0].toUpperCase()}${rotulo.slice(1)}: máximo de ${max} caracteres.`);
+
+// Imagem: enviada ao próprio sistema (/api/imagens/<uuid>) ou URL https externa.
+const RE_IMAGEM_LOCAL = /^\/api\/imagens\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export const urlImagem = z
+  .string()
+  .trim()
+  .max(500, "URL da imagem muito longa.")
+  .refine((s) => {
+    if (RE_IMAGEM_LOCAL.test(s)) return true;
+    try {
+      const u = new URL(s);
+      return u.protocol === "https:" || u.protocol === "http:";
+    } catch {
+      return false;
+    }
+  }, "Imagem inválida. Envie um arquivo ou informe uma URL http(s).");
+export const urlImagemOpcional = z.preprocess((v) => (v === "" ? null : v), urlImagem.nullable().optional());
+
+export const urlOpcional = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() === "" ? null : v),
+  z
+    .string()
+    .trim()
+    .max(500, "URL muito longa.")
+    .refine((s) => {
+      try {
+        return new URL(s).protocol === "https:";
+      } catch {
+        return false;
+      }
+    }, "Informe uma URL que comece com https://")
+    .nullable()
+    .optional()
+);
+
+// Valor em reais: aceita 45, "45", "45.9", "45,90" → "45.90"
+export const dinheiro = z
+  .union([z.number(), z.string()], { error: "Informe o valor." })
+  .transform((v) => String(v).trim().replace(",", "."))
+  .refine((s) => /^\d{1,7}(\.\d{1,2})?$/.test(s), "Valor inválido. Use até 2 casas decimais.")
+  .transform((s) => Number(s).toFixed(2))
+  .refine((s) => Number(s) <= 999999.99, "Valor muito alto.");
+
+export const inteiro = (min, max, rotulo = "Valor") =>
+  z.coerce
+    .number({ error: `${rotulo} inválido.` })
+    .int(`${rotulo} deve ser um número inteiro.`)
+    .min(min, `${rotulo}: mínimo ${min}.`)
+    .max(max, `${rotulo}: máximo ${max}.`);
+
+export const dataIso = z
+  .string({ error: "Informe a data." })
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida.")
+  .refine((s) => !Number.isNaN(new Date(`${s}T00:00:00Z`).getTime()) && new Date(`${s}T00:00:00Z`).toISOString().startsWith(s), "Data inválida.");
+
+export const horaTexto = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Horário inválido (use HH:MM).");
+
+export const instante = z
+  .string({ error: "Informe o horário." })
+  .refine((s) => !Number.isNaN(Date.parse(s)), "Horário inválido.")
+  .transform((s) => new Date(s));
+
+export const booleano = z.preprocess((v) => (v === "true" ? true : v === "false" ? false : v), z.boolean());
+
+// Usuário de rede social: "@fulano", "fulano" ou URL do perfil → "fulano"
+export const usuarioRede = z.preprocess(
+  (v) => {
+    if (typeof v !== "string") return v;
+    let s = v.trim();
+    if (!s) return null;
+    s = s.replace(/^https?:\/\/(www\.)?(instagram\.com|tiktok\.com)\/@?/i, "").replace(/^@/, "").replace(/\/.*$/, "");
+    return s;
+  },
+  z
+    .string()
+    .regex(/^[A-Za-z0-9._]{1,60}$/, "Usuário inválido (use letras, números, ponto ou _).")
+    .nullable()
+    .optional()
+);
+
+export const telefoneOpcional = z.preprocess(
+  (v) => (typeof v === "string" && v.replace(/\D/g, "") === "" ? null : v),
+  telefone.nullable().optional()
+);
+
+// WhatsApp: DDD + número, com ou sem 55 → só dígitos com 55 na frente.
+export const whatsappOpcional = z.preprocess(
+  (v) => (typeof v === "string" && v.replace(/\D/g, "") === "" ? null : v),
+  z
+    .string()
+    .transform((s) => s.replace(/\D/g, ""))
+    .transform((s) => (s.length === 10 || s.length === 11 ? `55${s}` : s))
+    .refine((s) => /^55\d{10,11}$/.test(s), "WhatsApp inválido. Use DDD + número.")
+    .nullable()
+    .optional()
+);
+
+export const emailOpcional = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() === "" ? null : v),
+  email.nullable().optional()
+);

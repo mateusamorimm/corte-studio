@@ -12,6 +12,12 @@ export const CAMPOS_USUARIO_PUBLICO = {
   data_nascimento: true,
   tipo_perfil: true,
   avatar_url: true,
+  capa_url: true,
+  bio: true,
+  endereco: true,
+  instagram: true,
+  tiktok: true,
+  whatsapp: true,
   ativo: true,
   data_cadastro: true,
 };

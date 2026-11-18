@@ -52,3 +52,28 @@ tests/             node:test
 
 - Nenhuma operação destrutiva automática: migrations versionadas aplicadas com `prisma migrate deploy`; nada de `migrate reset` ou `db push --force-reset`.
 - Remoções de usuários, serviços, produtos e cortes são lógicas (`ativo = false`) para preservar histórico.
+
+## Agenda (horários livres)
+
+- Expediente semanal por profissional (`disponibilidade_barbeiro`, horário local do salão) e serviços que cada um realiza (`barbeiro_servico`), cadastrados em **Painel → Equipe**.
+- `GET /api/agenda/horarios?servico&data[&profissional]`: gera os horários a cada `intervalo_slots_minutos` dentro do expediente, cabendo a duração do serviço, sem bloqueios nem agendamentos ativos sobrepostos, respeitando `antecedencia_minima_minutos` e `janela_agendamento_dias` (a equipe ignora essas duas).
+- Fuso: instantes em UTC (`TIMESTAMPTZ`), conversão pelo `fuso_horario` da configuração (`src/lib/tempo.js`).
+- Cliente: até 5 agendamentos futuros; cancela online até `antecedencia_cancelamento_hrs` antes; avalia só atendimentos `CONCLUIDO`, uma vez.
+- Transições de status pela equipe são validadas (ex.: concluir/falta só depois do horário; reativar um cancelado revalida conflitos sob o lock).
+
+## Imagens
+
+- `POST /api/imagens` (logado): corpo binário, até 3 MB; o tipo é detectado pela assinatura do arquivo (JPEG/PNG/WebP). SVG, GIF e HTML são recusados.
+- Guardadas na tabela `imagem` (Neon) e servidas em `GET /api/imagens/:uuid` com `nosniff`, `CSP: default-src 'none'; sandbox` e cache imutável.
+- Campos de imagem aceitam esse caminho local ou uma URL `http(s)` externa; `javascript:`/`data:` são recusados no servidor e ignorados no cliente.
+
+## Clientes de balcão
+
+- O admin pode cadastrar cliente sem e-mail (atendimento por telefone/presencial); a migration `20261118000000_perfil_imagens` tornou `usuario.email` opcional **somente** para `CLIENTE` (CHECK `usuario_email_obrigatorio_equipe`).
+- Com e-mail, o admin pode enviar o link para o cliente criar a senha (mesmo fluxo de token de uso único da redefinição).
+
+## Implantação de mudanças no banco
+
+1. Testar na branch de teste: `npm run test:db:prepare` e `npm test`.
+2. Conferir o banco principal: `npm run db:status`.
+3. Aplicar: `npm run db:deploy` (só migrations versionadas; nunca `migrate reset`/`db push`).

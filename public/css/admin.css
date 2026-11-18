@@ -251,3 +251,119 @@
     padding: 16px;
   }
 }
+
+/* ========== COMPLEMENTOS DO PAINEL (mesma linguagem visual) ========== */
+/* Botão do menu lateral: só aparece no celular */
+.admin-menu-toggle {
+  display: none;
+  font-size: 1.2rem;
+}
+@media (max-width: 768px) {
+  .admin-menu-toggle {
+    display: inline-flex;
+  }
+  .sidebar {
+    height: 100vh;
+    overflow-y: auto;
+  }
+}
+
+/* Filtros acima das tabelas */
+.admin-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+.admin-filtros .form-group {
+  margin-bottom: 0;
+  min-width: 150px;
+}
+.admin-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+tr.inativo td {
+  opacity: 0.55;
+}
+
+/* Painel de notificações (sino) */
+.notif-wrap {
+  position: relative;
+}
+.notif-contador {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.notif-painel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: min(320px, calc(100vw - 32px));
+  z-index: 50;
+}
+
+/* Disponibilidade semanal (equipe) */
+.semana-linha {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 8px 12px;
+  align-items: start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.semana-linha:last-child {
+  border-bottom: 0;
+}
+.semana-intervalos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.semana-intervalo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.semana-intervalo .form-input {
+  width: auto;
+  padding: 8px 10px;
+}
+.check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.check-item input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+}
+.miniatura {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: var(--bg-input);
+}

@@ -56,6 +56,32 @@ export async function api(metodo, caminho, corpo, tentativa = 0) {
   throw new ApiError(res.status, dados?.erro);
 }
 
+// Envia um arquivo de imagem (corpo binário) e devolve a URL gravada no servidor.
+export async function enviarImagem(arquivo, tentativa = 0) {
+  if (!lerCookie("sc_csrf")) await renovarCsrf();
+  let res;
+  try {
+    res = await fetch("/api/imagens", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": arquivo.type || "application/octet-stream", "X-CSRF-Token": lerCookie("sc_csrf") || "" },
+      credentials: "same-origin",
+      body: arquivo,
+    });
+  } catch {
+    throw new ApiError(0, { codigo: "SEM_CONEXAO", mensagem: "Sem conexão com o servidor. Verifique sua internet." });
+  }
+  let dados = null;
+  try {
+    dados = await res.json();
+  } catch {
+    /* sem corpo */
+  }
+  if (res.ok) return dados.url;
+  if (res.status === 403 && dados?.erro?.codigo === "CSRF_INVALIDO" && tentativa === 0) return enviarImagem(arquivo, 1);
+  if (res.status === 413) throw new ApiError(413, { mensagem: "Imagem muito grande. O limite é 3 MB." });
+  throw new ApiError(res.status, dados?.erro);
+}
+
 export const get = (c) => api("GET", c);
 export const post = (c, b = {}) => api("POST", c, b);
 export const put = (c, b = {}) => api("PUT", c, b);

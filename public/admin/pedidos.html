@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pedidos — Studio Corte Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar" id="sidebar">
+      <a href="../index.html" class="logo">Studio<span>Corte</span></a>
+      <nav class="sidebar-nav" aria-label="Menu do painel">
+        <a href="index.html" class="sidebar-link" data-so-admin>🏠 Dashboard</a>
+        <a href="servicos.html" class="sidebar-link" data-so-admin>✂️ Serviços</a>
+        <a href="clientes.html" class="sidebar-link" data-so-admin>👥 Clientes</a>
+        <a href="produtos.html" class="sidebar-link" data-so-admin>🛍️ Produtos</a>
+        <a href="pedidos.html" class="sidebar-link active" data-so-admin>📦 Pedidos</a>
+        <a href="agendamentos.html" class="sidebar-link">📅 Atendimentos</a>
+        <a href="equipe.html" class="sidebar-link" data-so-admin>💈 Equipe</a>
+        <a href="configuracoes.html" class="sidebar-link" data-so-admin>⚙️ Configurações</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <span class="avatar avatar-iniciais" aria-hidden="true"></span>
+          <div><div class="name">&nbsp;</div><div class="role">&nbsp;</div></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" data-sair style="width:100%;">Sair da Conta</button>
+      </div>
+    </aside>
+    <main class="admin-main">
+      <div class="admin-header">
+        <div>
+          <h1>Pedidos</h1>
+          <p class="sub">Compras feitas pelo site: separe, avise a retirada e conclua no pagamento.</p>
+        </div>
+      </div>
+      <div class="admin-card">
+        <form class="admin-filtros" id="filtros">
+          <div class="form-group">
+            <label class="form-label" for="fStatus">Status</label>
+            <select class="form-input" id="fStatus" name="status">
+              <option value="">Todos</option>
+              <option value="PENDENTE">Pendente</option>
+              <option value="PRONTO_PARA_RETIRADA">Pronto p/ retirada</option>
+              <option value="CONCLUIDO">Concluído</option>
+              <option value="CANCELADO">Cancelado</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label class="form-label" for="fBusca">Buscar cliente</label>
+            <input type="search" class="form-input" id="fBusca" name="busca" placeholder="Nome, e-mail ou telefone">
+          </div>
+        </form>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="pedidosBody"><tr><td colspan="7" class="estado-vazio">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="../js/admin/pedidos.js"></script>
+</body>
+</html>

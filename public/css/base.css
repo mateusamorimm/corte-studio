@@ -92,6 +92,7 @@ h1, h2, h3, h4, h5, h6 {
 .grid { display: grid; }
 
 .hidden { display: none !important; }
+[hidden] { display: none !important; } /* o atributo hidden vence classes como .btn/.form-group */
 
 @media (max-width: 768px) {
   .container {
