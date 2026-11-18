@@ -13,26 +13,24 @@
 </head>
 <body>
   <div class="admin-layout">
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
       <a href="../index.html" class="logo">Studio<span>Corte</span></a>
-      <nav class="sidebar-nav">
-        <a href="index.html" class="sidebar-link active">🏠 Dashboard</a>
-        <a href="servicos.html" class="sidebar-link">✂️ Serviços</a>
-        <a href="clientes.html" class="sidebar-link">👥 Clientes</a>
-        <a href="produtos.html" class="sidebar-link">🛍️ Produtos</a>
+      <nav class="sidebar-nav" aria-label="Menu do painel">
+        <a href="index.html" class="sidebar-link active" data-so-admin>🏠 Dashboard</a>
+        <a href="servicos.html" class="sidebar-link" data-so-admin>✂️ Serviços</a>
+        <a href="clientes.html" class="sidebar-link" data-so-admin>👥 Clientes</a>
+        <a href="produtos.html" class="sidebar-link" data-so-admin>🛍️ Produtos</a>
+        <a href="pedidos.html" class="sidebar-link" data-so-admin>📦 Pedidos</a>
         <a href="agendamentos.html" class="sidebar-link">📅 Atendimentos</a>
-        <a href="configuracoes.html" class="sidebar-link">⚙️ Configurações</a>
+        <a href="equipe.html" class="sidebar-link" data-so-admin>💈 Equipe</a>
+        <a href="configuracoes.html" class="sidebar-link" data-so-admin>⚙️ Configurações</a>
       </nav>
       <div class="sidebar-footer">
         <div class="sidebar-user">
-          <img class="avatar" src="https://i.pravatar.cc/100?u=admin" alt="Admin">
-          <div>
-            <div class="name">Carlos Admin</div>
-            <div class="role">Proprietário</div>
-          </div>
+          <span class="avatar avatar-iniciais" aria-hidden="true"></span>
+          <div><div class="name">&nbsp;</div><div class="role">&nbsp;</div></div>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="logout()" style="width:100%;">Sair da Conta</button>
+        <button class="btn btn-ghost btn-sm" data-sair style="width:100%;">Sair da Conta</button>
       </div>
     </aside>
 
@@ -44,12 +42,15 @@
           <p class="sub">Acompanhe as métricas de desempenho e serviços do salão.</p>
         </div>
         <div class="admin-header-actions">
-          <div class="search-box">
+          <form class="search-box" id="formBusca" role="search">
             <span>🔍</span>
-            <input type="text" placeholder="Buscar agendamento...">
+            <input type="search" id="buscaAgendamento" placeholder="Buscar agendamento..." aria-label="Buscar agendamento">
+          </form>
+          <div class="notif-wrap">
+            <button class="btn btn-ghost btn-icon" title="Notificações" id="btnNotif" aria-expanded="false" aria-controls="painelNotif">🔔</button>
+            <div class="admin-card notif-painel" id="painelNotif" hidden></div>
           </div>
-          <button class="btn btn-ghost btn-icon" title="Notificações" id="btnNotif">🔔</button>
-          <span class="badge badge-info">Hoje · 02/09</span>
+          <span class="badge badge-info" id="badgeHoje">Hoje</span>
         </div>
       </div>
 
@@ -57,23 +58,23 @@
       <div class="metrics-grid">
         <div class="metric-card">
           <div class="label">Total Clientes <span>👤</span></div>
-          <div class="valor">247</div>
-          <div class="delta">▲ +18 novos este mês</div>
+          <div class="valor" id="mClientes">—</div>
+          <div class="delta" id="mClientesDelta">&nbsp;</div>
         </div>
         <div class="metric-card">
           <div class="label">Atendimentos Hoje <span>📅</span></div>
-          <div class="valor">12</div>
-          <div class="delta">▲ 8 confirmados</div>
+          <div class="valor" id="mHoje">—</div>
+          <div class="delta" id="mHojeDelta">&nbsp;</div>
         </div>
         <div class="metric-card">
           <div class="label">Faturamento Mensal <span>💰</span></div>
-          <div class="valor">R$ 18.450</div>
-          <div class="delta">▲ +12.4% vs mês anterior</div>
+          <div class="valor" id="mFaturamento">—</div>
+          <div class="delta" id="mFaturamentoDelta">&nbsp;</div>
         </div>
         <div class="metric-card">
           <div class="label">Avaliação Média <span>⭐</span></div>
-          <div class="valor">4.8 ★</div>
-          <div class="delta">▲ Baseado em 94 avaliações</div>
+          <div class="valor" id="mAvaliacao">—</div>
+          <div class="delta" id="mAvaliacaoDelta">&nbsp;</div>
         </div>
       </div>
 
@@ -92,8 +93,13 @@
                   <th>Status</th>
                 </tr>
               </thead>
-              <tbody id="agendamentosBody"></tbody>
+              <tbody id="agendamentosBody">
+                <tr><td colspan="5" class="estado-vazio">Carregando...</td></tr>
+              </tbody>
             </table>
+          </div>
+          <div style="margin-top:16px;text-align:right;">
+            <a href="agendamentos.html" class="btn btn-ghost btn-sm">Ver agenda completa →</a>
           </div>
         </div>
 
@@ -101,56 +107,15 @@
         <div style="display:flex;flex-direction:column;gap:20px;">
           <div class="admin-card">
             <h3>Atividade Recente</h3>
-            <div id="atividadeList">
-              <div class="atividade-item">
-                <span>❤️</span>
-                <div>
-                  <div><strong>Felipe Melo</strong> curtiu o corte <span class="text-accent">Mullet Moderno</span></div>
-                  <div class="time">Há 5 min</div>
-                </div>
-              </div>
-              <div class="atividade-item">
-                <span>⭐</span>
-                <div>
-                  <div><strong>Rodrigo Faro</strong> avaliou o serviço 5★ Excelente — João Barbeiro!</div>
-                  <div class="time">Há 12 min</div>
-                </div>
-              </div>
-              <div class="atividade-item">
-                <span>📅</span>
-                <div>
-                  <div><strong>Gabriel Silva</strong> agendou Degradê p/ amanhã às 10:00</div>
-                  <div class="time">Há 1h</div>
-                </div>
-              </div>
-            </div>
+            <div id="atividadeList"><p class="estado-vazio">Carregando...</p></div>
           </div>
 
           <div class="admin-card">
             <h3>Serviços Mais Populares</h3>
-            <div class="popular-item">
-              <span style="width:140px;">1. Degradê Americano</span>
-              <div class="popular-bar"><span style="width:90%"></span></div>
-              <span style="width:70px;text-align:right;color:var(--text-muted);font-size:0.8rem;">142 cortes</span>
-            </div>
-            <div class="popular-item">
-              <span style="width:140px;">2. Corte Social</span>
-              <div class="popular-bar"><span style="width:65%"></span></div>
-              <span style="width:70px;text-align:right;color:var(--text-muted);font-size:0.8rem;">98 cortes</span>
-            </div>
-            <div class="popular-item">
-              <span style="width:140px;">3. Barba Completa</span>
-              <div class="popular-bar"><span style="width:50%"></span></div>
-              <span style="width:70px;text-align:right;color:var(--text-muted);font-size:0.8rem;">74 barbas</span>
-            </div>
-            <div class="popular-item">
-              <span style="width:140px;">4. Hidratação Capilar</span>
-              <div class="popular-bar"><span style="width:25%"></span></div>
-              <span style="width:70px;text-align:right;color:var(--text-muted);font-size:0.8rem;">32 tratam.</span>
-            </div>
+            <div id="popularesList"><p class="estado-vazio">Carregando...</p></div>
           </div>
 
-          <!-- Avisos de recuperação de senha -->
+          <!-- Solicitações de redefinição de senha -->
           <div class="admin-card" id="avisosCard" style="display:none;">
             <h3>🔔 Solicitações de Senha</h3>
             <div id="avisosList"></div>
@@ -160,45 +125,6 @@
     </main>
   </div>
 
-  <script src="../js/data.js"></script>
-  <script>
-    // Proteção admin
-    const user = getUser();
-    if (!user || user.role !== "admin") {
-      alert("Acesso restrito ao proprietário.");
-      window.location.href = "../login.html";
-    }
-
-    // Agendamentos
-    const statusMap = {
-      "CONFIRMADO": "badge-success",
-      "EM ESPERA": "badge-warning",
-      "PENDENTE": "badge-pending"
-    };
-    document.getElementById("agendamentosBody").innerHTML = AGENDAMENTOS.map(a => `
-      <tr>
-        <td style="color:var(--accent);font-weight:600;">${a.hora}</td>
-        <td>${a.cliente}</td>
-        <td>${a.servico}</td>
-        <td>${a.profissional}</td>
-        <td><span class="badge ${statusMap[a.status] || 'badge-info'}">${a.status}</span></td>
-      </tr>
-    `).join("");
-
-    // Avisos de senha
-    const avisos = JSON.parse(localStorage.getItem("sc_avisos_admin") || "[]");
-    if (avisos.length) {
-      document.getElementById("avisosCard").style.display = "block";
-      document.getElementById("avisosList").innerHTML = avisos.slice(0, 5).map(a => `
-        <div class="atividade-item">
-          <span>🔑</span>
-          <div>
-            <div>Solicitação de <strong>${a.email}</strong></div>
-            <div class="time">${a.data}</div>
-          </div>
-        </div>
-      `).join("");
-    }
-  </script>
+  <script type="module" src="../js/admin/dashboard.js"></script>
 </body>
 </html>

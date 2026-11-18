@@ -379,6 +379,17 @@ tr:hover td {
   }
 }
 
+/* Celular: o botão duplicado "Agendar agora" sai do cabeçalho para o menu (☰) caber na tela;
+   "Marcar Horário" continua no menu e no destaque da página. */
+@media (max-width: 480px) {
+  .header .nav-actions {
+    gap: 6px;
+  }
+  .header .nav-actions > a.btn-primary {
+    display: none;
+  }
+}
+
 /* ========== ESTADOS E FEEDBACK (compartilhado) ========== */
 .btn:disabled,
 .btn[aria-busy="true"] {

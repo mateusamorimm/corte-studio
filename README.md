@@ -1,72 +1,65 @@
-# Studio Corte — Sistema Completo (HTML + CSS + JS)
+# Studio Corte — Sistema de barbearia
 
-Sistema de gerenciamento e site institucional para barbearia/cabeleireiro, baseado 100% no tema visual das imagens fornecidas.
+Site institucional + agendamento online + loja + painel administrativo.
+Stack: **Node.js (Express 5) · Prisma 6 · PostgreSQL (Neon)** · HTML/CSS/JS no frontend (servido pelo próprio Express).
 
 ## Tema visual
-- Fundo: `#09090d`
-- Cards: `#16161f`
-- Accent: `#ef4444`
-- Tipografia: Inter
-- Dark mode premium, responsivo
+- Fundo `#09090d` · Cards `#16161f` · Destaque `#ef4444` · Tipografia Inter · Dark mode, responsivo
+
+## Como rodar
+
+```bash
+npm ci                 # instala as dependências (gera o Prisma Client)
+cp .env.example .env   # preencha DATABASE_URL, DIRECT_URL e SESSION_SECRET
+npm run db:status      # confere se o banco está com todas as migrations
+npm run dev            # http://localhost:3000
+```
+
+Primeira instalação em banco vazio: `npm run db:deploy` (aplica as migrations) e `npm run db:seed`
+(cria o administrador definido em `SEED_ADMIN_*`, a configuração do salão, serviços, produtos e galeria).
+O seed é idempotente e nunca apaga nem sobrescreve dados.
+
+### Testes (branch de teste do Neon)
+
+Os testes que gravam dados **só rodam** com `TEST_DATABASE_URL`/`TEST_DIRECT_URL` apontando para uma
+branch separada do Neon — e se recusam a rodar se forem iguais às URLs do banco principal.
+
+```bash
+npm test                 # 50 testes: autenticação, agenda, loja, perfil, painel, permissões, uploads
+npm run test:db:prepare  # aplica migrations + seed na branch de teste
+npm run dev:teste        # servidor na porta 3001 usando a branch de teste (.env + .env.teste)
+```
+
+## Perfis de acesso
+
+| Perfil | O que acessa |
+|---|---|
+| Visitante | Home (serviços, galeria, produtos, avaliações, mapa), consulta de horários livres, cadastro e login |
+| **CLIENTE** | Agendar, cancelar (até X h antes) e avaliar atendimentos; favoritos e imagens de referência; carrinho e pedidos; perfil completo (foto, capa, bio, redes, senha) |
+| **BARBEIRO** | Painel → Atendimentos: só a própria agenda (confirmar, concluir, falta, remarcar, bloquear horários) |
+| **ADMIN** | Painel completo: dashboard, serviços, clientes, produtos, pedidos, atendimentos, equipe, configurações e editor de conteúdo |
+
+A permissão é sempre conferida no servidor; o frontend só esconde o que o perfil não pode usar.
 
 ## Estrutura
 
 ```
-studio-corte/
-├── index.html              → Página inicial (hero, cortes, serviços, produtos, localização, avaliações)
-├── login.html              → Login (cliente e admin)
-├── recuperar-senha.html    → Fluxo de recuperação (notifica o proprietário)
-├── perfil.html             → Área do usuário (dados, favoritos, histórico, carrinho)
-├── admin/
-│   ├── index.html          → Dashboard do proprietário
-│   ├── clientes.html
-│   ├── servicos.html
-│   ├── produtos.html       → CRUD de produtos
-│   ├── agendamentos.html
-│   └── configuracoes.html
-├── css/
-│   ├── variables.css
-│   ├── base.css
-│   ├── components.css
-│   ├── home.css
-│   ├── login.css
-│   ├── perfil.css
-│   └── admin.css
-└── js/
-    ├── data.js             → Dados simulados + auth + carrinho (localStorage)
-    └── main.js
+public/                 frontend (sem scripts inline — CSP estrita)
+  index.html            home: conteúdo do banco + agendamento com horários reais
+  perfil.html           área do cliente
+  login / cadastro / recuperar-senha / redefinir-senha
+  admin/                index (dashboard), servicos, clientes, produtos, pedidos,
+                        agendamentos, equipe, configuracoes, conteudo
+  js/api.js, ui.js, sessao.js, validacao.js
+  js/pages/*.js         scripts das páginas públicas
+  js/admin/*.js         scripts do painel
+src/
+  routes/               auth, publico, conta (/api/me), admin, imagens
+  services/             authService, agendaService, lojaService, configService
+  validators/           zod (comum, auth, dominio)
+  lib/                  prisma, sessão (JWT), tempo (fuso do salão), e-mail, erros
+prisma/
+  schema.prisma, migrations/ (SQL versionado, inclui CHECK e EXCLUDE), seed.js
+tests/                  node:test
+docs/ARQUITETURA.md     decisões técnicas (concorrência, estoque, segurança)
 ```
-
-## Como usar
-
-1. Abra `index.html` em qualquer navegador moderno (ou use um servidor local).
-2. **Cliente demo**: qualquer e-mail + qualquer senha → vai para o perfil.
-3. **Admin demo**: `admin@studiocorte.com` + qualquer senha → painel de controle.
-
-## Funcionalidades implementadas
-
-- [x] Tema idêntico às imagens (cores, cards, tipografia, layout)
-- [x] Página inicial completa (hero, galeria, serviços, produtos condicionais, mapa, avaliações, rodapé reduzido)
-- [x] Login + recuperação de senha (notifica o admin)
-- [x] Perfil do usuário (dados, redes, favoritos, históricos, estatísticas, carrinho)
-- [x] Painel do proprietário (métricas, agendamentos, atividade, populares)
-- [x] Gerenciamento de produtos (CRUD com localStorage)
-- [x] Gerenciamento de clientes, serviços e agendamentos
-- [x] Carrinho no perfil do usuário
-- [x] Seção de produtos na home (só aparece se houver produtos)
-- [x] Responsivo (mobile / tablet / desktop)
-- [x] Auth simulada com localStorage
-- [x] Avisos de recuperação de senha no dashboard do admin
-
-## Próximos passos possíveis
-- Backend real (Node, Firebase, Supabase…)
-- Upload real de imagens
-- Agendamento com calendário
-- Notificações push / WhatsApp API
-- Editor de conteúdo avançado (pedido no extra de automação)
-
-## Demo rápida
-1. Abra `index.html`
-2. Clique em “Entrar na Conta”
-3. Use `admin@studiocorte.com` para ver o painel completo
-4. Ou qualquer outro e-mail para ver o perfil de cliente + carrinho

@@ -12,22 +12,24 @@
 </head>
 <body>
   <div class="admin-layout">
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <a href="../index.html" class="logo">Studio<span>Corte</span></a>
-      <nav class="sidebar-nav">
-        <a href="index.html" class="sidebar-link">🏠 Dashboard</a>
-        <a href="servicos.html" class="sidebar-link">✂️ Serviços</a>
-        <a href="clientes.html" class="sidebar-link">👥 Clientes</a>
-        <a href="produtos.html" class="sidebar-link">🛍️ Produtos</a>
+      <nav class="sidebar-nav" aria-label="Menu do painel">
+        <a href="index.html" class="sidebar-link" data-so-admin>🏠 Dashboard</a>
+        <a href="servicos.html" class="sidebar-link" data-so-admin>✂️ Serviços</a>
+        <a href="clientes.html" class="sidebar-link" data-so-admin>👥 Clientes</a>
+        <a href="produtos.html" class="sidebar-link" data-so-admin>🛍️ Produtos</a>
+        <a href="pedidos.html" class="sidebar-link" data-so-admin>📦 Pedidos</a>
         <a href="agendamentos.html" class="sidebar-link">📅 Atendimentos</a>
-        <a href="configuracoes.html" class="sidebar-link active">⚙️ Configurações</a>
+        <a href="equipe.html" class="sidebar-link" data-so-admin>💈 Equipe</a>
+        <a href="configuracoes.html" class="sidebar-link active" data-so-admin>⚙️ Configurações</a>
       </nav>
       <div class="sidebar-footer">
         <div class="sidebar-user">
-          <img class="avatar" src="https://i.pravatar.cc/100?u=admin" alt="Admin">
-          <div><div class="name">Carlos Admin</div><div class="role">Proprietário</div></div>
+          <span class="avatar avatar-iniciais" aria-hidden="true"></span>
+          <div><div class="name">&nbsp;</div><div class="role">&nbsp;</div></div>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="logout()" style="width:100%;">Sair da Conta</button>
+        <button class="btn btn-ghost btn-sm" data-sair style="width:100%;">Sair da Conta</button>
       </div>
     </aside>
     <main class="admin-main">
@@ -38,39 +40,74 @@
         </div>
       </div>
 
-      <div class="admin-card" style="max-width:560px;">
+      <form class="admin-card" style="max-width:560px;" id="formSalao" novalidate>
         <h3 style="margin-bottom:20px;">Dados do Salão</h3>
+        <div id="alertaSalao" class="form-alert" hidden></div>
         <div class="form-group">
-          <label class="form-label">Nome</label>
-          <input class="form-input" value="Studio Corte">
+          <label class="form-label" for="cfgNome">Nome</label>
+          <input class="form-input" id="cfgNome" name="nome_salao" maxlength="100" required>
         </div>
         <div class="form-group">
-          <label class="form-label">Endereço</label>
-          <input class="form-input" value="Rua das Tesouras, 123 — Centro, São Paulo/SP">
+          <label class="form-label" for="cfgEndereco">Endereço</label>
+          <input class="form-input" id="cfgEndereco" name="endereco" maxlength="200">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="cfgTelefone">Telefone</label>
+            <input class="form-input" id="cfgTelefone" name="telefone" type="tel">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cfgWhatsapp">WhatsApp</label>
+            <input class="form-input" id="cfgWhatsapp" name="whatsapp" type="tel">
+          </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Telefone / WhatsApp</label>
-          <input class="form-input" value="(11) 99999-0000">
+          <label class="form-label" for="cfgEmail">E-mail de contato</label>
+          <input class="form-input" id="cfgEmail" name="email_contato" type="email" maxlength="160">
         </div>
         <div class="form-group">
-          <label class="form-label">Horário de funcionamento</label>
-          <input class="form-input" value="Seg–Sáb 09h–20h | Dom 10h–16h">
+          <label class="form-label" for="cfgHorario">Horário de funcionamento</label>
+          <input class="form-input" id="cfgHorario" name="horario_funcionamento_texto" maxlength="120" placeholder="Seg–Sáb 09h–20h | Dom 10h–16h">
+          <small class="form-hint">Texto exibido no site. Os horários de agendamento vêm do expediente de cada profissional (Equipe).</small>
         </div>
-        <button class="btn btn-primary">Salvar alterações</button>
-      </div>
+        <button class="btn btn-primary" type="submit">Salvar alterações</button>
+      </form>
+
+      <form class="admin-card" style="max-width:560px;margin-top:24px;" id="formAgenda" novalidate>
+        <h3 style="margin-bottom:20px;">Regras de Agendamento</h3>
+        <div id="alertaAgenda" class="form-alert" hidden></div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="cfgIntervalo">Intervalo entre horários (min)</label>
+            <input class="form-input" id="cfgIntervalo" name="intervalo_slots_minutos" type="number" min="5" max="120" step="5" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cfgJanela">Agendar com até (dias)</label>
+            <input class="form-input" id="cfgJanela" name="janela_agendamento_dias" type="number" min="1" max="365" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="cfgAntecedencia">Antecedência mínima (min)</label>
+            <input class="form-input" id="cfgAntecedencia" name="antecedencia_minima_minutos" type="number" min="0" max="10080" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cfgCancelamento">Cliente cancela até (horas antes)</label>
+            <input class="form-input" id="cfgCancelamento" name="antecedencia_cancelamento_hrs" type="number" min="0" max="168" required>
+          </div>
+        </div>
+        <button class="btn btn-primary" type="submit">Salvar regras</button>
+      </form>
 
       <div class="admin-card" style="max-width:560px;margin-top:24px;">
         <h3 style="margin-bottom:12px;">Automação & Conteúdo</h3>
         <p class="text-secondary" style="font-size:0.9rem;margin-bottom:16px;">
-          Sistema avançado para editar e salvar conteúdos, imagens e modelos. Em produção conectaria a um CMS ou painel de arquivos.
+          Edite os textos e a imagem de destaque da página inicial, as redes sociais e o mapa, a galeria de cortes e a moderação das avaliações.
         </p>
-        <button class="btn btn-outline">Abrir editor de conteúdo</button>
+        <a class="btn btn-outline" href="conteudo.html">Abrir editor de conteúdo</a>
       </div>
     </main>
   </div>
-  <script src="../js/data.js"></script>
-  <script>
-    if (!getUser() || getUser().role !== "admin") location.href = "../login.html";
-  </script>
+  <script type="module" src="../js/admin/configuracoes.js"></script>
 </body>
 </html>

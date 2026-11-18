@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Equipe — Studio Corte Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar" id="sidebar">
+      <a href="../index.html" class="logo">Studio<span>Corte</span></a>
+      <nav class="sidebar-nav" aria-label="Menu do painel">
+        <a href="index.html" class="sidebar-link" data-so-admin>🏠 Dashboard</a>
+        <a href="servicos.html" class="sidebar-link" data-so-admin>✂️ Serviços</a>
+        <a href="clientes.html" class="sidebar-link" data-so-admin>👥 Clientes</a>
+        <a href="produtos.html" class="sidebar-link" data-so-admin>🛍️ Produtos</a>
+        <a href="pedidos.html" class="sidebar-link" data-so-admin>📦 Pedidos</a>
+        <a href="agendamentos.html" class="sidebar-link">📅 Atendimentos</a>
+        <a href="equipe.html" class="sidebar-link active" data-so-admin>💈 Equipe</a>
+        <a href="configuracoes.html" class="sidebar-link" data-so-admin>⚙️ Configurações</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <span class="avatar avatar-iniciais" aria-hidden="true"></span>
+          <div><div class="name">&nbsp;</div><div class="role">&nbsp;</div></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" data-sair style="width:100%;">Sair da Conta</button>
+      </div>
+    </aside>
+    <main class="admin-main">
+      <div class="admin-header">
+        <div>
+          <h1>Equipe</h1>
+          <p class="sub">Profissionais, serviços que cada um realiza e horários de atendimento.</p>
+        </div>
+        <button class="btn btn-primary" id="btnNovo">+ Novo Profissional</button>
+      </div>
+
+      <div class="admin-card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Profissional</th><th>Perfil</th><th>Serviços</th><th>Expediente</th><th>Ações</th></tr></thead>
+            <tbody id="equipeBody"><tr><td colspan="5" class="estado-vazio">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="admin-card" id="formEquipe" style="display:none;max-width:720px;margin-top:24px;">
+        <h3 id="formTitle">Novo Profissional</h3>
+        <form id="equipeForm" novalidate>
+          <div id="alertaEquipe" class="form-alert" hidden></div>
+          <input type="hidden" id="eqId">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="eqNome">Nome completo</label>
+              <input class="form-input" id="eqNome" name="nome_completo" maxlength="120" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="eqEmail">E-mail (acesso ao painel)</label>
+              <input class="form-input" id="eqEmail" name="email" type="email" maxlength="160" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="eqTel">Telefone</label>
+              <input class="form-input" id="eqTel" name="telefone" type="tel">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="eqPerfil">Perfil de acesso</label>
+              <select class="form-input" id="eqPerfil" name="tipo_perfil">
+                <option value="BARBEIRO">Profissional (vê só a própria agenda)</option>
+                <option value="ADMIN">Administrador (acesso total)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="eqFoto">Foto (URL ou envio)</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <img class="miniatura" id="eqPrevia" alt="" hidden>
+              <input class="form-input" id="eqFoto" name="avatar_url" placeholder="https://..." style="flex:1;">
+              <button type="button" class="btn btn-outline btn-sm" id="btnFoto">⬆ Enviar</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <span class="form-label">Serviços que realiza</span>
+            <div class="check-grid" id="eqServicos"></div>
+          </div>
+          <div class="form-group">
+            <span class="form-label">Expediente semanal (horário do salão)</span>
+            <div id="eqSemana"></div>
+            <small class="form-hint">Deixe o dia sem intervalos para folga. Use mais de um intervalo para pausas (ex.: almoço).</small>
+          </div>
+          <p class="form-hint" id="dicaConvite" style="margin-bottom:16px;">Ao salvar, enviamos para o e-mail informado um link para o profissional criar a senha de acesso.</p>
+          <div style="display:flex;gap:12px;">
+            <button type="submit" class="btn btn-primary">Salvar</button>
+            <button type="button" class="btn btn-outline" id="btnCancelar">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="../js/admin/equipe.js"></script>
+</body>
+</html>

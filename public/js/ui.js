@@ -176,6 +176,106 @@ export function confirmar(mensagem, { titulo = "Confirmar", confirmar: rotulo = 
   });
 }
 
+// ───────── Imagens ─────────
+// Imagem quebrada → placeholder (substitui o antigo onerror="..." inline, bloqueado pela CSP).
+export const PLACEHOLDER = {
+  corte: "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="100%" height="100%" fill="#1a1a24"/><text x="50%" y="50%" fill="#71717a" font-family="sans-serif" font-size="22" text-anchor="middle" dominant-baseline="middle">Corte</text></svg>'),
+  produto: "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect width="100%" height="100%" fill="#1a1a24"/><text x="50%" y="50%" fill="#71717a" font-family="sans-serif" font-size="22" text-anchor="middle" dominant-baseline="middle">Produto</text></svg>'),
+};
+document.addEventListener(
+  "error",
+  (e) => {
+    const img = e.target;
+    if (img instanceof HTMLImageElement && img.dataset.fallback && !img.dataset.falhou) {
+      img.dataset.falhou = "1";
+      img.src = PLACEHOLDER[img.dataset.fallback] ?? PLACEHOLDER.corte;
+    }
+  },
+  true
+);
+
+const TIPOS_IMAGEM = ["image/jpeg", "image/png", "image/webp"];
+// Abre o seletor de arquivo e devolve o File escolhido (ou null).
+export function escolherImagem() {
+  return new Promise((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = TIPOS_IMAGEM.join(",");
+    input.addEventListener("change", () => resolve(input.files?.[0] ?? null), { once: true });
+    input.addEventListener("cancel", () => resolve(null), { once: true });
+    input.click();
+  });
+}
+export function validarArquivoImagem(arquivo) {
+  if (!TIPOS_IMAGEM.includes(arquivo.type)) return "Formato não suportado. Envie JPG, PNG ou WebP.";
+  if (arquivo.size > 3 * 1024 * 1024) return "Imagem muito grande. O limite é 3 MB.";
+  return null;
+}
+
+// ───────── Exibição de dados ─────────
+export const estrelas = (n) => "★".repeat(n) + "☆".repeat(5 - n);
+
+export const STATUS_AGENDAMENTO = {
+  PENDENTE: { rotulo: "PENDENTE", classe: "badge-pending" },
+  CONFIRMADO: { rotulo: "CONFIRMADO", classe: "badge-success" },
+  CONCLUIDO: { rotulo: "CONCLUÍDO", classe: "badge-info" },
+  CANCELADO: { rotulo: "CANCELADO", classe: "badge-accent" },
+  NAO_COMPARECEU: { rotulo: "NÃO COMPARECEU", classe: "badge-warning" },
+};
+export const STATUS_PEDIDO = {
+  PENDENTE: { rotulo: "PENDENTE", classe: "badge-pending" },
+  PRONTO_PARA_RETIRADA: { rotulo: "PRONTO P/ RETIRADA", classe: "badge-warning" },
+  CONCLUIDO: { rotulo: "CONCLUÍDO", classe: "badge-success" },
+  CANCELADO: { rotulo: "CANCELADO", classe: "badge-accent" },
+};
+export const badgeStatus = (mapa, status) => {
+  const s = mapa[status] ?? { rotulo: status, classe: "badge-info" };
+  return html`<span class="badge ${s.classe}">${s.rotulo}</span>`;
+};
+
+const rtf = new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" });
+export function tempoRelativo(d) {
+  const seg = (new Date(d).getTime() - Date.now()) / 1000;
+  const abs = Math.abs(seg);
+  if (abs < 60) return "agora";
+  if (abs < 3600) return rtf.format(Math.round(seg / 60), "minute");
+  if (abs < 86400) return rtf.format(Math.round(seg / 3600), "hour");
+  if (abs < 86400 * 30) return rtf.format(Math.round(seg / 86400), "day");
+  if (abs < 86400 * 365) return rtf.format(Math.round(seg / (86400 * 30)), "month");
+  return rtf.format(Math.round(seg / (86400 * 365)), "year");
+}
+export const mesAno = (d) => {
+  const s = new Date(d).toLocaleDateString("pt-BR", { timeZone: FUSO, month: "short", year: "numeric" }).replace(".", "").replace(" de ", " ");
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
+// Data local de hoje (fuso do salão) no formato AAAA-MM-DD
+export const hojeIso = () => new Date().toLocaleDateString("en-CA", { timeZone: FUSO });
+// Valor de <input type=datetime-local> (horário do salão) → ISO com fuso
+export function localParaIso(valor) {
+  // O salão usa America/Sao_Paulo (UTC-3, sem horário de verão desde 2019).
+  return new Date(`${valor}:00-03:00`).toISOString();
+}
+export function isoParaLocalInput(d) {
+  const p = new Date(d).toLocaleString("sv-SE", { timeZone: FUSO }); // "AAAA-MM-DD HH:MM:SS"
+  return p.slice(0, 16).replace(" ", "T");
+}
+
+// Abre um <dialog> já presente na página; fecha com Esc, botão [data-fechar] ou clique fora.
+export function abrirModal(dlg) {
+  if (!dlg.dataset.preparado) {
+    dlg.dataset.preparado = "1";
+    dlg.addEventListener("click", (e) => {
+      if (e.target === dlg || e.target.closest("[data-fechar]")) dlg.close();
+    });
+  }
+  dlg.showModal();
+}
+
+// Liga o botão de sair (data-sair) a qualquer página.
+export function ligarSair(fn) {
+  $$("[data-sair]").forEach((b) => b.addEventListener("click", fn));
+}
+
 // Valida caminho de retorno (?voltar=) para evitar redirecionamento a outros sites.
 export function caminhoInterno(caminho, padrao = "/") {
   if (typeof caminho !== "string" || !caminho.startsWith("/") || caminho.startsWith("//") || caminho.includes("\\")) {
