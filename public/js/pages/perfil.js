@@ -183,7 +183,7 @@ formCorte.addEventListener("submit", async (e) => {
   if (erroArq) return alertaForm(alerta, erroArq);
   await comCarregamento(formCorte.querySelector("[type=submit]"), async () => {
     try {
-      const url = await enviarImagem(arquivo);
+      const url = await enviarImagem(arquivo, { finalidade: "REFERENCIA" });
       const { corte } = await post("/me/cortes-enviados", { nome, imagem_url: url });
       favoritos.enviados.unshift(corte);
       renderFavoritos();
@@ -346,7 +346,7 @@ async function trocarImagem(rota, botao) {
   if (erro) return toast(erro, "erro");
   await comCarregamento(botao, async () => {
     try {
-      const url = await enviarImagem(arquivo);
+      const url = await enviarImagem(arquivo, { finalidade: rota === "/me/capa" ? "CAPA" : "AVATAR" });
       ({ usuario } = await put(rota, { url }));
       renderPerfil();
       toast("Imagem atualizada.", "sucesso");

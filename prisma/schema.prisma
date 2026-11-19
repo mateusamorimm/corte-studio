@@ -68,6 +68,7 @@ model Usuario {
   tokens_senha          TokenRedefinicaoSenha[]
   cortes_enviados       CorteEnviado[]
   imagens               Imagem[]
+  midias                Midia[]
 
   @@index([tipo_perfil, ativo])
   @@map("usuario")
@@ -231,6 +232,49 @@ model CorteEnviado {
 
   @@index([id_cliente, data_envio])
   @@map("corte_enviado")
+}
+
+// ───────────── MÍDIA NO CLOUDINARY (fotos, vídeos e modelos 3D) ─────────────
+
+enum FinalidadeMidia {
+  AVATAR
+  CAPA
+  REFERENCIA // imagem de corte enviada pelo cliente
+  POST
+  PRODUTO
+  SERVICO
+  GALERIA
+  CORTE_3D
+  SALAO // imagens do site (destaque)
+  EQUIPE
+}
+
+enum TipoMidia {
+  IMAGEM
+  VIDEO
+  MODELO_3D
+}
+
+// Registro de cada arquivo enviado ao Cloudinary, conferido pelo servidor na API do Cloudinary.
+model Midia {
+  id_midia      Int             @id @default(autoincrement())
+  id_usuario    Int? // quem enviou
+  finalidade    FinalidadeMidia
+  tipo          TipoMidia
+  public_id     String          @unique @db.VarChar(255)
+  resource_type String          @db.VarChar(10) // image | video | raw (CHECK)
+  formato       String          @db.VarChar(10)
+  url           String          @unique @db.VarChar(500)
+  bytes         Int
+  largura       Int?
+  altura        Int?
+  duracao_seg   Decimal?        @db.Decimal(8, 2)
+  data_criacao  DateTime        @default(now()) @db.Timestamptz(3)
+
+  usuario Usuario? @relation(fields: [id_usuario], references: [id_usuario], onDelete: SetNull)
+
+  @@index([id_usuario, finalidade])
+  @@map("midia")
 }
 
 // ───────────── IMAGENS (upload armazenado no próprio banco) ─────────────

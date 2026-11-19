@@ -32,6 +32,7 @@ import {
   INCLUDE_PEDIDO,
 } from "../services/lojaService.js";
 import { hashSenha } from "../services/authService.js";
+import { urlPertenceAoUsuario } from "../services/midiaService.js";
 import { criarSessao } from "../lib/sessao.js";
 import { emitirCsrf } from "../middlewares/csrf.js";
 
@@ -39,6 +40,13 @@ const router = Router();
 router.use(exigirLogin);
 
 const meuId = (req) => req.usuario.id_usuario;
+
+// Foto, banner e imagens de referência do cliente só podem ser arquivos enviados por ele
+async function exigirMidiaPropria(url, idUsuario) {
+  if (!(await urlPertenceAoUsuario(url, idUsuario))) {
+    throw new AppError(400, "Use uma imagem enviada pelo botão de envio do site.", "MIDIA_ALHEIA");
+  }
+}
 
 // ───────── Perfil ─────────
 
@@ -100,6 +108,7 @@ router.put("/perfil", validar({ body: perfilSchema }), async (req, res) => {
 
 for (const [rota, campo] of [["/avatar", "avatar_url"], ["/capa", "capa_url"]]) {
   router.put(rota, validar({ body: imagemPerfilSchema }), async (req, res) => {
+    await exigirMidiaPropria(req.valid.body.url, meuId(req));
     const usuario = await prisma.usuario.update({
       where: { id_usuario: meuId(req) },
       data: { [campo]: req.valid.body.url ?? null },
@@ -228,6 +237,7 @@ router.delete("/favoritos/:id", validar({ params: idParam }), async (req, res) =
 });
 
 router.post("/cortes-enviados", validar({ body: corteEnviadoSchema }), async (req, res) => {
+  await exigirMidiaPropria(req.valid.body.imagem_url, meuId(req));
   const total = await prisma.corteEnviado.count({ where: { id_cliente: meuId(req) } });
   if (total >= 30) throw conflict("Limite de 30 imagens enviadas. Remova alguma para enviar outra.");
   const corte = await prisma.corteEnviado.create({

@@ -21,7 +21,7 @@ const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sáb
 const CURTO = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const form = $("#equipeForm");
 const caixa = $("#formEquipe");
-const foto = campoImagem({ input: $("#eqFoto"), botao: $("#btnFoto"), previa: $("#eqPrevia") });
+const foto = campoImagem({ input: $("#eqFoto"), botao: $("#btnFoto"), previa: $("#eqPrevia"), finalidade: "EQUIPE" });
 mascaraTelefone(form.telefone);
 
 let equipe = [];

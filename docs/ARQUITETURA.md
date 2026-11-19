@@ -77,3 +77,13 @@ tests/             node:test
 1. Testar na branch de teste: `npm run test:db:prepare` e `npm test`.
 2. Conferir o banco principal: `npm run db:status`.
 3. Aplicar: `npm run db:deploy` (só migrations versionadas; nunca `migrate reset`/`db push`).
+
+## Mídia no Cloudinary
+
+- Fluxo: `POST /api/midia/assinatura` (logado, com limite de envios) → o navegador envia **direto** ao Cloudinary com a assinatura → `POST /api/midia/confirmar` → o servidor consulta o arquivo na Admin API, confere pasta do usuário, formato e tamanho, e registra na tabela `midia`. Arquivo fora das regras é apagado do Cloudinary.
+- O `CLOUDINARY_API_SECRET` nunca sai do servidor. A assinatura cobre pasta (`<CLOUDINARY_PASTA>/<finalidade>/u<id>`), formatos permitidos e tags.
+- Finalidades e permissões em `src/services/midiaService.js` (ex.: AVATAR/CAPA/REFERENCIA/POST para qualquer conta; PRODUTO/GALERIA/SALAO/EQUIPE/CORTE_3D só ADMIN). Limites: imagem 10 MB, vídeo 60 MB, modelo 3D (.glb) 10 MB.
+- Foto, banner e imagens de referência do cliente só aceitam mídia enviada por ele (impede apontar para URLs externas).
+- CSP: `connect-src` libera `api.cloudinary.com` e `res.cloudinary.com`; `media-src` libera `res.cloudinary.com`.
+- Imagens antigas (tabela `imagem`) → `scripts/migrar-imagens-cloudinary.mjs` (simula por padrão; `--executar` envia e troca as referências, sem apagar a tabela antiga).
+- Ordem de implantação: migration `20261119000000_midia_cloudinary` → variáveis `CLOUDINARY_*` no Render → deploy do código → migração das imagens.

@@ -8,7 +8,7 @@ await iniciarPainel(["ADMIN"]);
 // ───────── Destaque e redes (configuração) ─────────
 const fh = $("#formHero");
 const fr = $("#formRedes");
-const imgHero = campoImagem({ input: $("#hImagem"), botao: $("#btnHeroImg"), previa: $("#hPrevia") });
+const imgHero = campoImagem({ input: $("#hImagem"), botao: $("#btnHeroImg"), previa: $("#hPrevia"), finalidade: "SALAO" });
 
 function preencher(c) {
   fh.hero_titulo.value = c.hero_titulo ?? "";
@@ -53,7 +53,7 @@ fr.addEventListener("submit", (e) => {
 
 // ───────── Galeria ─────────
 const fc = $("#formCorte");
-const imgCorte = campoImagem({ input: $("#gImagem"), botao: $("#btnCorteImg"), previa: $("#gPrevia") });
+const imgCorte = campoImagem({ input: $("#gImagem"), botao: $("#btnCorteImg"), previa: $("#gPrevia"), finalidade: "GALERIA" });
 let cortes = [];
 
 async function carregarGaleria() {

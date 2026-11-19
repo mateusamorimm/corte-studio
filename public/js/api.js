@@ -89,9 +89,8 @@ export async function comprimirImagem(arquivo, { ladoMax = 1600, qualidade = 0.8
   return blob && blob.size < arquivo.size ? blob : arquivo;
 }
 
-// Envia um arquivo de imagem (corpo binário) e devolve a URL gravada no servidor.
-export async function enviarImagem(original, tentativa = 0) {
-  const arquivo = tentativa === 0 ? await comprimirImagem(original) : original;
+// Envio para o armazenamento local (/api/imagens): usado quando o Cloudinary não está configurado.
+async function enviarLocal(arquivo, tentativa = 0) {
   if (arquivo.size > LIMITE_ENVIO) throw new ApiError(413, { mensagem: "Imagem muito grande mesmo após reduzir. Escolha outra (até 3 MB)." });
   if (!lerCookie("sc_csrf")) await renovarCsrf();
   let res;
@@ -112,9 +111,57 @@ export async function enviarImagem(original, tentativa = 0) {
     /* sem corpo */
   }
   if (res.ok) return dados.url;
-  if (res.status === 403 && dados?.erro?.codigo === "CSRF_INVALIDO" && tentativa === 0) return enviarImagem(arquivo, 1);
+  if (res.status === 403 && dados?.erro?.codigo === "CSRF_INVALIDO" && tentativa === 0) return enviarLocal(arquivo, 1);
   if (res.status === 413) throw new ApiError(413, { mensagem: "Imagem muito grande. O limite é 3 MB." });
   throw new ApiError(res.status, dados?.erro);
+}
+
+let cloudinaryAtivo = null;
+async function usaCloudinary() {
+  if (cloudinaryAtivo === null) {
+    try {
+      cloudinaryAtivo = (await api("GET", "/midia/config")).cloudinary === true;
+    } catch {
+      cloudinaryAtivo = false;
+    }
+  }
+  return cloudinaryAtivo;
+}
+
+// Envio direto ao Cloudinary com assinatura do servidor; depois o servidor confere e registra.
+async function enviarCloudinary(arquivo, finalidade, tipo) {
+  const ass = await api("POST", "/midia/assinatura", { finalidade, tipo });
+  if (arquivo.size > ass.limite_bytes) {
+    throw new ApiError(413, { mensagem: `Arquivo muito grande. O limite é ${Math.round(ass.limite_bytes / 1048576)} MB.` });
+  }
+  const corpo = new FormData();
+  corpo.append("file", arquivo);
+  for (const k of ["api_key", "timestamp", "signature", "folder", "allowed_formats", "tags"]) corpo.append(k, String(ass[k]));
+  let res;
+  try {
+    res = await fetch(ass.url_envio, { method: "POST", body: corpo });
+  } catch {
+    throw new ApiError(0, { codigo: "SEM_CONEXAO", mensagem: "Não foi possível enviar o arquivo. Verifique sua internet." });
+  }
+  const enviado = await res.json().catch(() => null);
+  if (!res.ok || !enviado?.public_id) {
+    const motivo = /format/i.test(enviado?.error?.message ?? "") ? "Formato de arquivo não permitido." : "O envio do arquivo falhou. Tente novamente.";
+    throw new ApiError(res.status, { codigo: "MIDIA_FALHA", mensagem: motivo });
+  }
+  const { url } = await api("POST", "/midia/confirmar", { finalidade, tipo, public_id: enviado.public_id });
+  return url;
+}
+
+// Envia uma imagem e devolve a URL. finalidade: AVATAR, CAPA, REFERENCIA, PRODUTO, GALERIA, SALAO, EQUIPE...
+export async function enviarImagem(original, { finalidade = "REFERENCIA" } = {}) {
+  const arquivo = await comprimirImagem(original);
+  return (await usaCloudinary()) ? enviarCloudinary(arquivo, finalidade, "IMAGEM") : enviarLocal(arquivo);
+}
+
+// Vídeos e modelos 3D só existem no Cloudinary.
+export async function enviarArquivo(arquivo, { finalidade, tipo }) {
+  if (!(await usaCloudinary())) throw new ApiError(503, { mensagem: "Envio de vídeos e modelos 3D indisponível no momento." });
+  return enviarCloudinary(arquivo, finalidade, tipo);
 }
 
 export const get = (c) => api("GET", c);

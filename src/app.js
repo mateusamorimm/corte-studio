@@ -28,7 +28,9 @@ export function criarApp() {
           "font-src": ["'self'", "https://fonts.gstatic.com"],
           "img-src": ["'self'", "data:", "https:"],
           "frame-src": ["https://www.google.com", "https://maps.google.com"],
-          "connect-src": ["'self'"],
+          // Envio direto do navegador ao Cloudinary (assinado pelo servidor) e vídeos/modelos 3D de lá
+          "connect-src": ["'self'", "https://api.cloudinary.com", "https://res.cloudinary.com"],
+          "media-src": ["'self'", "https://res.cloudinary.com"],
           "form-action": ["'self'"],
           "upgrade-insecure-requests": isProd ? [] : null,
         },

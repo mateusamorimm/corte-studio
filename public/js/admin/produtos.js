@@ -7,7 +7,7 @@ await iniciarPainel(["ADMIN"]);
 
 const form = $("#produtoForm");
 const caixa = $("#formProduto");
-const imagem = campoImagem({ input: $("#prodImg"), botao: $("#btnEnviarImg"), previa: $("#prodPrevia") });
+const imagem = campoImagem({ input: $("#prodImg"), botao: $("#btnEnviarImg"), previa: $("#prodPrevia"), finalidade: "PRODUTO" });
 let produtos = [];
 
 async function carregar() {
