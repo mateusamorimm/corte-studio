@@ -29,6 +29,7 @@ import {
 } from "../ui.js";
 import { regras, validarForm, mascaraTelefone, mascaraCpf } from "../validacao.js";
 import { exigirLogin, sair } from "../sessao.js";
+import { iniciarCarrinho, recarregarCarrinho } from "../carrinho.js";
 
 const VISITAS_FIDELIDADE = 5;
 let usuario = await exigirLogin();
@@ -382,6 +383,17 @@ $("#carrinhoContent").addEventListener("click", async (e) => {
     carrinho = await get("/me/carrinho").catch(() => carrinho);
     renderCarrinho();
   }
+  recarregarCarrinho(); // mantém a gaveta e o contador do cabeçalho em sincronia
+});
+
+// Mudanças feitas pela gaveta do carrinho (cabeçalho) refletem nesta página
+window.addEventListener("carrinho:atualizado", (e) => {
+  carrinho = e.detail;
+  renderCarrinho();
+});
+window.addEventListener("pedido:criado", (e) => {
+  if (!pedidos.some((p) => p.id_pedido === e.detail.id_pedido)) pedidos.unshift(e.detail);
+  renderPedidos();
 });
 
 // ───────── Capa e foto ─────────
@@ -516,6 +528,7 @@ formSenha.addEventListener("submit", async (e) => {
 
 // ───────── Carga inicial ─────────
 renderPerfil();
+iniciarCarrinho(usuario);
 const [r, ag, pe, ca, fa] = await Promise.allSettled([
   get("/me/resumo"),
   get("/me/agendamentos"),

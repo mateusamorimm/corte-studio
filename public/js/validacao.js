@@ -2,6 +2,11 @@
 // Servem para dar retorno imediato; o servidor sempre valida de novo.
 
 export const soDigitos = (s) => String(s ?? "").replace(/\D/g, "");
+// Telefone BR: aceita com ou sem +55 → DDD + número (10 ou 11 dígitos)
+export const digitosTelefone = (s) => {
+  const d = soDigitos(s);
+  return (d.length === 12 || d.length === 13) && d.startsWith("55") ? d.slice(2) : d;
+};
 
 export function cpfValido(valor) {
   const cpf = soDigitos(valor);
@@ -25,7 +30,7 @@ export const regras = {
         : new TextEncoder().encode(v).length > 72
           ? "A senha deve ter no máximo 72 caracteres."
           : null,
-  telefone: (v) => ([10, 11].includes(soDigitos(v).length) ? null : "Informe o telefone com DDD."),
+  telefone: (v) => ([10, 11].includes(digitosTelefone(v).length) ? null : "Informe o telefone com DDD."),
   cpfOpcional: (v) => (!v.trim() || cpfValido(v) ? null : "CPF inválido."),
   dataPassadaOpcional: (v) => (!v || new Date(`${v}T00:00:00`) < new Date() ? null : "Data inválida."),
 };
@@ -44,7 +49,7 @@ export function validarForm(form, campos) {
 // Máscaras simples enquanto digita
 export function mascaraTelefone(input) {
   input.addEventListener("input", () => {
-    const d = soDigitos(input.value).slice(0, 11);
+    const d = digitosTelefone(input.value).slice(0, 11);
     let v = d;
     if (d.length > 2) v = `(${d.slice(0, 2)}) ${d.slice(2)}`;
     if (d.length > 6) v = `(${d.slice(0, 2)}) ${d.slice(2, d.length === 11 ? 7 : 6)}-${d.slice(d.length === 11 ? 7 : 6)}`;

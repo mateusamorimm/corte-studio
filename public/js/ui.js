@@ -208,7 +208,8 @@ export function escolherImagem() {
 }
 export function validarArquivoImagem(arquivo) {
   if (!TIPOS_IMAGEM.includes(arquivo.type)) return "Formato não suportado. Envie JPG, PNG ou WebP.";
-  if (arquivo.size > 3 * 1024 * 1024) return "Imagem muito grande. O limite é 3 MB.";
+  // Fotos grandes são reduzidas no navegador antes do envio (api.js → comprimirImagem)
+  if (arquivo.size > 20 * 1024 * 1024) return "Imagem muito grande. Escolha uma foto de até 20 MB.";
   return null;
 }
 
@@ -232,6 +233,22 @@ export const badgeStatus = (mapa, status) => {
   const s = mapa[status] ?? { rotulo: status, classe: "badge-info" };
   return html`<span class="badge ${s.classe}">${s.rotulo}</span>`;
 };
+
+// Cartão de avaliação pública (home e página de avaliações)
+export function cartaoAvaliacao(a) {
+  return html`
+    <article class="comentario-card">
+      <div class="comentario-header">
+        ${avatar({ nome_completo: a.cliente, avatar_url: a.avatar_url })}
+        <div>
+          <div class="name">${a.cliente}</div>
+          <div class="meta">${a.servico} · ${tempoRelativo(a.data_avaliacao)}</div>
+        </div>
+      </div>
+      <div class="stars" aria-label="Nota ${a.nota} de 5">${estrelas(a.nota)}</div>
+      <p>${a.comentario || "Avaliou o atendimento."}</p>
+    </article>`;
+}
 
 const rtf = new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" });
 export function tempoRelativo(d) {

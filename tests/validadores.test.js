@@ -14,6 +14,16 @@ test("CPF: dígitos verificadores", () => {
   assert.equal(cpfValido("123"), false);
 });
 
+test("telefone aceita +55 e formatos comuns, recusa números incompletos", () => {
+  const tel = (t) => cadastroSchema.safeParse({ nome_completo: "Ana Souza", email: "a@b.com", senha: "abc12345", telefone: t });
+  assert.equal(tel("+55 (11) 98765-4321").data.telefone, "11987654321");
+  assert.equal(tel("5511987654321").data.telefone, "11987654321");
+  assert.equal(tel("55 11 3333-4444").data.telefone, "1133334444");
+  assert.equal(tel("(11) 98765-4321").data.telefone, "11987654321");
+  assert.equal(tel("98765-4321").success, false);
+  assert.equal(tel("+1 555 123 4567 89").success, false);
+});
+
 test("cadastro: normaliza e-mail, telefone e CPF; campos opcionais vazios", () => {
   const r = cadastroSchema.parse({ nome_completo: " Ana Souza ", email: " ANA@Exemplo.com ", senha: "abc12345", telefone: "(11) 3333-4444", cpf: "", data_nascimento: "" });
   assert.equal(r.email, "ana@exemplo.com");

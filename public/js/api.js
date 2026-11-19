@@ -56,8 +56,43 @@ export async function api(metodo, caminho, corpo, tentativa = 0) {
   throw new ApiError(res.status, dados?.erro);
 }
 
+// Reduz a imagem no navegador antes do envio (lado maior ≤ ladoMax, WebP ou JPEG).
+// Se não ficar menor que o original, envia o original. O servidor valida de novo.
+export const LIMITE_ENVIO = 3 * 1024 * 1024;
+export async function comprimirImagem(arquivo, { ladoMax = 1600, qualidade = 0.82 } = {}) {
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(arquivo);
+  } catch {
+    return arquivo; // formato que o navegador não decodifica: o servidor decide
+  }
+  const escala = Math.min(1, ladoMax / Math.max(bitmap.width, bitmap.height));
+  if (escala === 1 && arquivo.size <= 400 * 1024) {
+    bitmap.close?.();
+    return arquivo;
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * escala);
+  canvas.height = Math.round(bitmap.height * escala);
+  const ctx = canvas.getContext("2d");
+  const paraBlob = (tipo) => new Promise((ok) => canvas.toBlob(ok, tipo, qualidade));
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  let blob = await paraBlob("image/webp");
+  if (!blob || blob.type !== "image/webp") {
+    // Sem WebP: JPEG não tem transparência, então pinta o fundo de branco
+    ctx.globalCompositeOperation = "destination-over";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    blob = await paraBlob("image/jpeg");
+  }
+  bitmap.close?.();
+  return blob && blob.size < arquivo.size ? blob : arquivo;
+}
+
 // Envia um arquivo de imagem (corpo binário) e devolve a URL gravada no servidor.
-export async function enviarImagem(arquivo, tentativa = 0) {
+export async function enviarImagem(original, tentativa = 0) {
+  const arquivo = tentativa === 0 ? await comprimirImagem(original) : original;
+  if (arquivo.size > LIMITE_ENVIO) throw new ApiError(413, { mensagem: "Imagem muito grande mesmo após reduzir. Escolha outra (até 3 MB)." });
   if (!lerCookie("sc_csrf")) await renovarCsrf();
   let res;
   try {

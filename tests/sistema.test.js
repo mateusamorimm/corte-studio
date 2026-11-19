@@ -287,6 +287,20 @@ describe("sistema completo", { skip: MOTIVO_SKIP, concurrency: false }, () => {
     assert.equal(minha.cliente, "cliente S.");
     assert.equal(JSON.stringify(pub.json).includes(email("cliente")), false, "e-mail não vaza");
 
+    // Página de avaliações: filtro por nota, paginação e distribuição
+    const cinco = await new Navegador(base).get("/api/avaliacoes?limite=50&nota=5");
+    assert.ok(cinco.json.avaliacoes.every((a) => a.nota === 5));
+    assert.ok(cinco.json.avaliacoes.some((a) => a.comentario === `Excelente ${s}`));
+    const baixas = await new Navegador(base).get("/api/avaliacoes?limite=50&nota=3");
+    assert.ok(baixas.json.avaliacoes.every((a) => a.nota <= 3));
+    assert.ok(!baixas.json.avaliacoes.some((a) => a.comentario === `Excelente ${s}`));
+    const soma = Object.values(pub.json.distribuicao).reduce((x, y) => x + y, 0);
+    assert.equal(soma, pub.json.total, "distribuição soma o total");
+    const pag = await new Navegador(base).get("/api/avaliacoes?limite=1&pagina=1");
+    assert.equal(pag.json.avaliacoes.length, 1);
+    assert.equal(pag.json.paginas, pag.json.total_filtrado);
+    assert.equal((await new Navegador(base).get("/api/avaliacoes?nota=9")).status, 400);
+
     const resumo = await cliente.get("/api/me/resumo");
     assert.equal(resumo.json.resumo.visitas, 1);
     assert.equal(resumo.json.resumo.total_gasto, "50.00");

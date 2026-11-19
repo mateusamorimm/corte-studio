@@ -7,10 +7,8 @@ import {
   raw,
   urlSegura,
   moeda,
-  estrelas,
-  tempoRelativo,
   telefoneFormatado,
-  avatar,
+  cartaoAvaliacao,
   toast,
   alertaForm,
   comCarregamento,
@@ -18,33 +16,15 @@ import {
   hora,
   dataCurta,
 } from "../ui.js";
-import { obterUsuario } from "../sessao.js";
+import { iniciarVitrine } from "../vitrine.js";
+import { adicionarAoCarrinho } from "../carrinho.js";
+import { linksMapa } from "../contatos.js";
 
 const TITULO_PADRAO = "Seu próximo corte, pensado antes de sentar na cadeira.";
 const RASCUNHO = "sc_rascunho_agendamento"; // seleção do formulário guardada só nesta aba, até o login
 
 let usuario = null;
 let config = null;
-
-// ───────── Cabeçalho e menu ─────────
-const toggle = $("#mobileToggle");
-const nav = $("#mainNav");
-toggle?.addEventListener("click", () => nav.classList.toggle("open"));
-nav?.addEventListener("click", (e) => e.target.closest("a") && nav.classList.remove("open"));
-
-function montarCabecalho() {
-  const btnLogin = $("#btnLogin");
-  if (!usuario || !btnLogin) return;
-  btnLogin.textContent = usuario.nome_completo.split(" ")[0];
-  btnLogin.href = usuario.tipo_perfil === "CLIENTE" ? "perfil.html" : "perfil.html";
-  if (usuario.tipo_perfil !== "CLIENTE") {
-    const painel = document.createElement("a");
-    painel.href = usuario.tipo_perfil === "ADMIN" ? "admin/index.html" : "admin/agendamentos.html";
-    painel.className = "btn btn-outline btn-sm";
-    painel.textContent = "Painel";
-    btnLogin.parentNode.insertBefore(painel, btnLogin);
-  }
-}
 
 function irParaLogin() {
   location.href = `login.html?voltar=${encodeURIComponent("/index.html#agendar")}`;
@@ -68,8 +48,6 @@ function linkExterno(el, url) {
 function montarConfig() {
   const c = config;
   document.title = `${c.nome_salao} — Cortes com precisão • Agende com confiança`;
-  $("#nomeSalaoRodape").textContent = c.nome_salao;
-  $("#anoAtual").textContent = String(new Date().getFullYear());
 
   // Hero: *palavra* no título vira destaque. O título padrão mantém o desenho original.
   const titulo = (c.hero_titulo || "").trim();
@@ -90,23 +68,14 @@ function montarConfig() {
   const wa = c.whatsapp ? c.whatsapp.replace(/\D/g, "") : null;
   textoInfo("#infoWhatsapp", wa ? telefoneFormatado(wa.replace(/^55/, "")) : null);
 
-  const embed = c.url_mapa && /^https:\/\/(www\.)?google\.com\/maps\/embed/.test(c.url_mapa) ? c.url_mapa : null;
-  const busca = c.endereco ? encodeURIComponent(c.endereco) : null;
-  const linkMapa = embed ? (busca ? `https://www.google.com/maps/search/?api=1&query=${busca}` : null) : c.url_mapa || (busca ? `https://www.google.com/maps/search/?api=1&query=${busca}` : null);
-  linkExterno($("#btnMapa"), linkMapa);
-  const src = embed || (busca ? `https://maps.google.com/maps?q=${busca}&output=embed` : null);
-  if (src) {
-    $("#mapa").innerHTML = html`<iframe src="${src}" title="Mapa: ${c.endereco ?? c.nome_salao}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" style="width:100%;height:100%;border:0;border-radius:inherit;"></iframe>`.toString();
+  const mapa = linksMapa(c);
+  linkExterno($("#btnMapa"), mapa.abrir);
+  linkExterno($("#btnRota"), mapa.rota);
+  if (mapa.embed) {
+    $("#mapa").innerHTML = html`<iframe src="${mapa.embed}" title="Mapa: ${c.endereco ?? c.nome_salao}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" style="width:100%;height:100%;border:0;border-radius:inherit;"></iframe>`.toString();
     $("#mapa").style.padding = "0";
     $("#mapa").style.overflow = "hidden";
   }
-
-  // Redes e WhatsApp
-  linkExterno($("#linkInstagram"), c.instagram_url);
-  linkExterno($("#linkTiktok"), c.tiktok_url);
-  const linkWa = wa ? `https://wa.me/${wa}` : null;
-  linkExterno($("#linkWhatsapp"), linkWa);
-  linkExterno($("#chatFloat"), linkWa);
 }
 
 // ───────── Galeria ─────────
@@ -205,57 +174,30 @@ function renderProdutos() {
 $("#produtosGrid").addEventListener("click", async (e) => {
   const btn = e.target.closest("[data-produto]");
   if (!btn) return;
-  if (!usuario) {
-    toast("Faça login para adicionar produtos ao carrinho.", "info");
-    location.href = `login.html?voltar=${encodeURIComponent("/index.html#produtos")}`;
-    return;
-  }
   await comCarregamento(btn, async () => {
     try {
-      const carrinho = await post("/me/carrinho", { id_produto: Number(btn.dataset.produto), quantidade: 1 });
-      const qtd = carrinho.itens.reduce((s, i) => s + i.quantidade, 0);
-      toast(`Produto adicionado ao carrinho (${qtd} ${qtd === 1 ? "item" : "itens"}). Finalize no seu perfil.`, "sucesso");
+      await adicionarAoCarrinho(btn.dataset.produto);
     } catch (err) {
       toast(err.message, "erro");
     }
   }, "Adicionando...");
 });
 
-// ───────── Avaliações ─────────
-async function carregarAvaliacoes(limite) {
+// ───────── Avaliações (as 3 mais recentes; todas em avaliacoes.html) ─────────
+async function carregarAvaliacoes() {
   const grid = $("#comentariosGrid");
   try {
-    const { avaliacoes, total } = await get(`/avaliacoes?limite=${limite}`);
-    $("#btnVerTodosComentarios").hidden = total <= 3;
+    const { avaliacoes, total } = await get("/avaliacoes?limite=3");
+    const botao = $("#btnVerTodosComentarios");
+    botao.hidden = total <= 3;
+    botao.textContent = `Ver todos os comentários (${total})`;
     grid.innerHTML = avaliacoes.length
-      ? avaliacoes
-          .map(
-            (a) => html`
-        <article class="comentario-card">
-          <div class="comentario-header">
-            ${avatar({ nome_completo: a.cliente, avatar_url: a.avatar_url })}
-            <div>
-              <div class="name">${a.cliente}</div>
-              <div class="meta">${a.servico} · ${tempoRelativo(a.data_avaliacao)}</div>
-            </div>
-          </div>
-          <div class="stars" aria-label="Nota ${a.nota} de 5">${estrelas(a.nota)}</div>
-          <p>${a.comentario || "Avaliou o atendimento."}</p>
-        </article>`
-          )
-          .join("")
+      ? avaliacoes.map(cartaoAvaliacao).join("")
       : html`<p class="estado-vazio" style="grid-column:1/-1;">Ainda não há avaliações. Depois do seu atendimento, avalie pelo seu perfil.</p>`.toString();
   } catch {
     grid.innerHTML = html`<p class="estado-vazio" style="grid-column:1/-1;">Não foi possível carregar as avaliações.</p>`.toString();
   }
 }
-
-let todosComentarios = false;
-$("#btnVerTodosComentarios").addEventListener("click", async (e) => {
-  todosComentarios = !todosComentarios;
-  await comCarregamento(e.currentTarget, () => carregarAvaliacoes(todosComentarios ? 50 : 3), "Carregando...");
-  e.currentTarget.textContent = todosComentarios ? "Ver menos" : "Ver todos os comentários";
-});
 
 // ───────── Agendamento ─────────
 const form = $("#formAgendamento");
@@ -411,33 +353,27 @@ $("#agNovo").addEventListener("click", () => {
 
 // ───────── Inicialização ─────────
 (async () => {
-  const [u, cfg, gal, srv, prd] = await Promise.allSettled([
-    obterUsuario(),
-    get("/config"),
-    get("/galeria"),
-    get("/servicos"),
-    get("/produtos"),
-  ]);
-  usuario = u.status === "fulfilled" ? u.value : null;
-  montarCabecalho();
+  const [vitrine, gal, srv, prd] = await Promise.allSettled([iniciarVitrine(), get("/galeria"), get("/servicos"), get("/produtos")]);
+  if (vitrine.status === "fulfilled") ({ usuario, config } = vitrine.value);
+  if (config) montarConfig();
 
-  if (cfg.status === "fulfilled") {
-    config = cfg.value.config;
-    montarConfig();
-  }
   cortes = gal.status === "fulfilled" ? gal.value.cortes : [];
   renderCortes();
   servicos = srv.status === "fulfilled" ? srv.value.servicos : [];
   renderServicos();
   produtos = prd.status === "fulfilled" ? prd.value.produtos : [];
   renderProdutos();
-  carregarAvaliacoes(3);
+  carregarAvaliacoes();
 
   preencherServicos();
   montarFormularioAgendamento();
+  // Vindo do catálogo (index.html?servico=ID#agendar): já deixa o serviço escolhido
+  const servicoPedido = new URLSearchParams(location.search).get("servico");
+  if (servicoPedido && servicos.some((s) => String(s.id_servico) === servicoPedido)) selServico.value = servicoPedido;
   await carregarProfissionais();
   if (usuario) await restaurarRascunho();
-  if ([cfg, gal, srv, prd].some((r) => r.status === "rejected")) {
+  if (servicoPedido) carregarHorarios();
+  if ([gal, srv, prd].some((r) => r.status === "rejected")) {
     toast("Parte do conteúdo não pôde ser carregada. Atualize a página.", "aviso");
   }
   // Rolagem para a âncora depois que o conteúdo dinâmico foi montado

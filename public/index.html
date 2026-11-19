@@ -24,6 +24,7 @@
         <a href="#localizacao" class="nav-link">Informações</a>
         <a href="#agendar" class="nav-link">Marcar Horário</a>
         <a href="#avaliacoes" class="nav-link">Avaliações</a>
+        <a href="catalogo.html" class="nav-link">Catálogo</a>
       </nav>
 
       <div class="nav-actions">
@@ -101,8 +102,9 @@
           <div class="local-item" id="infoTelefone">📞 <strong>Telefone:</strong> <span></span></div>
           <div class="local-item" id="infoWhatsapp">💬 <strong>WhatsApp:</strong> <span></span></div>
         </div>
-        <div style="margin-top: 28px;">
+        <div style="margin-top: 28px; display:flex; flex-wrap:wrap; gap:10px;">
           <a href="https://maps.google.com" target="_blank" rel="noopener" class="btn btn-primary" id="btnMapa">Ver no mapa</a>
+          <a href="#" target="_blank" rel="noopener" class="btn btn-outline" id="btnRota" hidden>Iniciar rota</a>
         </div>
       </div>
       <div class="map-placeholder" id="mapa">
@@ -123,7 +125,7 @@
       </div>
 
       <div style="text-align:center;margin-top:32px;">
-        <button class="btn btn-outline" id="btnVerTodosComentarios">Ver todos os comentários</button>
+        <a class="btn btn-outline" id="btnVerTodosComentarios" href="avaliacoes.html">Ver todos os comentários</a>
       </div>
     </div>
   </section>
@@ -198,28 +200,36 @@
   <!-- FOOTER (ajustado - menor) -->
   <footer class="footer">
     <div class="container">
-      <div class="footer-inner">
-        <a href="index.html" class="logo">Studio<span>Corte</span></a>
-        <div class="footer-links">
+      <div class="footer-grid">
+        <div>
+          <a href="index.html" class="logo">Studio<span>Corte</span></a>
+          <p class="sobre" id="rodapeEndereco" hidden></p>
+        </div>
+        <nav aria-label="Navegação do rodapé">
+          <h4>Navegação</h4>
           <a href="#servicos">Serviços</a>
           <a href="#cortes">Galeria</a>
-          <a href="#localizacao">Localização</a>
+          <a href="catalogo.html">Catálogo</a>
+          <a href="avaliacoes.html">Avaliações</a>
+          <a href="#agendar">Agendar</a>
+        </nav>
+        <nav aria-label="Conta">
+          <h4>Conta</h4>
           <a href="login.html">Entrar</a>
-        </div>
-        <div style="display:flex;gap:16px;">
-          <a href="#" aria-label="Instagram" id="linkInstagram" target="_blank" rel="noopener" hidden>📷</a>
-          <a href="#" aria-label="TikTok" id="linkTiktok" target="_blank" rel="noopener" hidden>🎵</a>
-          <a href="#" aria-label="WhatsApp" id="linkWhatsapp" target="_blank" rel="noopener" hidden>💬</a>
+          <a href="cadastro.html">Criar conta</a>
+          <a href="perfil.html">Meu perfil</a>
+          <a href="recuperar-senha.html">Recuperar senha</a>
+        </nav>
+        <div>
+          <h4>Contato</h4>
+          <div id="rodapeContatos"></div>
         </div>
       </div>
-      <p class="footer-copy">© <span id="anoAtual">2026</span> <span id="nomeSalaoRodape">Studio Corte</span></p>
+      <p class="footer-copy">© <span id="anoAtual">2026</span> <span id="rodapeNome">Studio Corte</span></p>
     </div>
   </footer>
 
-  <!-- Chat flutuante -->
-  <a href="#" class="chat-float" target="_blank" rel="noopener" aria-label="WhatsApp" id="chatFloat" hidden>
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.8.48 3.48 1.32 4.94L2 22l5.2-1.28A9.96 9.96 0 0012 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.56 0-3.02-.42-4.28-1.14l-.3-.18-3.16.78.8-3.08-.2-.32A7.94 7.94 0 014 12c0-4.42 3.58-8 8-8s8 3.58 8 8-3.58 8-8 8z"/></svg>
-  </a>
+  <!-- Balão de contatos: montado por js/contatos.js a partir da configuração do salão -->
 
   <script type="module" src="js/pages/home.js"></script>
 </body>

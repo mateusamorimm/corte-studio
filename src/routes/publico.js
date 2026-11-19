@@ -71,13 +71,22 @@ router.get("/galeria", async (req, res) => {
 });
 
 // Avaliações visíveis: nome e avatar do cliente, serviço e nota (sem e-mail/telefone).
-router.get("/avaliacoes", validar({ query: z.object({ limite: z.coerce.number().int().min(1).max(50).default(3) }) }), async (req, res) => {
-  const where = { visivel: true };
-  const [avaliacoes, resumo] = await Promise.all([
+// Paginação (?pagina) e filtro por nota (?nota=5 ou ?nota=3 para "3 ou menos").
+const avaliacoesQuery = z.object({
+  limite: z.coerce.number().int().min(1).max(50).default(3),
+  pagina: z.coerce.number().int().min(1).max(1000).default(1),
+  nota: z.preprocess((v) => (v === "" ? undefined : v), z.coerce.number().int().min(1).max(5).optional()),
+});
+router.get("/avaliacoes", validar({ query: avaliacoesQuery }), async (req, res) => {
+  const { limite, pagina, nota } = req.valid.query;
+  const visiveis = { visivel: true };
+  const where = nota ? { ...visiveis, nota: nota <= 3 ? { lte: 3 } : nota } : visiveis;
+  const [avaliacoes, resumo, filtradas, distribuicao] = await Promise.all([
     prisma.avaliacao.findMany({
       where,
       orderBy: { data_avaliacao: "desc" },
-      take: req.valid.query.limite,
+      skip: (pagina - 1) * limite,
+      take: limite,
       select: {
         id_avaliacao: true,
         nota: true,
@@ -92,7 +101,9 @@ router.get("/avaliacoes", validar({ query: z.object({ limite: z.coerce.number().
         },
       },
     }),
-    prisma.avaliacao.aggregate({ where, _avg: { nota: true }, _count: true }),
+    prisma.avaliacao.aggregate({ where: visiveis, _avg: { nota: true }, _count: true }),
+    prisma.avaliacao.count({ where }),
+    prisma.avaliacao.groupBy({ by: ["nota"], where: visiveis, _count: true }),
   ]);
   res.json({
     avaliacoes: avaliacoes.map((a) => ({
@@ -107,6 +118,9 @@ router.get("/avaliacoes", validar({ query: z.object({ limite: z.coerce.number().
     })),
     total: resumo._count,
     media: resumo._avg.nota,
+    total_filtrado: filtradas,
+    paginas: Math.max(1, Math.ceil(filtradas / limite)),
+    distribuicao: Object.fromEntries([5, 4, 3, 2, 1].map((n) => [n, distribuicao.find((d) => d.nota === n)?._count ?? 0])),
   });
 });
 

@@ -45,4 +45,10 @@
 
   /* Transitions */
   --transition: 0.2s ease;
+  --transition-slow: 0.3s ease;
+
+  /* Complementos (componentes integrados: carrinho em gaveta, chips, balão de contatos) */
+  --bg-elevated: #1c1c28;
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --cart-w: 400px;
 }

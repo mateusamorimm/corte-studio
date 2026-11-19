@@ -23,10 +23,12 @@ export const nome = z
 
 const soDigitos = (s) => s.replace(/\D/g, "");
 
+// Aceita com ou sem +55: "+55 (11) 98765-4321" → "11987654321"
 export const telefone = z
   .string()
   .trim()
   .transform(soDigitos)
+  .transform((s) => ((s.length === 12 || s.length === 13) && s.startsWith("55") ? s.slice(2) : s))
   .refine((s) => s.length === 10 || s.length === 11, "Telefone inválido. Use DDD + número.");
 
 export function cpfValido(cpf) {

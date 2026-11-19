@@ -46,11 +46,16 @@ A permissão é sempre conferida no servidor; o frontend só esconde o que o per
 ```
 public/                 frontend (sem scripts inline — CSP estrita)
   index.html            home: conteúdo do banco + agendamento com horários reais
+  catalogo.html         serviços, cortes e produtos com filtros e busca
+  avaliacoes.html       todas as avaliações: média, distribuição, filtro por nota
   perfil.html           área do cliente
   login / cadastro / recuperar-senha / redefinir-senha
   admin/                index (dashboard), servicos, clientes, produtos, pedidos,
                         agendamentos, equipe, configuracoes, conteudo
   js/api.js, ui.js, sessao.js, validacao.js
+  js/vitrine.js         cabeçalho, rodapé e balão comuns às páginas públicas
+  js/carrinho.js        carrinho em gaveta (sobre /api/me/carrinho)
+  js/contatos.js        contatos oficiais (balão e rodapé) e links do mapa
   js/pages/*.js         scripts das páginas públicas
   js/admin/*.js         scripts do painel
 src/
