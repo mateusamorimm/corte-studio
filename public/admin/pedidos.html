@@ -9,34 +9,23 @@
   <link rel="stylesheet" href="../css/base.css">
   <link rel="stylesheet" href="../css/components.css">
   <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/complementos.css">
 </head>
 <body>
   <div class="admin-layout">
-    <aside class="sidebar" id="sidebar">
-      <a href="../index.html" class="logo">Studio<span>Corte</span></a>
-      <nav class="sidebar-nav" aria-label="Menu do painel">
-        <a href="index.html" class="sidebar-link" data-so-admin>🏠 Dashboard</a>
-        <a href="servicos.html" class="sidebar-link" data-so-admin>✂️ Serviços</a>
-        <a href="clientes.html" class="sidebar-link" data-so-admin>👥 Clientes</a>
-        <a href="produtos.html" class="sidebar-link" data-so-admin>🛍️ Produtos</a>
-        <a href="pedidos.html" class="sidebar-link active" data-so-admin>📦 Pedidos</a>
-        <a href="agendamentos.html" class="sidebar-link">📅 Atendimentos</a>
-        <a href="equipe.html" class="sidebar-link" data-so-admin>💈 Equipe</a>
-        <a href="configuracoes.html" class="sidebar-link" data-so-admin>⚙️ Configurações</a>
-      </nav>
-      <div class="sidebar-footer">
-        <div class="sidebar-user">
-          <span class="avatar avatar-iniciais" aria-hidden="true"></span>
-          <div><div class="name">&nbsp;</div><div class="role">&nbsp;</div></div>
-        </div>
-        <button class="btn btn-ghost btn-sm" data-sair style="width:100%;">Sair da Conta</button>
+    <aside class="admin-sidebar">
+      <a href="../index.html" class="logo" style="display:block;margin-bottom:24px">Studio<span>Corte</span></a>
+      <nav id="adminNav" aria-label="Menu do painel"></nav>
+      <div style="margin-top:auto;padding-top:24px">
+        <div class="sidebar-user"></div>
+        <button type="button" class="btn btn-ghost btn-sm" data-sair style="width:100%">Sair</button>
       </div>
     </aside>
     <main class="admin-main">
       <div class="admin-header">
         <div>
           <h1>Pedidos</h1>
-          <p class="sub">Compras feitas pelo site: separe, avise a retirada e conclua no pagamento.</p>
+          <p class="text-muted">Compras feitas pelo site: separe, avise a retirada e conclua no pagamento.</p>
         </div>
       </div>
       <div class="admin-card">

@@ -1,7 +1,8 @@
-// Perfil do usuário: dados pessoais, redes, favoritos, histórico, carrinho e estatísticas — tudo do banco.
-import { get, post, put, patch, del, enviarImagem } from "../api.js";
+// Perfil do usuário (layout do colega: banner, abas e resumo lateral) — dados sempre da API.
+import { get, post, put, del, enviarImagem } from "../api.js";
 import {
   $,
+  $$,
   html,
   raw,
   urlSegura,
@@ -16,7 +17,6 @@ import {
   limparErrosCampos,
   dataCurta,
   hora,
-  dataSemFuso,
   telefoneFormatado,
   mesAno,
   badgeStatus,
@@ -29,9 +29,8 @@ import {
 } from "../ui.js";
 import { regras, validarForm, mascaraTelefone, mascaraCpf } from "../validacao.js";
 import { exigirLogin, sair } from "../sessao.js";
-import { iniciarCarrinho, recarregarCarrinho } from "../carrinho.js";
+import { iniciarCarrinho } from "../carrinho.js";
 
-const VISITAS_FIDELIDADE = 5;
 let usuario = await exigirLogin();
 ligarSair(sair);
 if (usuario.tipo_perfil !== "CLIENTE") {
@@ -39,38 +38,61 @@ if (usuario.tipo_perfil !== "CLIENTE") {
   link.hidden = false;
   link.href = usuario.tipo_perfil === "ADMIN" ? "admin/index.html" : "admin/agendamentos.html";
 }
+$("#mobileToggle")?.addEventListener("click", (e) => {
+  const aberto = $("#mainNav").classList.toggle("open");
+  e.currentTarget.setAttribute("aria-expanded", String(aberto));
+});
 
 let resumo = null;
 let agendamentos = [];
 let pedidos = [];
-let carrinho = { itens: [], total: "0" };
 let favoritos = { favoritos: [], enviados: [] };
+
+// ───────── Abas ─────────
+const ABAS = ["agendamentos", "favoritos", "historico", "redes", "conta", "dados"];
+function abrirAba(nome, { rolar = false } = {}) {
+  if (!ABAS.includes(nome)) nome = "agendamentos";
+  $$(".perfil-tab").forEach((t) => {
+    const ativa = t.dataset.tab === nome;
+    t.classList.toggle("active", ativa);
+    t.setAttribute("aria-selected", String(ativa));
+  });
+  $$(".tab-panel").forEach((p) => (p.hidden = p.id !== `tab-${nome}`));
+  if (location.hash !== `#${nome}`) history.replaceState(null, "", `#${nome}`);
+  if (rolar) $(".perfil-tabs").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$(".perfil-tabs").addEventListener("click", (e) => {
+  const aba = e.target.closest("[data-tab]");
+  if (aba) abrirAba(aba.dataset.tab);
+});
+document.addEventListener("click", (e) => {
+  const ir = e.target.closest("[data-ir-aba]");
+  if (ir) abrirAba(ir.dataset.irAba, { rolar: true });
+});
+window.addEventListener("hashchange", () => abrirAba(location.hash.slice(1)));
 
 // ───────── Cabeçalho do perfil ─────────
 function renderPerfil() {
   const u = usuario;
   const capa = urlSegura(u.capa_url);
-  const hero = $("#perfilHero");
-  if (capa) hero.style.setProperty("--capa", `url(${JSON.stringify(capa)})`);
-  else hero.style.removeProperty("--capa");
+  $("#perfilBanner").querySelector("img")?.remove();
+  if (capa) $("#perfilBanner").insertAdjacentHTML("afterbegin", html`<img src="${capa}" alt="">`.toString());
 
-  $("#userAvatar").outerHTML = avatar(u, "avatar avatar-lg").toString().replace("<img ", '<img id="userAvatar" ').replace("<span ", '<span id="userAvatar" ');
-  const fiel = resumo && resumo.visitas >= VISITAS_FIDELIDADE;
-  $("#userNome").innerHTML = html`${u.nome_completo} ${fiel ? html`<span class="badge badge-accent">FIDELIDADE</span>` : ""}`.toString();
-  $("#userHandle").textContent = u.email ? `@${u.email.split("@")[0]}` : "";
+  const foto = avatar(u, "perfil-avatar").toString().replace("<img ", '<img id="userAvatar" ').replace("<span ", '<span id="userAvatar" ');
+  $("#userAvatar").outerHTML = foto;
+  $("#btnRemoverFoto").hidden = !u.avatar_url;
+
+  $("#userNome").textContent = u.nome_completo;
+  $("#userMeta").textContent = [u.email, `Cliente desde ${mesAno(u.data_cadastro)}`].filter(Boolean).join(" · ");
   $("#userBio").textContent = u.bio ?? "";
   $("#userBio").hidden = !u.bio;
 
-  $("#userEmail").textContent = u.email ?? "—";
-  $("#userTel").textContent = u.telefone ? telefoneFormatado(u.telefone) : "—";
-  $("#userNasc").textContent = u.data_nascimento ? dataSemFuso(u.data_nascimento) : "—";
-  $("#userEnd").textContent = u.endereco ?? "—";
-
   const redes = [];
-  if (u.instagram) redes.push(html`<div>📷 Instagram · <a href="${`https://instagram.com/${u.instagram}`}" target="_blank" rel="noopener">@${u.instagram}</a></div>`);
-  if (u.tiktok) redes.push(html`<div>🎵 TikTok · <a href="${`https://www.tiktok.com/@${u.tiktok}`}" target="_blank" rel="noopener">@${u.tiktok}</a></div>`);
-  if (u.whatsapp) redes.push(html`<div>💬 WhatsApp · <a href="${`https://wa.me/${u.whatsapp}`}" target="_blank" rel="noopener">${telefoneFormatado(u.whatsapp.replace(/^55/, ""))}</a></div>`);
-  $("#redesLista").innerHTML = redes.length ? redes.join("") : html`<div class="text-muted">Nenhuma rede social adicionada.</div>`.toString();
+  if (u.instagram) redes.push(html`<a class="social-chip" href="${`https://instagram.com/${u.instagram}`}" target="_blank" rel="noopener">📷 @${u.instagram}</a>`);
+  if (u.tiktok) redes.push(html`<a class="social-chip" href="${`https://www.tiktok.com/@${u.tiktok}`}" target="_blank" rel="noopener">🎵 @${u.tiktok}</a>`);
+  if (u.whatsapp) redes.push(html`<a class="social-chip" href="${`https://wa.me/${u.whatsapp}`}" target="_blank" rel="noopener">💬 ${telefoneFormatado(u.whatsapp.replace(/^55/, ""))}</a>`);
+  $("#socialPublicRow").innerHTML = redes.join("");
+  $("#socialPublicRow").hidden = !redes.length;
 }
 
 function renderEstatisticas() {
@@ -80,7 +102,7 @@ function renderEstatisticas() {
   $("#statFavorito").textContent = resumo.servico_favorito ?? "—";
   $("#statProfissional").textContent = primeiro(resumo.profissional_favorito);
   $("#statMembro").textContent = mesAno(resumo.membro_desde);
-  $("#statGasto").textContent = moeda(resumo.total_gasto).replace(",00", "");
+  $("#statGasto").textContent = moeda(resumo.total_gasto);
 }
 
 // ───────── Favoritos ─────────
@@ -166,6 +188,7 @@ formCorte.addEventListener("submit", async (e) => {
       favoritos.enviados.unshift(corte);
       renderFavoritos();
       $("#modalCorte").close();
+      abrirAba("favoritos");
       toast("Imagem enviada! O profissional poderá vê-la no seu atendimento.", "sucesso");
     } catch (err) {
       alertaForm(alerta, err.message);
@@ -173,7 +196,7 @@ formCorte.addEventListener("submit", async (e) => {
   }, "Enviando...");
 });
 
-// ───────── Histórico de serviços ─────────
+// ───────── Agendamentos ─────────
 const futuro = (a) => new Date(a.data_hora_inicio) > new Date();
 function renderAgendamentos() {
   const corpo = $("#historicoServicos");
@@ -183,11 +206,11 @@ function renderAgendamentos() {
   }
   corpo.innerHTML = agendamentos
     .map((a) => {
-      let avaliacao = html`<span class="text-muted">—</span>`;
-      if (a.avaliacao) avaliacao = html`<span class="stars" title="${a.avaliacao.comentario ?? ""}">${estrelas(a.avaliacao.nota)}</span>`;
-      else if (a.status === "CONCLUIDO") avaliacao = html`<button class="btn btn-outline btn-sm" data-avaliar="${a.id_agendamento}">Avaliar</button>`;
+      let acao = html`<span class="text-muted">—</span>`;
+      if (a.avaliacao) acao = html`<span class="stars" title="${a.avaliacao.comentario ?? ""}">${estrelas(a.avaliacao.nota)}</span>`;
+      else if (a.status === "CONCLUIDO") acao = html`<button class="btn btn-outline btn-sm" data-avaliar="${a.id_agendamento}">Avaliar</button>`;
       else if (["PENDENTE", "CONFIRMADO"].includes(a.status) && futuro(a)) {
-        avaliacao = html`<button class="btn btn-ghost btn-sm" style="color:var(--accent)" data-cancelar="${a.id_agendamento}">Cancelar</button>`;
+        acao = html`<button class="btn btn-ghost btn-sm" style="color:var(--accent)" data-cancelar="${a.id_agendamento}">Cancelar</button>`;
       }
       return html`
         <tr>
@@ -195,7 +218,7 @@ function renderAgendamentos() {
           <td>${a.servico.nome_servico}</td>
           <td>${a.barbeiro.nome_completo}</td>
           <td>${badgeStatus(STATUS_AGENDAMENTO, a.status)}</td>
-          <td>${avaliacao}</td>
+          <td>${acao}</td>
           <td>${moeda(a.preco_registrado)}</td>
         </tr>`;
     })
@@ -234,7 +257,7 @@ function desenharNota() {
   seletor.innerHTML = [1, 2, 3, 4, 5]
     .map(
       (n) =>
-        html`<button type="button" role="radio" aria-checked="${n === notaEscolhida ? "true" : "false"}" aria-label="${n} estrela${n > 1 ? "s" : ""}" data-nota="${n}" style="color:inherit;font-size:inherit;">${n <= notaEscolhida ? "★" : "☆"}</button>`
+        html`<button type="button" role="radio" aria-checked="${n === notaEscolhida ? "true" : "false"}" aria-label="${n} estrela${n > 1 ? "s" : ""}" data-nota="${n}">${n <= notaEscolhida ? "★" : "☆"}</button>`
     )
     .join("");
 }
@@ -309,94 +332,13 @@ $("#historicoCompras").addEventListener("click", async (e) => {
   }
 });
 
-// ───────── Carrinho ─────────
-function renderCarrinho() {
-  const el = $("#carrinhoContent");
-  if (!carrinho.itens.length) {
-    el.innerHTML = html`<p class="text-muted">Seu carrinho está vazio. Adicione produtos na <a href="index.html#produtos" style="color:var(--accent);">página inicial</a>.</p>`.toString();
-    return;
-  }
-  el.innerHTML =
-    carrinho.itens
-      .map((item) => {
-        const p = item.produto;
-        const indisponivel = !p.ativo;
-        return html`
-        <div class="carrinho-item">
-          <div class="info">
-            <strong>${p.nome_produto}</strong>
-            <span class="text-muted">${indisponivel ? "Produto indisponível — remova do carrinho" : html`${item.quantidade}x · ${moeda(p.preco)}`}</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end;">
-            ${indisponivel
-              ? ""
-              : html`<div style="display:flex;align-items:center;gap:4px;">
-                  <button class="btn btn-ghost btn-sm" data-qtd="${p.id_produto}" data-delta="-1" aria-label="Diminuir quantidade de ${p.nome_produto}" ${raw(item.quantidade <= 1 ? "disabled" : "")}>−</button>
-                  <span aria-live="polite" style="min-width:20px;text-align:center;">${item.quantidade}</span>
-                  <button class="btn btn-ghost btn-sm" data-qtd="${p.id_produto}" data-delta="1" aria-label="Aumentar quantidade de ${p.nome_produto}" ${raw(item.quantidade >= Math.min(99, p.quantidade_estoque) ? "disabled" : "")}>+</button>
-                </div>
-                <span class="preco">${moeda(Number(p.preco) * item.quantidade)}</span>`}
-            <button class="btn btn-ghost btn-sm" data-remover="${p.id_produto}">Remover</button>
-          </div>
-        </div>`;
-      })
-      .join("") +
-    html`
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;gap:12px;flex-wrap:wrap;">
-        <strong>Total: ${moeda(carrinho.total)}</strong>
-        <button class="btn btn-primary" id="btnFinalizar">Finalizar compra</button>
-      </div>
-      <p class="form-hint" style="margin-top:8px;">Pagamento e retirada no salão. Os itens ficam reservados para você.</p>`;
-}
-
-$("#carrinhoContent").addEventListener("click", async (e) => {
-  const qtd = e.target.closest("[data-qtd]");
-  const rem = e.target.closest("[data-remover]");
-  const fin = e.target.closest("#btnFinalizar");
-  try {
-    if (qtd) {
-      const item = carrinho.itens.find((i) => String(i.produto.id_produto) === qtd.dataset.qtd);
-      qtd.disabled = true;
-      carrinho = await patch(`/me/carrinho/${qtd.dataset.qtd}`, { quantidade: item.quantidade + Number(qtd.dataset.delta) });
-      renderCarrinho();
-    } else if (rem) {
-      rem.disabled = true;
-      carrinho = await del(`/me/carrinho/${rem.dataset.remover}`);
-      renderCarrinho();
-    } else if (fin) {
-      const ok = await confirmar(`Confirmar pedido de ${moeda(carrinho.total)}? Pagamento e retirada no salão.`, {
-        titulo: "Finalizar compra",
-        confirmar: "Confirmar pedido",
-      });
-      if (!ok) return;
-      await comCarregamento(fin, async () => {
-        const { pedido } = await post("/me/pedidos", {});
-        pedidos.unshift(pedido);
-        carrinho = { itens: [], total: "0" };
-        renderCarrinho();
-        renderPedidos();
-        toast(`Pedido #${pedido.id_pedido} realizado! Avisaremos quando estiver pronto para retirada.`, "sucesso", 6000);
-      }, "Finalizando...");
-    }
-  } catch (err) {
-    toast(err.message, "erro");
-    carrinho = await get("/me/carrinho").catch(() => carrinho);
-    renderCarrinho();
-  }
-  recarregarCarrinho(); // mantém a gaveta e o contador do cabeçalho em sincronia
-});
-
-// Mudanças feitas pela gaveta do carrinho (cabeçalho) refletem nesta página
-window.addEventListener("carrinho:atualizado", (e) => {
-  carrinho = e.detail;
-  renderCarrinho();
-});
+// Pedido feito pela gaveta do carrinho aparece no histórico
 window.addEventListener("pedido:criado", (e) => {
   if (!pedidos.some((p) => p.id_pedido === e.detail.id_pedido)) pedidos.unshift(e.detail);
   renderPedidos();
 });
 
-// ───────── Capa e foto ─────────
+// ───────── Foto e banner ─────────
 async function trocarImagem(rota, botao) {
   const arquivo = await escolherImagem();
   if (!arquivo) return;
@@ -407,7 +349,6 @@ async function trocarImagem(rota, botao) {
       const url = await enviarImagem(arquivo);
       ({ usuario } = await put(rota, { url }));
       renderPerfil();
-      prepararPreviaAvatar();
       toast("Imagem atualizada.", "sucesso");
     } catch (err) {
       toast(err.message, "erro");
@@ -415,97 +356,94 @@ async function trocarImagem(rota, botao) {
   }, "Enviando...");
 }
 $("#btnCapa").addEventListener("click", (e) => trocarImagem("/me/capa", e.currentTarget));
-
-// ───────── Editar perfil ─────────
-const formPerfil = $("#formPerfil");
-mascaraTelefone(formPerfil.telefone);
-mascaraTelefone(formPerfil.whatsapp);
-mascaraCpf(formPerfil.cpf);
-formPerfil.data_nascimento.max = new Date().toISOString().slice(0, 10);
-
-function prepararPreviaAvatar() {
-  $("#previaAvatar").innerHTML = avatar(usuario, "avatar avatar-lg").toString();
-  $("#btnRemoverFoto").hidden = !usuario.avatar_url;
-}
-
-function abrirEdicao(focarRedes = false) {
-  const u = usuario;
-  limparErrosCampos(formPerfil);
-  alertaForm($("#alertaPerfil"), null);
-  formPerfil.nome_completo.value = u.nome_completo;
-  formPerfil.telefone.value = telefoneFormatado(u.telefone ?? "");
-  formPerfil.data_nascimento.value = u.data_nascimento ? u.data_nascimento.slice(0, 10) : "";
-  formPerfil.cpf.value = u.cpf ? u.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : "";
-  $("#pEmail").value = u.email ?? "";
-  formPerfil.endereco.value = u.endereco ?? "";
-  formPerfil.bio.value = u.bio ?? "";
-  formPerfil.instagram.value = u.instagram ? `@${u.instagram}` : "";
-  formPerfil.tiktok.value = u.tiktok ? `@${u.tiktok}` : "";
-  formPerfil.whatsapp.value = u.whatsapp ? telefoneFormatado(u.whatsapp.replace(/^55/, "")) : "";
-  prepararPreviaAvatar();
-  abrirModal($("#modalPerfil"));
-  if (focarRedes) {
-    $("#tituloRedes").scrollIntoView({ block: "start" });
-    formPerfil.instagram.focus();
-  }
-}
-$("#btnEditarPerfil").addEventListener("click", () => abrirEdicao());
-$("#btnRedes").addEventListener("click", () => abrirEdicao(true));
-$("#btnTrocarFoto").addEventListener("click", (e) => trocarImagem("/me/avatar", e.currentTarget));
+$("#btnFoto").addEventListener("click", (e) => trocarImagem("/me/avatar", e.currentTarget));
 $("#btnRemoverFoto").addEventListener("click", async () => {
   try {
     ({ usuario } = await put("/me/avatar", { url: null }));
     renderPerfil();
-    prepararPreviaAvatar();
+    toast("Foto removida.", "sucesso");
   } catch (err) {
     toast(err.message, "erro");
   }
 });
 
-formPerfil.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const alerta = $("#alertaPerfil");
-  alertaForm(alerta, null);
-  const erros = validarForm(formPerfil, {
-    nome_completo: regras.nome,
-    telefone: (v) => (!v.trim() || !regras.telefone(v) ? null : regras.telefone(v)),
-    cpf: regras.cpfOpcional,
-    data_nascimento: regras.dataPassadaOpcional,
-    whatsapp: (v) => (!v.trim() || !regras.telefone(v) ? null : "Informe o WhatsApp com DDD."),
-  });
-  if (mostrarErrosCampos(formPerfil, erros)) return;
-  await comCarregamento(formPerfil.querySelector("[type=submit]"), async () => {
-    try {
-      ({ usuario } = await put("/me/perfil", {
-        nome_completo: formPerfil.nome_completo.value,
-        telefone: formPerfil.telefone.value,
-        data_nascimento: formPerfil.data_nascimento.value,
-        cpf: formPerfil.cpf.value,
-        endereco: formPerfil.endereco.value,
-        bio: formPerfil.bio.value,
-        instagram: formPerfil.instagram.value,
-        tiktok: formPerfil.tiktok.value,
-        whatsapp: formPerfil.whatsapp.value,
-      }));
-      renderPerfil();
-      $("#modalPerfil").close();
-      toast("Perfil atualizado.", "sucesso");
-    } catch (err) {
-      alertaForm(alerta, err.message);
-      if (Array.isArray(err.detalhes)) mostrarErrosCampos(formPerfil, err.detalhes);
-      else if (err.detalhes?.campo) mostrarErrosCampos(formPerfil, [{ campo: err.detalhes.campo, mensagem: err.message }]);
-    }
-  }, "Salvando...");
+// ───────── Dados pessoais e redes (o PUT grava o perfil inteiro) ─────────
+const formPerfil = $("#formPerfil");
+const formRedes = $("#formRedes");
+mascaraTelefone(formPerfil.telefone);
+mascaraTelefone(formRedes.whatsapp);
+mascaraCpf(formPerfil.cpf);
+formPerfil.data_nascimento.max = new Date().toISOString().slice(0, 10);
+
+function preencherFormularios() {
+  const u = usuario;
+  formPerfil.nome_completo.value = u.nome_completo;
+  formPerfil.telefone.value = telefoneFormatado(u.telefone ?? "");
+  formPerfil.data_nascimento.value = u.data_nascimento ? u.data_nascimento.slice(0, 10) : "";
+  formPerfil.cpf.value = u.cpf ? u.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : "";
+  formPerfil.endereco.value = u.endereco ?? "";
+  formPerfil.bio.value = u.bio ?? "";
+  formRedes.instagram.value = u.instagram ? `@${u.instagram}` : "";
+  formRedes.tiktok.value = u.tiktok ? `@${u.tiktok}` : "";
+  formRedes.whatsapp.value = u.whatsapp ? telefoneFormatado(u.whatsapp.replace(/^55/, "")) : "";
+  $("#pEmail").value = u.email ?? "";
+}
+
+// Monta o perfil completo a partir dos dois formulários (os campos não exibidos vêm do usuário atual)
+const dadosPerfil = () => ({
+  nome_completo: formPerfil.nome_completo.value,
+  telefone: formPerfil.telefone.value,
+  data_nascimento: formPerfil.data_nascimento.value,
+  cpf: formPerfil.cpf.value,
+  endereco: formPerfil.endereco.value,
+  bio: formPerfil.bio.value,
+  instagram: formRedes.instagram.value,
+  tiktok: formRedes.tiktok.value,
+  whatsapp: formRedes.whatsapp.value,
 });
 
-// ───────── Alterar senha ─────────
-const formSenha = $("#formSenha");
-$("#btnAbrirSenha").addEventListener("click", () => {
-  formSenha.reset();
-  limparErrosCampos(formSenha);
-  alertaForm($("#alertaSenha"), null);
-  abrirModal($("#modalSenha"));
+async function salvarPerfil(form, alerta, mensagem) {
+  alertaForm(alerta, null);
+  await comCarregamento(form.querySelector("[type=submit]"), async () => {
+    try {
+      ({ usuario } = await put("/me/perfil", dadosPerfil()));
+      renderPerfil();
+      preencherFormularios();
+      toast(mensagem, "sucesso");
+    } catch (err) {
+      alertaForm(alerta, err.message);
+      if (Array.isArray(err.detalhes)) {
+        mostrarErrosCampos(formPerfil, err.detalhes);
+        mostrarErrosCampos(formRedes, err.detalhes);
+      } else if (err.detalhes?.campo) mostrarErrosCampos(formPerfil, [{ campo: err.detalhes.campo, mensagem: err.message }]);
+    }
+  }, "Salvando...");
+}
+
+formPerfil.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const erros = validarForm(formPerfil, {
+    nome_completo: regras.nome,
+    telefone: (v) => (!v.trim() ? null : regras.telefone(v)),
+    cpf: regras.cpfOpcional,
+    data_nascimento: regras.dataPassadaOpcional,
+  });
+  if (mostrarErrosCampos(formPerfil, erros)) return;
+  salvarPerfil(formPerfil, $("#alertaPerfil"), "Dados atualizados.");
 });
+
+formRedes.addEventListener("submit", (e) => {
+  e.preventDefault();
+  limparErrosCampos(formRedes);
+  const erros = validarForm(formRedes, {
+    whatsapp: (v) => (!v.trim() ? null : regras.telefone(v) ? "Informe o WhatsApp com DDD." : null),
+  });
+  if (mostrarErrosCampos(formRedes, erros)) return;
+  salvarPerfil(formRedes, $("#alertaRedes"), "Redes sociais salvas.");
+});
+
+// ───────── Conta / senha ─────────
+const formSenha = $("#formSenha");
 formSenha.addEventListener("submit", async (e) => {
   e.preventDefault();
   const erros = validarForm(formSenha, {
@@ -517,8 +455,9 @@ formSenha.addEventListener("submit", async (e) => {
   await comCarregamento(formSenha.querySelector("[type=submit]"), async () => {
     try {
       await put("/me/senha", { senha_atual: formSenha.senha_atual.value, nova_senha: formSenha.nova_senha.value });
-      $("#modalSenha").close();
-      toast("Senha alterada. As outras sessões abertas foram encerradas.", "sucesso", 6000);
+      formSenha.reset();
+      preencherFormularios();
+      alertaForm($("#alertaSenha"), "Senha alterada. As outras sessões abertas foram encerradas.", "sucesso");
     } catch (err) {
       alertaForm($("#alertaSenha"), err.message);
       if (Array.isArray(err.detalhes)) mostrarErrosCampos(formSenha, err.detalhes);
@@ -528,24 +467,17 @@ formSenha.addEventListener("submit", async (e) => {
 
 // ───────── Carga inicial ─────────
 renderPerfil();
+preencherFormularios();
+abrirAba(location.hash.slice(1));
 iniciarCarrinho(usuario);
-const [r, ag, pe, ca, fa] = await Promise.allSettled([
-  get("/me/resumo"),
-  get("/me/agendamentos"),
-  get("/me/pedidos"),
-  get("/me/carrinho"),
-  get("/me/favoritos"),
-]);
+const [r, ag, pe, fa] = await Promise.allSettled([get("/me/resumo"), get("/me/agendamentos"), get("/me/pedidos"), get("/me/favoritos")]);
 if (r.status === "fulfilled") ({ usuario, resumo } = r.value);
 if (ag.status === "fulfilled") agendamentos = ag.value.agendamentos;
 if (pe.status === "fulfilled") pedidos = pe.value.pedidos;
-if (ca.status === "fulfilled") carrinho = ca.value;
 if (fa.status === "fulfilled") favoritos = fa.value;
 renderPerfil();
 renderEstatisticas();
 renderFavoritos();
 renderAgendamentos();
 renderPedidos();
-renderCarrinho();
-if ([r, ag, pe, ca, fa].some((x) => x.status === "rejected")) toast("Parte dos dados não pôde ser carregada. Atualize a página.", "aviso");
-if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
+if ([r, ag, pe, fa].some((x) => x.status === "rejected")) toast("Parte dos dados não pôde ser carregada. Atualize a página.", "aviso");

@@ -1,9 +1,27 @@
-// Comum a todas as páginas do painel: exige login da equipe, monta a barra lateral e o menu mobile.
-// A permissão real é sempre conferida pelo servidor; aqui só se evita mostrar o que não se pode usar.
-import { $, $$, html, avatar, ligarSair } from "../ui.js";
+// Comum a todas as páginas do painel (layout do colega): exige login da equipe,
+// monta o menu lateral filtrado pelo perfil e o rodapé com usuário e "Sair".
+// A permissão real é sempre conferida pelo servidor; o menu só esconde o que não se pode usar.
+import { $, html, avatar, ligarSair } from "../ui.js";
 import { exigirLogin, sair, destinoPorPerfil } from "../sessao.js";
 
 const ROTULO = { ADMIN: "Proprietário", BARBEIRO: "Profissional" };
+
+// Itens do menu (ordem e nomes do painel do colega)
+const MENU = [
+  { href: "index.html", ico: "📊", rotulo: "Dashboard", perfis: ["ADMIN"] },
+  { href: "pedidos.html", ico: "📦", rotulo: "Pedidos", perfis: ["ADMIN"] },
+  { href: "agendamentos.html", ico: "📅", rotulo: "Agendamentos", perfis: ["ADMIN", "BARBEIRO"] },
+  { href: "clientes.html", ico: "👥", rotulo: "Clientes", perfis: ["ADMIN"] },
+  { href: "equipe.html", ico: "💈", rotulo: "Profissionais", perfis: ["ADMIN"] },
+  { href: "servicos.html", ico: "✂️", rotulo: "Serviços", perfis: ["ADMIN"] },
+  { href: "produtos.html", ico: "🛍️", rotulo: "Produtos", perfis: ["ADMIN"] },
+  { href: "conteudo.html", ico: "🖼️", rotulo: "Galeria e conteúdo", perfis: ["ADMIN"] },
+  { href: "configuracoes.html", ico: "⚙️", rotulo: "Site e Config", perfis: ["ADMIN"] },
+];
+
+function paginaAtual() {
+  return location.pathname.split("/").pop() || "index.html";
+}
 
 // perfis: quem pode abrir esta página (padrão: só ADMIN)
 export async function iniciarPainel(perfis = ["ADMIN"]) {
@@ -13,42 +31,29 @@ export async function iniciarPainel(perfis = ["ADMIN"]) {
     return new Promise(() => {});
   }
 
-  if (usuario.tipo_perfil !== "ADMIN") $$("[data-so-admin]").forEach((el) => el.remove());
+  const atual = paginaAtual();
+  const nav = $("#adminNav");
+  if (nav) {
+    nav.innerHTML = MENU.filter((i) => i.perfis.includes(usuario.tipo_perfil))
+      .map(
+        (i) => html`<a href="${i.href}" class="${i.href === atual ? "active" : ""}" ${i.href === atual ? html`aria-current="page"` : ""}>
+          <span class="nav-ico" aria-hidden="true">${i.ico}</span><span>${i.rotulo}</span></a>`
+      )
+      .join("");
+  }
+
+  // Elementos marcados como exclusivos do administrador somem para o profissional
+  if (usuario.tipo_perfil !== "ADMIN") document.querySelectorAll("[data-so-admin]").forEach((el) => el.remove());
 
   const cartao = $(".sidebar-user");
   if (cartao) {
     cartao.innerHTML = html`
       ${avatar(usuario)}
-      <div>
-        <div class="name">${usuario.nome_completo}</div>
+      <div style="min-width:0">
+        <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${usuario.nome_completo}</div>
         <div class="role">${ROTULO[usuario.tipo_perfil] ?? usuario.tipo_perfil}</div>
       </div>`.toString();
   }
   ligarSair(sair);
-
-  // Menu lateral no celular
-  const sidebar = $("#sidebar");
-  const cabecalho = $(".admin-header");
-  if (sidebar && cabecalho && !$(".admin-menu-toggle")) {
-    const botao = document.createElement("button");
-    botao.type = "button";
-    botao.className = "btn btn-ghost btn-icon admin-menu-toggle";
-    botao.setAttribute("aria-label", "Abrir menu");
-    botao.setAttribute("aria-controls", "sidebar");
-    botao.setAttribute("aria-expanded", "false");
-    botao.textContent = "☰";
-    cabecalho.prepend(botao);
-    botao.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const aberto = sidebar.classList.toggle("open");
-      botao.setAttribute("aria-expanded", String(aberto));
-    });
-    document.addEventListener("click", (e) => {
-      if (sidebar.classList.contains("open") && !sidebar.contains(e.target)) {
-        sidebar.classList.remove("open");
-        botao.setAttribute("aria-expanded", "false");
-      }
-    });
-  }
   return usuario;
 }

@@ -5,236 +5,223 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meu Perfil — Studio Corte</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/variables.css">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/perfil.css">
+  <link rel="stylesheet" href="css/complementos.css">
 </head>
 <body>
+  <a href="#main" class="skip-link">Pular para o conteúdo</a>
   <header class="header">
     <div class="container header-inner">
       <a href="index.html" class="logo">Studio<span>Corte</span></a>
-      <nav class="nav">
-        <a href="index.html" class="nav-link">Início</a>
-        <a href="perfil.html" class="nav-link active">Perfil</a>
-        <a href="#agendamentos" class="nav-link">Agendamentos</a>
+      <nav class="nav" id="mainNav" aria-label="Principal">
+        <a href="index.html#servicos" class="nav-link">Serviços</a>
+        <a href="index.html#produtos" class="nav-link">Produtos</a>
+        <a href="index.html#agendar" class="nav-link">Agendar</a>
       </nav>
       <div class="nav-actions">
         <a href="admin/index.html" class="btn btn-outline btn-sm" id="linkPainel" hidden>Painel</a>
-        <button class="btn btn-ghost btn-sm" data-sair>Sair</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-sair>Sair</button>
+        <button class="mobile-toggle btn-icon" id="mobileToggle" aria-label="Abrir menu" aria-expanded="false" aria-controls="mainNav">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
       </div>
     </div>
   </header>
 
-  <main class="container" style="padding-top:24px;padding-bottom:60px;">
-    <!-- Hero do perfil -->
-    <div class="perfil-hero" id="perfilHero">
-      <div class="perfil-hero-actions">
-        <button class="btn btn-outline btn-sm" id="btnCapa">📷 Editar Capa</button>
-        <button class="btn btn-primary btn-sm" id="btnEditarPerfil">✏️ Editar Perfil</button>
+  <main id="main" class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12)">
+    <div class="perfil-header">
+      <div class="perfil-banner" id="perfilBanner">
+        <button type="button" class="media-btn" id="btnCapa" title="Alterar apenas o banner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Banner
+        </button>
+      </div>
+      <div class="perfil-avatar-wrap">
+        <span class="perfil-avatar avatar-iniciais" id="userAvatar" aria-hidden="true"></span>
+        <button type="button" class="media-btn" id="btnFoto" title="Alterar apenas a foto" aria-label="Alterar foto de perfil">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </button>
       </div>
       <div class="perfil-info">
-        <span class="avatar avatar-lg avatar-iniciais" id="userAvatar" aria-hidden="true"></span>
-        <div class="perfil-meta">
-          <h1 id="userNome"><span class="skeleton" style="display:inline-block;width:180px;height:1.2em;"></span></h1>
-          <div class="username" id="userHandle"></div>
-          <p class="perfil-bio" id="userBio"></p>
+        <h1 id="userNome"><span class="skeleton" style="display:inline-block;width:180px;height:1.2em;"></span></h1>
+        <div class="perfil-meta" id="userMeta"></div>
+        <p class="text-secondary" style="margin-bottom:12px;font-size:0.95rem" id="userBio" hidden></p>
+        <div class="social-row" id="socialPublicRow"></div>
+        <div class="perfil-actions">
+          <a href="index.html#agendar" class="btn btn-primary btn-sm">Marcar horário</a>
+          <button type="button" class="btn btn-outline btn-sm" data-ir-aba="dados">Editar dados</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btnEnviarCorte">⬆ Enviar imagem de corte</button>
         </div>
       </div>
     </div>
 
-    <!-- Informações + Redes -->
-    <div class="perfil-grid" style="margin-top:48px;">
-      <div class="card">
-        <h2 style="font-size:1rem;margin-bottom:16px;">👤 Informações Pessoais</h2>
-        <div style="display:flex;flex-direction:column;gap:12px;font-size:0.9rem;">
-          <div><span class="text-muted">E-MAIL</span><br><span id="userEmail">—</span></div>
-          <div><span class="text-muted">TELEFONE</span><br><span id="userTel">—</span></div>
-          <div><span class="text-muted">DATA DE NASCIMENTO</span><br><span id="userNasc">—</span></div>
-          <div><span class="text-muted">ENDEREÇO</span><br><span id="userEnd">—</span></div>
+    <div class="perfil-tabs" role="tablist" aria-label="Seções do perfil">
+      <button type="button" class="perfil-tab" role="tab" data-tab="agendamentos" aria-controls="tab-agendamentos">Agendamentos</button>
+      <button type="button" class="perfil-tab" role="tab" data-tab="favoritos" aria-controls="tab-favoritos">Favoritos</button>
+      <button type="button" class="perfil-tab" role="tab" data-tab="historico" aria-controls="tab-historico">Histórico de compras</button>
+      <button type="button" class="perfil-tab" role="tab" data-tab="redes" aria-controls="tab-redes">Redes sociais</button>
+      <button type="button" class="perfil-tab" role="tab" data-tab="conta" aria-controls="tab-conta">Conta / login</button>
+      <button type="button" class="perfil-tab" role="tab" data-tab="dados" aria-controls="tab-dados">Dados pessoais</button>
+    </div>
+
+    <div class="perfil-grid">
+      <aside class="perfil-sidebar">
+        <div class="card">
+          <h3>Resumo</h3>
+          <div class="stat-row"><span>Visitas</span><span id="statVisitas">—</span></div>
+          <div class="stat-row"><span>Total gasto</span><span id="statGasto">—</span></div>
+          <div class="stat-row"><span>Serviço favorito</span><span id="statFavorito">—</span></div>
+          <div class="stat-row"><span>Profissional</span><span id="statProfissional">—</span></div>
+          <div class="stat-row"><span>Cliente desde</span><span id="statMembro">—</span></div>
         </div>
-      </div>
-      <div class="card">
-        <h2 style="font-size:1rem;margin-bottom:16px;">🌐 Redes Sociais</h2>
-        <div style="display:flex;flex-direction:column;gap:12px;font-size:0.9rem;">
-          <div id="redesLista" style="display:flex;flex-direction:column;gap:12px;"></div>
-          <button class="btn btn-outline btn-sm" style="margin-top:8px;align-self:flex-start;" id="btnRedes">+ Adicionar rede social</button>
+        <div class="card">
+          <h3>Seus dados</h3>
+          <p class="text-muted" style="font-size:0.85rem">E-mail, telefone e CPF ficam visíveis só para você e para o salão.</p>
+        </div>
+      </aside>
+
+      <div>
+        <!-- AGENDAMENTOS -->
+        <div id="tab-agendamentos" class="tab-panel" role="tabpanel">
+          <div class="card" style="overflow:hidden">
+            <div style="padding:var(--space-5) var(--space-5) 0"><h3 style="margin-bottom:4px">Seus agendamentos</h3>
+              <p class="text-muted" style="font-size:0.85rem">Cancele com antecedência e avalie os atendimentos concluídos.</p></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Data</th><th>Serviço</th><th>Profissional</th><th>Status</th><th>Avaliação</th><th>Valor</th></tr></thead>
+                <tbody id="historicoServicos"><tr><td colspan="6" class="estado-vazio">Carregando...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- FAVORITOS -->
+        <div id="tab-favoritos" class="tab-panel" role="tabpanel" hidden>
+          <div class="card" style="padding:var(--space-5)">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+              <h3>Cortes favoritos</h3>
+              <a href="catalogo.html?tipo=cortes" class="btn btn-outline btn-sm">Ver galeria</a>
+            </div>
+            <div class="favoritos-grid" id="favoritosGrid"></div>
+          </div>
+        </div>
+
+        <!-- HISTÓRICO DE COMPRAS -->
+        <div id="tab-historico" class="tab-panel" role="tabpanel" hidden>
+          <div class="card" style="overflow:hidden">
+            <div style="padding:var(--space-5) var(--space-5) 0"><h3 style="margin-bottom:4px">Histórico de compras</h3>
+              <p class="text-muted" style="font-size:0.85rem">Pagamento e retirada no salão. Pedidos pendentes podem ser cancelados.</p></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Data</th><th>Produto</th><th>Qtd</th><th>Valor</th><th>Status</th></tr></thead>
+                <tbody id="historicoCompras"><tr><td colspan="5" class="estado-vazio">Carregando...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- REDES SOCIAIS -->
+        <div id="tab-redes" class="tab-panel" role="tabpanel" hidden>
+          <form class="card" style="padding:var(--space-5)" id="formRedes" novalidate>
+            <h3 style="margin-bottom:12px">Suas redes e contatos</h3>
+            <div id="alertaRedes" class="form-alert" hidden></div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="pInstagram">Instagram</label>
+                <input class="form-input" id="pInstagram" name="instagram" placeholder="@seuusuario" maxlength="80">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="pTiktok">TikTok</label>
+                <input class="form-input" id="pTiktok" name="tiktok" placeholder="@seuusuario" maxlength="80">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="pWhatsapp">WhatsApp</label>
+              <input class="form-input" id="pWhatsapp" name="whatsapp" type="tel" placeholder="(11) 99999-0000">
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Salvar redes</button>
+          </form>
+        </div>
+
+        <!-- CONTA / LOGIN -->
+        <div id="tab-conta" class="tab-panel" role="tabpanel" hidden>
+          <form class="card" style="padding:var(--space-5)" id="formSenha" novalidate>
+            <h3 style="margin-bottom:12px">E-mail e senha de acesso</h3>
+            <div id="alertaSenha" class="form-alert" hidden></div>
+            <div class="form-group">
+              <label class="form-label" for="pEmail">E-mail de login</label>
+              <input class="form-input" id="pEmail" type="email" readonly>
+              <small class="form-hint">Para trocar o e-mail de login, fale com o salão.</small>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="sAtual">Senha atual</label>
+              <input class="form-input" id="sAtual" name="senha_atual" type="password" autocomplete="current-password" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="sNova">Nova senha</label>
+                <input class="form-input" id="sNova" name="nova_senha" type="password" autocomplete="new-password" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="sConfirmar">Confirmar nova senha</label>
+                <input class="form-input" id="sConfirmar" name="confirmar" type="password" autocomplete="new-password" required>
+              </div>
+            </div>
+            <small class="form-hint" style="margin:-8px 0 16px">Mínimo de 8 caracteres, com letras e números. As outras sessões abertas serão encerradas.</small>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <button type="submit" class="btn btn-primary btn-sm">Alterar senha</button>
+              <a href="recuperar-senha.html" class="btn btn-ghost btn-sm">Esqueci a senha atual</a>
+            </div>
+          </form>
+        </div>
+
+        <!-- DADOS PESSOAIS -->
+        <div id="tab-dados" class="tab-panel" role="tabpanel" hidden>
+          <form class="card" style="padding:var(--space-5)" id="formPerfil" novalidate>
+            <h3 style="margin-bottom:12px">Dados pessoais</h3>
+            <div id="alertaPerfil" class="form-alert" hidden></div>
+            <div class="form-group">
+              <label class="form-label" for="pNome">Nome</label>
+              <input class="form-input" id="pNome" name="nome_completo" maxlength="120" required autocomplete="name">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="pTelefone">Telefone</label>
+                <input class="form-input" id="pTelefone" name="telefone" type="tel" autocomplete="tel">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="pNascimento">Nascimento</label>
+                <input class="form-input" id="pNascimento" name="data_nascimento" type="date">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="pCpf">CPF (opcional)</label>
+                <input class="form-input" id="pCpf" name="cpf" inputmode="numeric">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="pEndereco">Endereço</label>
+                <input class="form-input" id="pEndereco" name="endereco" maxlength="200" placeholder="Cidade, UF" autocomplete="address-level2">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="pBio">Bio</label>
+              <textarea class="form-textarea" id="pBio" name="bio" rows="2" maxlength="300" placeholder="Conte um pouco sobre seu estilo"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <button type="submit" class="btn btn-primary btn-sm">Salvar dados</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btnRemoverFoto" hidden>Remover foto de perfil</button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
-
-    <!-- Cortes Favoritos -->
-    <section class="perfil-section">
-      <div class="flex justify-between items-center" style="margin-bottom:16px;">
-        <h2>❤️ Cortes Favoritos</h2>
-        <button class="btn btn-outline btn-sm" id="btnEnviarCorte">⬆ Enviar imagem de corte</button>
-      </div>
-      <div class="favoritos-grid" id="favoritosGrid"></div>
-    </section>
-
-    <!-- Histórico de Serviços -->
-    <section class="perfil-section" id="agendamentos">
-      <h2>📅 Histórico de Serviços</h2>
-      <div class="card" style="padding:0;overflow:hidden;">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Serviço</th>
-                <th>Profissional</th>
-                <th>Status</th>
-                <th>Avaliação</th>
-                <th>Valor</th>
-              </tr>
-            </thead>
-            <tbody id="historicoServicos">
-              <tr><td colspan="6" class="estado-vazio">Carregando...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- Histórico de Compras -->
-    <section class="perfil-section">
-      <h2>🛒 Histórico de Compras</h2>
-      <div class="card" style="padding:0;overflow:hidden;">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Data</th><th>Produto</th><th>Qtd</th><th>Valor</th><th>Status</th></tr>
-            </thead>
-            <tbody id="historicoCompras">
-              <tr><td colspan="5" class="estado-vazio">Carregando...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- Carrinho -->
-    <section class="perfil-section" id="carrinhoSection">
-      <h2>🛍️ Meu Carrinho</h2>
-      <div id="carrinhoContent" class="carrinho-lista"></div>
-    </section>
-
-    <!-- Estatísticas -->
-    <section class="perfil-section">
-      <h2>📊 Resumo Geral / Estatísticas</h2>
-      <div class="stats-row">
-        <div class="stat-item"><div class="valor" id="statVisitas">—</div><div class="label">Visitas</div></div>
-        <div class="stat-item"><div class="valor" style="color:var(--accent)" id="statFavorito">—</div><div class="label">Favorito</div></div>
-        <div class="stat-item"><div class="valor" id="statProfissional">—</div><div class="label">Profissional</div></div>
-        <div class="stat-item"><div class="valor" id="statMembro">—</div><div class="label">Membro desde</div></div>
-        <div class="stat-item"><div class="valor" style="color:var(--success)" id="statGasto">—</div><div class="label">Total gasto</div></div>
-      </div>
-    </section>
   </main>
-
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-inner">
-        <a href="index.html" class="logo">Studio<span>Corte</span></a>
-        <p class="footer-copy" style="margin:0;border:0;padding:0;">© 2026 Studio Corte</p>
-      </div>
-    </div>
-  </footer>
-
-  <!-- Editar perfil -->
-  <dialog class="modal" id="modalPerfil" aria-labelledby="tituloModalPerfil">
-    <form class="modal-body" id="formPerfil" novalidate>
-      <h3 class="modal-title" id="tituloModalPerfil">Editar perfil</h3>
-      <div id="alertaPerfil" class="form-alert" hidden></div>
-      <div class="form-group" style="flex-direction:row;align-items:center;gap:16px;">
-        <span id="previaAvatar"></span>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button type="button" class="btn btn-outline btn-sm" id="btnTrocarFoto">📷 Trocar foto</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="btnRemoverFoto">Remover</button>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="pNome">Nome completo</label>
-        <input class="form-input" id="pNome" name="nome_completo" maxlength="120" required autocomplete="name">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="pTelefone">Telefone</label>
-          <input class="form-input" id="pTelefone" name="telefone" type="tel" autocomplete="tel">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="pNascimento">Data de nascimento</label>
-          <input class="form-input" id="pNascimento" name="data_nascimento" type="date">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="pCpf">CPF (opcional)</label>
-          <input class="form-input" id="pCpf" name="cpf" inputmode="numeric">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="pEmail">E-mail</label>
-          <input class="form-input" id="pEmail" type="email" readonly>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="pEndereco">Endereço</label>
-        <input class="form-input" id="pEndereco" name="endereco" maxlength="200" placeholder="Cidade, UF" autocomplete="address-level2">
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="pBio">Bio</label>
-        <textarea class="form-input" id="pBio" name="bio" rows="2" maxlength="300" placeholder="Conte um pouco sobre seu estilo"></textarea>
-      </div>
-      <h4 style="font-size:0.95rem;margin:8px 0 12px;" id="tituloRedes">🌐 Redes sociais</h4>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="pInstagram">Instagram</label>
-          <input class="form-input" id="pInstagram" name="instagram" placeholder="@seuusuario" maxlength="80">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="pTiktok">TikTok</label>
-          <input class="form-input" id="pTiktok" name="tiktok" placeholder="@seuusuario" maxlength="80">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="pWhatsapp">WhatsApp</label>
-        <input class="form-input" id="pWhatsapp" name="whatsapp" type="tel" placeholder="(11) 99999-0000">
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-ghost btn-sm" id="btnAbrirSenha">🔒 Alterar senha</button>
-        <span style="flex:1"></span>
-        <button type="button" class="btn btn-outline btn-sm" data-fechar>Cancelar</button>
-        <button type="submit" class="btn btn-primary btn-sm">Salvar</button>
-      </div>
-    </form>
-  </dialog>
-
-  <!-- Alterar senha -->
-  <dialog class="modal modal-sm" id="modalSenha" aria-labelledby="tituloModalSenha">
-    <form class="modal-body" id="formSenha" novalidate>
-      <h3 class="modal-title" id="tituloModalSenha">Alterar senha</h3>
-      <div id="alertaSenha" class="form-alert" hidden></div>
-      <div class="form-group">
-        <label class="form-label" for="sAtual">Senha atual</label>
-        <input class="form-input" id="sAtual" name="senha_atual" type="password" autocomplete="current-password" required>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="sNova">Nova senha</label>
-        <input class="form-input" id="sNova" name="nova_senha" type="password" autocomplete="new-password" required>
-        <small class="form-hint">Mínimo de 8 caracteres, com letras e números.</small>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="sConfirmar">Confirmar nova senha</label>
-        <input class="form-input" id="sConfirmar" name="confirmar" type="password" autocomplete="new-password" required>
-      </div>
-      <p class="form-hint" style="margin-top:4px;">Não lembra a senha atual? <a href="recuperar-senha.html" style="color:var(--accent);">Receba um link por e-mail</a>.</p>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-outline btn-sm" data-fechar>Cancelar</button>
-        <button type="submit" class="btn btn-primary btn-sm">Alterar senha</button>
-      </div>
-    </form>
-  </dialog>
 
   <!-- Enviar imagem de corte -->
   <dialog class="modal modal-sm" id="modalCorte" aria-labelledby="tituloModalCorte">
@@ -246,11 +233,12 @@
         <input class="form-input" id="cNome" name="nome" maxlength="100" placeholder="Ex.: Mullet moderno" required>
       </div>
       <div class="form-group">
-        <label class="form-label" for="cArquivo">Imagem (JPG, PNG ou WebP — fotos grandes são reduzidas automaticamente)</label>
+        <label class="form-label" for="cArquivo">Imagem do dispositivo</label>
         <input class="form-input" id="cArquivo" name="arquivo" type="file" accept="image/jpeg,image/png,image/webp" required>
+        <small class="form-hint">JPG, PNG ou WebP. Fotos grandes são reduzidas automaticamente.</small>
       </div>
       <div class="modal-actions">
-        <button type="button" class="btn btn-outline btn-sm" data-fechar>Cancelar</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-fechar>Cancelar</button>
         <button type="submit" class="btn btn-primary btn-sm">Enviar</button>
       </div>
     </form>
@@ -264,14 +252,14 @@
       <div id="alertaAvaliar" class="form-alert" hidden></div>
       <div class="form-group">
         <span class="form-label">Nota</span>
-        <div class="stars" id="seletorNota" role="radiogroup" aria-label="Nota de 1 a 5" style="font-size:1.6rem;display:flex;gap:4px;"></div>
+        <div class="estrelas-input" id="seletorNota" role="radiogroup" aria-label="Nota de 1 a 5"></div>
       </div>
       <div class="form-group">
         <label class="form-label" for="aComentario">Comentário (opcional)</label>
-        <textarea class="form-input" id="aComentario" name="comentario" rows="3" maxlength="1000" placeholder="Conte como foi o atendimento"></textarea>
+        <textarea class="form-textarea" id="aComentario" name="comentario" rows="3" maxlength="1000" placeholder="Conte como foi o atendimento"></textarea>
       </div>
       <div class="modal-actions">
-        <button type="button" class="btn btn-outline btn-sm" data-fechar>Cancelar</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-fechar>Cancelar</button>
         <button type="submit" class="btn btn-primary btn-sm">Enviar avaliação</button>
       </div>
     </form>

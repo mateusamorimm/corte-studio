@@ -1,6 +1,21 @@
 // Todas as avaliações públicas: resumo (média e distribuição), filtro por nota e paginação.
 import { get } from "../api.js";
-import { $, $$, html, estrelas, cartaoAvaliacao, comCarregamento, toast } from "../ui.js";
+import { $, $$, html, estrelas, avatar, tempoRelativo, comCarregamento, toast } from "../ui.js";
+
+// Cartão detalhado (layout da página de comentários do colega)
+const cartao = (a) => html`
+  <article class="comentario-detail">
+    <div class="header-row">
+      ${avatar({ nome_completo: a.cliente, avatar_url: a.avatar_url })}
+      <div>
+        <div style="font-weight:600">${a.cliente}</div>
+        <div class="text-muted" style="font-size:0.8rem">${tempoRelativo(a.data_avaliacao)}</div>
+      </div>
+    </div>
+    <div><span class="alvo-badge">Serviço: ${a.servico}</span> <span class="alvo-badge">Profissional: ${a.profissional}</span></div>
+    <div class="stars-gold" aria-label="Nota ${a.nota} de 5">${estrelas(a.nota)}</div>
+    <p>${a.comentario || "Avaliou o atendimento."}</p>
+  </article>`;
 import { iniciarVitrine } from "../vitrine.js";
 
 const POR_PAGINA = 12;
@@ -36,12 +51,12 @@ async function carregar({ acrescentar = false } = {}) {
   const r = await get(`/avaliacoes?${q}`);
   paginas = r.paginas;
   if (pagina === 1) renderResumo(r);
-  const cartoes = r.avaliacoes.map(cartaoAvaliacao).join("");
+  const cartoes = r.avaliacoes.map(cartao).join("");
   if (acrescentar) lista.insertAdjacentHTML("beforeend", cartoes);
   else {
     lista.innerHTML =
       cartoes ||
-      html`<p class="estado-vazio" style="grid-column:1/-1;">${
+      html`<p class="estado-vazio">${
         r.total ? "Nenhuma avaliação com essa nota." : "Ainda não há avaliações. Depois do seu atendimento, avalie pelo seu perfil."
       }</p>`.toString();
   }
@@ -53,7 +68,7 @@ $(".filter-bar").addEventListener("click", async (e) => {
   if (!chip) return;
   nota = chip.dataset.nota;
   pagina = 1;
-  $$(".filter-bar .chip").forEach((c) => c.setAttribute("aria-pressed", String(c === chip)));
+  $$(".filter-bar .chip").forEach((c) => { c.setAttribute("aria-pressed", String(c === chip)); c.classList.toggle("active", c === chip); });
   try {
     await carregar();
   } catch (err) {
@@ -77,5 +92,5 @@ iniciarVitrine();
 try {
   await carregar();
 } catch {
-  $("#lista").innerHTML = html`<p class="estado-vazio" style="grid-column:1/-1;">Não foi possível carregar as avaliações.</p>`.toString();
+  $("#lista").innerHTML = html`<p class="estado-vazio">Não foi possível carregar as avaliações.</p>`.toString();
 }

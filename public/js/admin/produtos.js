@@ -1,5 +1,5 @@
 import { get, post, put, del } from "../api.js";
-import { $, html, moeda, toast, alertaForm, comCarregamento, confirmar, mostrarErrosCampos, limparErrosCampos, urlSegura } from "../ui.js";
+import { $, html, moeda, toast, alertaForm, comCarregamento, confirmar, mostrarErrosCampos, limparErrosCampos, urlSegura, abrirModal } from "../ui.js";
 import { iniciarPainel } from "./comum.js";
 import { campoImagem } from "./imagemCampo.js";
 
@@ -67,8 +67,7 @@ function abrir(p = null) {
     form.ativo.checked = p.ativo;
   }
   imagem.atualizar();
-  caixa.style.display = "block";
-  caixa.scrollIntoView({ behavior: "smooth" });
+  abrirModal(caixa);
 }
 
 const dados = () => ({
@@ -82,7 +81,7 @@ const dados = () => ({
 });
 
 $("#btnNovoProduto").addEventListener("click", () => abrir());
-$("#btnCancelar").addEventListener("click", () => (caixa.style.display = "none"));
+$("#btnCancelar").addEventListener("click", () => caixa.close());
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -99,7 +98,7 @@ form.addEventListener("submit", async (e) => {
     try {
       if (id) await put(`/admin/produtos/${id}`, dados());
       else await post("/admin/produtos", dados());
-      caixa.style.display = "none";
+      caixa.close();
       toast(id ? "Produto atualizado." : "Produto cadastrado.", "sucesso");
       await carregar();
     } catch (err) {

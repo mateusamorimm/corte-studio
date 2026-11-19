@@ -5,44 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recuperar senha — Studio Corte</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/variables.css">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="css/complementos.css">
 </head>
 <body>
   <div class="login-page">
-    <div class="login-visual">
-      <div class="login-visual-content">
-        <span class="tag">RECUPERAÇÃO</span>
-        <h2>Esqueceu a senha? Sem problema.</h2>
-        <p>Informe o e-mail da sua conta. Enviaremos um link seguro, válido por 60 minutos, para você criar uma nova senha.</p>
-      </div>
-    </div>
+    <main class="login-card">
+      <a href="index.html" class="logo">Studio<span>Corte</span></a>
+      <h1>Recuperar senha</h1>
+      <p class="subtitle">Informe o e-mail da conta. Enviaremos um link para criar uma nova senha.</p>
 
-    <main class="login-form-side">
-      <div class="login-box">
-        <a href="index.html" class="logo">Studio<span>Corte</span></a>
-        <p class="tagline">Recuperação de acesso</p>
+      <div id="alerta" class="form-alert" hidden></div>
 
-        <div id="alerta" class="form-alert" hidden></div>
+      <form id="recoveryForm" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="email">E-mail da conta</label>
+          <input class="form-input" type="email" id="email" name="email" required autocomplete="email" placeholder="seu@email.com">
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">Enviar link</button>
+      </form>
 
-        <form id="recoveryForm" novalidate>
-          <div class="form-group">
-            <label class="form-label" for="email">E-mail cadastrado</label>
-            <div class="input-with-icon">
-              <span class="icon" aria-hidden="true">✉️</span>
-              <input type="email" class="form-input" id="email" name="email" placeholder="seu.email@exemplo.com" autocomplete="email" required>
-            </div>
-          </div>
-
-          <button type="submit" class="btn btn-primary btn-full">Enviar link de redefinição</button>
-        </form>
-
-        <p class="login-footer">
-          Lembrou a senha? <a href="login.html">Voltar ao login</a>
-        </p>
+      <div class="login-footer">
+        <a href="login.html">Voltar ao login</a> · <a href="index.html">Voltar ao site</a>
       </div>
     </main>
   </div>

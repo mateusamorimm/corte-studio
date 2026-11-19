@@ -10,8 +10,7 @@ import {
   confirmar,
   mostrarErrosCampos,
   limparErrosCampos,
-  telefoneFormatado,
-} from "../ui.js";
+  telefoneFormatado, abrirModal } from "../ui.js";
 import { regras, validarForm, mascaraTelefone } from "../validacao.js";
 import { iniciarPainel } from "./comum.js";
 import { campoImagem } from "./imagemCampo.js";
@@ -154,12 +153,11 @@ function abrir(m = null) {
         .join("")
     : html`<span class="text-muted">Cadastre serviços primeiro.</span>`.toString();
   montarSemana(m?.disponibilidade ?? []);
-  caixa.style.display = "block";
-  caixa.scrollIntoView({ behavior: "smooth" });
+  abrirModal(caixa);
 }
 
 $("#btnNovo").addEventListener("click", () => abrir());
-$("#btnCancelar").addEventListener("click", () => (caixa.style.display = "none"));
+$("#btnCancelar").addEventListener("click", () => caixa.close());
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -188,7 +186,7 @@ form.addEventListener("submit", async (e) => {
   await comCarregamento(form.querySelector("[type=submit]"), async () => {
     try {
       const r = id ? await put(`/admin/equipe/${id}`, dados) : await post("/admin/equipe", dados);
-      caixa.style.display = "none";
+      caixa.close();
       toast(id ? "Profissional atualizado." : "Profissional cadastrado. O convite foi enviado por e-mail.", "sucesso", 6000);
       if (r.aviso) toast(r.aviso, "aviso", 8000);
       await carregar();

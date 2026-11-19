@@ -9,6 +9,7 @@ import {
   moeda,
   telefoneFormatado,
   cartaoAvaliacao,
+  abrirModal,
   toast,
   alertaForm,
   comCarregamento,
@@ -19,6 +20,19 @@ import {
 import { iniciarVitrine } from "../vitrine.js";
 import { adicionarAoCarrinho } from "../carrinho.js";
 import { linksMapa } from "../contatos.js";
+import { cartaoCorte, cartaoServico, cartaoProduto, precoServico, aplicarPlaceholders } from "../cartoes.js";
+
+// Modal de agendamento (layout do colega): botões com data-abrir-agendamento abrem o formulário
+function abrirAgendamento() {
+  const dlg = document.getElementById("modalAgendar");
+  if (!dlg.open) abrirModal(dlg);
+}
+document.addEventListener("click", (e) => {
+  const gatilho = e.target.closest("[data-abrir-agendamento]");
+  if (!gatilho) return;
+  e.preventDefault();
+  abrirAgendamento();
+});
 
 const TITULO_PADRAO = "Seu próximo corte, pensado antes de sentar na cadeira.";
 const RASCUNHO = "sc_rascunho_agendamento"; // seleção do formulário guardada só nesta aba, até o login
@@ -35,7 +49,7 @@ function textoInfo(id, valor) {
   const el = $(id);
   if (!el) return;
   el.hidden = !valor;
-  el.querySelector("span").textContent = valor ?? "";
+  el.querySelector("[data-valor]").textContent = valor ?? "";
 }
 
 function linkExterno(el, url) {
@@ -72,9 +86,8 @@ function montarConfig() {
   linkExterno($("#btnMapa"), mapa.abrir);
   linkExterno($("#btnRota"), mapa.rota);
   if (mapa.embed) {
-    $("#mapa").innerHTML = html`<iframe src="${mapa.embed}" title="Mapa: ${c.endereco ?? c.nome_salao}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" style="width:100%;height:100%;border:0;border-radius:inherit;"></iframe>`.toString();
-    $("#mapa").style.padding = "0";
-    $("#mapa").style.overflow = "hidden";
+    $("#mapa").innerHTML = html`<iframe class="is-visible" src="${mapa.embed}" title="Mapa: ${c.endereco ?? c.nome_salao}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`.toString();
+    $("#mapa").classList.add("has-map");
   }
 }
 
@@ -86,17 +99,7 @@ function renderCortes() {
     grid.innerHTML = html`<p class="estado-vazio" style="grid-column:1/-1;">Em breve, novos cortes na galeria.</p>`.toString();
     return;
   }
-  grid.innerHTML = cortes
-    .map(
-      (c) => html`
-      <article class="corte-card">
-        <img src="${urlSegura(c.imagem_url)}" alt="${c.nome_corte}" loading="lazy" data-fallback="corte">
-        <button type="button" class="heart ${c.favorito ? "ativo" : ""}" data-favorito="${c.id_corte}"
-          aria-pressed="${c.favorito ? "true" : "false"}" aria-label="${c.favorito ? "Remover dos favoritos" : "Salvar nos favoritos"}: ${c.nome_corte}">${c.favorito ? "❤️" : "🤍"}</button>
-        <div class="info"><h3>${c.nome_corte}</h3></div>
-      </article>`
-    )
-    .join("");
+  grid.innerHTML = cortes.slice(0, 8).map(cartaoCorte).join("");
 }
 
 $("#cortesGrid").addEventListener("click", async (e) => {
@@ -124,51 +127,34 @@ $("#cortesGrid").addEventListener("click", async (e) => {
 
 // ───────── Serviços ─────────
 let servicos = [];
-const precoServico = (s) => `${s.preco_a_partir_de ? "A partir de " : ""}${moeda(s.preco)}`;
 function renderServicos() {
   const grid = $("#servicosGrid");
   grid.innerHTML = servicos.length
-    ? servicos
-        .map(
-          (s) => html`
-      <article class="servico-card">
-        <div class="icon">${s.icone || "✂️"}</div>
-        <h3>${s.nome_servico}</h3>
-        <p>${s.descricao ?? ""}</p>
-        <div class="preco">${precoServico(s)}</div>
-      </article>`
-        )
-        .join("")
+    ? servicos.slice(0, 6).map((sv) => cartaoServico(sv)).join("")
     : html`<p class="estado-vazio" style="grid-column:1/-1;">Serviços em atualização.</p>`.toString();
 }
+
+// "Agendar" num serviço: abre o agendamento com ele escolhido
+$("#servicosGrid").addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-agendar-servico]");
+  if (!btn) return;
+  selServico.value = btn.dataset.agendarServico;
+  abrirAgendamento();
+  await carregarProfissionais();
+  carregarHorarios();
+});
 
 // ───────── Produtos ─────────
 let produtos = [];
 function renderProdutos() {
   const secao = $("#produtos");
   if (!produtos.length) {
-    secao.style.display = "none";
+    secao.hidden = true;
     return;
   }
-  secao.style.display = "block";
-  $("#produtosGrid").innerHTML = produtos
-    .map((p) => {
-      const esgotado = p.quantidade_estoque < 1;
-      return html`
-      <article class="produto-card">
-        <img src="${urlSegura(p.imagem_url, "")}" alt="${p.nome_produto}" loading="lazy" data-fallback="produto">
-        <div class="info">
-          <h3>${p.nome_produto}</h3>
-          <div class="preco">${moeda(p.preco)}</div>
-          <button class="btn btn-primary btn-sm" data-produto="${p.id_produto}" ${raw(esgotado ? "disabled" : "")}>${esgotado ? "Esgotado" : "Adicionar"}</button>
-        </div>
-      </article>`;
-    })
-    .join("");
-  // Produto sem imagem: mostra o placeholder direto
-  $("#produtosGrid")
-    .querySelectorAll('img[src=""]')
-    .forEach((img) => img.dispatchEvent(new Event("error")));
+  secao.hidden = false;
+  $("#produtosGrid").innerHTML = produtos.slice(0, 8).map(cartaoProduto).join("");
+  aplicarPlaceholders($("#produtosGrid"));
 }
 
 $("#produtosGrid").addEventListener("click", async (e) => {
@@ -183,7 +169,7 @@ $("#produtosGrid").addEventListener("click", async (e) => {
   }, "Adicionando...");
 });
 
-// ───────── Avaliações (as 3 mais recentes; todas em avaliacoes.html) ─────────
+// ───────── Avaliações (as 3 mais recentes; todas em comentarios.html) ─────────
 async function carregarAvaliacoes() {
   const grid = $("#comentariosGrid");
   try {
@@ -280,15 +266,16 @@ async function restaurarRascunho() {
     r = JSON.parse(sessionStorage.getItem(RASCUNHO) || "null");
     sessionStorage.removeItem(RASCUNHO);
   } catch {
-    return;
+    return false;
   }
-  if (!r) return;
+  if (!r) return false;
   if (r.id_servico && servicos.some((s) => String(s.id_servico) === r.id_servico)) selServico.value = r.id_servico;
   await carregarProfissionais();
   if (r.id_barbeiro) selProf.value = r.id_barbeiro;
   if (r.data && r.data >= inpData.min) inpData.value = r.data;
   if (r.observacao) $("#agMsg").value = r.observacao;
   await carregarHorarios(r.inicio);
+  return true;
 }
 
 function montarFormularioAgendamento() {
@@ -302,7 +289,7 @@ function montarFormularioAgendamento() {
     $("#agNome").value = usuario.nome_completo;
     $("#agTel").value = telefoneFormatado(usuario.telefone ?? "");
     $("#agEmail").value = usuario.email ?? "";
-    $("#agRodape").innerHTML = html`Acompanhe e cancele seus horários em <a href="perfil.html#agendamentos" style="color:var(--accent);">Meu Perfil</a>.`.toString();
+    $("#agRodape").innerHTML = html`Acompanhe e cancele seus horários em <a href="perfil.html#agendamentos" style="color:var(--accent);">Meu perfil</a>.`.toString();
   } else {
     $("#agDadosCliente").hidden = true;
     alertaForm(alerta, "Escolha o serviço e o horário. Para confirmar, entre ou crie sua conta — leva menos de 1 minuto.", "info");
@@ -334,8 +321,8 @@ form.addEventListener("submit", async (e) => {
       $("#agSucessoTexto").textContent = `${agendamento.servico.nome_servico} com ${agendamento.barbeiro.nome_completo} em ${dataCurta(
         agendamento.data_hora_inicio
       )} às ${hora(agendamento.data_hora_inicio)}. O salão vai confirmar o horário em breve.`;
-      form.style.display = "none";
-      $("#agSucesso").style.display = "block";
+      form.hidden = true;
+      $("#agSucesso").hidden = false;
     } catch (err) {
       alertaForm(alerta, err.message);
       if (err.status === 409) carregarHorarios();
@@ -347,8 +334,8 @@ $("#agNovo").addEventListener("click", () => {
   form.reset();
   montarFormularioAgendamento();
   carregarHorarios();
-  $("#agSucesso").style.display = "none";
-  form.style.display = "";
+  $("#agSucesso").hidden = true;
+  form.hidden = false;
 });
 
 // ───────── Inicialização ─────────
@@ -371,11 +358,13 @@ $("#agNovo").addEventListener("click", () => {
   const servicoPedido = new URLSearchParams(location.search).get("servico");
   if (servicoPedido && servicos.some((s) => String(s.id_servico) === servicoPedido)) selServico.value = servicoPedido;
   await carregarProfissionais();
-  if (usuario) await restaurarRascunho();
+  const rascunhoRestaurado = usuario ? await restaurarRascunho() : false;
   if (servicoPedido) carregarHorarios();
   if ([gal, srv, prd].some((r) => r.status === "rejected")) {
     toast("Parte do conteúdo não pôde ser carregada. Atualize a página.", "aviso");
   }
   // Rolagem para a âncora depois que o conteúdo dinâmico foi montado
   if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
+  // Vindo do catálogo (?servico=) ou voltando do login com um rascunho: já abre o agendamento
+  if (servicoPedido || (usuario && rascunhoRestaurado)) abrirAgendamento();
 })();

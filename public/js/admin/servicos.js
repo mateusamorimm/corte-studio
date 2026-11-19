@@ -1,5 +1,5 @@
 import { get, post, put, del } from "../api.js";
-import { $, html, moeda, toast, alertaForm, comCarregamento, confirmar, mostrarErrosCampos, limparErrosCampos } from "../ui.js";
+import { $, html, moeda, toast, alertaForm, comCarregamento, confirmar, mostrarErrosCampos, limparErrosCampos, abrirModal } from "../ui.js";
 import { iniciarPainel } from "./comum.js";
 
 await iniciarPainel(["ADMIN"]);
@@ -59,8 +59,7 @@ function abrir(s = null) {
     form.duracao_minutos.value = 30;
     form.ordem_exibicao.value = servicos.length + 1;
   }
-  caixa.style.display = "block";
-  caixa.scrollIntoView({ behavior: "smooth" });
+  abrirModal(caixa);
 }
 
 const dadosDoForm = (s = {}) => ({
@@ -76,7 +75,7 @@ const dadosDoForm = (s = {}) => ({
 });
 
 $("#btnNovoServico").addEventListener("click", () => abrir());
-$("#btnCancelar").addEventListener("click", () => (caixa.style.display = "none"));
+$("#btnCancelar").addEventListener("click", () => caixa.close());
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -94,7 +93,7 @@ form.addEventListener("submit", async (e) => {
     try {
       if (id) await put(`/admin/servicos/${id}`, dadosDoForm(atual));
       else await post("/admin/servicos", dadosDoForm());
-      caixa.style.display = "none";
+      caixa.close();
       toast(id ? "Serviço atualizado." : "Serviço criado. Lembre-se de vinculá-lo aos profissionais em Equipe.", "sucesso", 6000);
       await carregar();
     } catch (err) {

@@ -29,15 +29,15 @@ const externo = (url) => /^https:/.test(url);
 
 // Balão flutuante: um canal → link direto; vários → abre a lista.
 export function montarBalaoContatos(config) {
-  document.querySelectorAll(".chat-float:not(.contact-fab .chat-float), .contact-fab").forEach((el) => el.remove());
+  document.querySelectorAll("#contactFab, .chat-float").forEach((el) => el.remove());
   const lista = contatosOficiais(config);
   if (!lista.length) return;
 
   const fab = document.createElement("div");
-  fab.className = "contact-fab";
+  fab.id = "contactFab";
   if (lista.length === 1) {
     const c = lista[0];
-    fab.innerHTML = html`<a class="chat-float" href="${c.url}" ${externo(c.url) ? raw('target="_blank" rel="noopener"') : ""} aria-label="${c.rotulo}: ${c.valor}">${ICONE_CHAT}</a>`.toString();
+    fab.innerHTML = html`<a class="contact-fab-btn" href="${c.url}" ${externo(c.url) ? raw('target="_blank" rel="noopener"') : ""} aria-label="${c.rotulo}: ${c.valor}">${ICONE_CHAT}</a>`.toString();
   } else {
     fab.innerHTML = html`
       <div class="contact-fab-panel" id="contactFabPanel" hidden>
@@ -47,7 +47,7 @@ export function montarBalaoContatos(config) {
             <span class="ico" aria-hidden="true">${c.ico}</span><span>${c.rotulo}<small>${c.valor}</small></span></a>`
         )}
       </div>
-      <button type="button" class="chat-float" aria-expanded="false" aria-controls="contactFabPanel" aria-label="Contatos do salão">${ICONE_CHAT}</button>`.toString();
+      <button type="button" class="contact-fab-btn" aria-expanded="false" aria-controls="contactFabPanel" aria-label="Contatos do salão">${ICONE_CHAT}</button>`.toString();
     const painel = $("#contactFabPanel", fab);
     const botao = $("button", fab);
     botao.addEventListener("click", (e) => {

@@ -15,8 +15,7 @@ import {
   telefoneFormatado,
   badgeStatus,
   STATUS_AGENDAMENTO,
-  STATUS_PEDIDO,
-} from "../ui.js";
+  STATUS_PEDIDO, abrirModal } from "../ui.js";
 import { regras, validarForm, mascaraTelefone, mascaraCpf } from "../validacao.js";
 import { iniciarPainel } from "./comum.js";
 
@@ -95,13 +94,12 @@ function abrirFormulario(c = null) {
   }
   $("#grupoConvite").hidden = Boolean(c?.tem_acesso);
   $("#estatisticasCliente").hidden = !c;
-  caixa.style.display = "block";
-  caixa.scrollIntoView({ behavior: "smooth" });
+  abrirModal(caixa);
   form.nome_completo.focus({ preventScroll: true });
 }
 
 $("#btnNovoCliente").addEventListener("click", () => abrirFormulario());
-$("#btnCancelar").addEventListener("click", () => (caixa.style.display = "none"));
+$("#btnCancelar").addEventListener("click", () => caixa.close());
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -129,7 +127,7 @@ form.addEventListener("submit", async (e) => {
   await comCarregamento(form.querySelector("[type=submit]"), async () => {
     try {
       const r = id ? await put(`/admin/clientes/${id}`, dados) : await post("/admin/clientes", dados);
-      caixa.style.display = "none";
+      caixa.close();
       toast(id ? "Cliente atualizado." : "Cliente cadastrado.", "sucesso");
       if (r.aviso) toast(r.aviso, "aviso", 8000);
       else if (dados.enviar_convite) toast("Link de acesso enviado para o e-mail do cliente.", "sucesso");
@@ -146,8 +144,7 @@ async function mostrarHistorico(c) {
   const caixaH = $("#historicoCliente");
   $("#historicoTitulo").textContent = `Histórico — ${c.nome_completo}`;
   $("#historicoBody").innerHTML = html`<tr><td colspan="5" class="estado-vazio">Carregando...</td></tr>`.toString();
-  caixaH.style.display = "block";
-  caixaH.scrollIntoView({ behavior: "smooth" });
+  abrirModal(caixaH);
   try {
     const { agendamentos, pedidos } = await get(`/admin/clientes/${c.id_usuario}`);
     const linhas = [

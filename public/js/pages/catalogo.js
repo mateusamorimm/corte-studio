@@ -1,8 +1,9 @@
 // Catálogo: serviços, cortes e produtos numa página só, com filtro por tipo e busca.
 import { get, put, del } from "../api.js";
-import { $, $$, html, raw, urlSegura, moeda, toast, comCarregamento } from "../ui.js";
+import { $, $$, html, toast, comCarregamento } from "../ui.js";
 import { iniciarVitrine } from "../vitrine.js";
 import { adicionarAoCarrinho } from "../carrinho.js";
+import { cartaoCorte, cartaoServico, cartaoProduto, aplicarPlaceholders } from "../cartoes.js";
 
 const TIPOS = ["todos", "servicos", "cortes", "produtos"];
 let usuario = null;
@@ -13,38 +14,7 @@ let busca = "";
 const normalizar = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const combina = (...campos) => !busca || campos.some((c) => normalizar(c).includes(busca));
 
-const precoServico = (s) => `${s.preco_a_partir_de ? "A partir de " : ""}${moeda(s.preco)}`;
-
-const cartaoServico = (s) => html`
-  <article class="servico-card">
-    <div class="icon">${s.icone || "✂️"}</div>
-    <h3>${s.nome_servico}</h3>
-    <p>${s.descricao ?? ""}</p>
-    <div class="preco">${precoServico(s)} <span class="text-muted" style="font-size:0.8rem;font-weight:400;">· ${s.duracao_minutos} min</span></div>
-    <a class="btn btn-outline btn-sm" style="margin-top:16px;" href="${`index.html?servico=${s.id_servico}#agendar`}">Agendar</a>
-  </article>`;
-
-const cartaoCorte = (c) => html`
-  <article class="corte-card">
-    <img src="${urlSegura(c.imagem_url)}" alt="${c.nome_corte}" loading="lazy" data-fallback="corte">
-    <button type="button" class="heart" data-favorito="${c.id_corte}" aria-pressed="${c.favorito ? "true" : "false"}"
-      aria-label="${c.favorito ? "Remover dos favoritos" : "Salvar nos favoritos"}: ${c.nome_corte}">${c.favorito ? "❤️" : "🤍"}</button>
-    <div class="info"><h3>${c.nome_corte}</h3></div>
-  </article>`;
-
-const cartaoProduto = (p) => {
-  const esgotado = p.quantidade_estoque < 1;
-  return html`
-  <article class="produto-card">
-    <img src="${urlSegura(p.imagem_url, "")}" alt="${p.nome_produto}" loading="lazy" data-fallback="produto">
-    <div class="info">
-      <h3>${p.nome_produto}</h3>
-      ${p.categoria ? html`<div class="text-muted" style="font-size:0.8rem;">${p.categoria}</div>` : ""}
-      <div class="preco">${moeda(p.preco)}</div>
-      <button class="btn btn-primary btn-sm" data-produto="${p.id_produto}" ${raw(esgotado ? "disabled" : "")}>${esgotado ? "Esgotado" : "Adicionar"}</button>
-    </div>
-  </article>`;
-};
+const cartaoServicoLink = (s) => cartaoServico(s, { acao: "link" });
 
 function grupo(titulo, classeGrade, itens, cartao, vazio) {
   return html`
@@ -63,15 +33,15 @@ function render() {
   $("#qtdServicos").textContent = String(servicos.length);
   $("#qtdCortes").textContent = String(cortes.length);
   $("#qtdProdutos").textContent = String(produtos.length);
-  $$(".filter-bar .chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.tipo === tipo)));
+  $$(".filter-bar .chip").forEach((c) => { c.setAttribute("aria-pressed", String(c.dataset.tipo === tipo)); c.classList.toggle("active", c.dataset.tipo === tipo); });
 
   const vazio = busca ? "Nada encontrado com essa busca." : "Nada cadastrado por enquanto.";
   const partes = [];
-  if (tipo === "todos" || tipo === "servicos") partes.push(grupo("Serviços", "servicos-grid", servicos, cartaoServico, vazio));
+  if (tipo === "todos" || tipo === "servicos") partes.push(grupo("Serviços", "servicos-grid", servicos, cartaoServicoLink, vazio));
   if (tipo === "todos" || tipo === "cortes") partes.push(grupo("Cortes", "cortes-grid", cortes, cartaoCorte, vazio));
   if (tipo === "todos" || tipo === "produtos") partes.push(grupo("Produtos", "produtos-grid", produtos, cartaoProduto, vazio));
   $("#catalogo").innerHTML = partes.join("");
-  $("#catalogo").querySelectorAll('img[src=""]').forEach((img) => img.dispatchEvent(new Event("error")));
+  aplicarPlaceholders($("#catalogo"));
 }
 
 $(".filter-bar").addEventListener("click", (e) => {

@@ -1,7 +1,7 @@
 // Estrutura comum das páginas públicas (home, catálogo, avaliações):
 // menu mobile, botão de conta/painel, carrinho em gaveta, rodapé e balão de contatos.
 import { get } from "./api.js";
-import { $, toast } from "./ui.js";
+import { $, html, avatar, toast } from "./ui.js";
 import { obterUsuario } from "./sessao.js";
 import { iniciarCarrinho } from "./carrinho.js";
 import { montarBalaoContatos, montarRodape } from "./contatos.js";
@@ -9,19 +9,32 @@ import { montarBalaoContatos, montarRodape } from "./contatos.js";
 function montarCabecalho(usuario) {
   const toggle = $("#mobileToggle");
   const nav = $("#mainNav");
-  toggle?.addEventListener("click", () => nav.classList.toggle("open"));
-  nav?.addEventListener("click", (e) => e.target.closest("a") && nav.classList.remove("open"));
+  toggle?.addEventListener("click", () => {
+    const aberto = nav.classList.toggle("open");
+    toggle.setAttribute("aria-expanded", String(aberto));
+  });
+  nav?.addEventListener("click", (e) => {
+    if (!e.target.closest("a")) return;
+    nav.classList.remove("open");
+    toggle?.setAttribute("aria-expanded", "false");
+  });
 
   const btnLogin = $("#btnLogin");
   if (!usuario || !btnLogin) return;
-  btnLogin.textContent = usuario.nome_completo.split(" ")[0];
-  btnLogin.href = "perfil.html";
+  // Logado: "Entrar" vira o chip do usuário (foto + primeiro nome), como no layout do colega
+  const chip = document.createElement("a");
+  chip.href = "perfil.html";
+  chip.className = "user-chip";
+  chip.id = "btnLogin";
+  chip.title = "Meu perfil";
+  chip.innerHTML = html`${avatar(usuario)}<span>${usuario.nome_completo.split(" ")[0]}</span>`.toString();
+  btnLogin.replaceWith(chip);
   if (usuario.tipo_perfil !== "CLIENTE") {
     const painel = document.createElement("a");
     painel.href = usuario.tipo_perfil === "ADMIN" ? "admin/index.html" : "admin/agendamentos.html";
     painel.className = "btn btn-outline btn-sm";
     painel.textContent = "Painel";
-    btnLogin.parentNode.insertBefore(painel, btnLogin);
+    chip.before(painel);
   }
 }
 

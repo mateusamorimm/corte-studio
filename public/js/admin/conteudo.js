@@ -1,5 +1,5 @@
 import { get, post, put, patch, del } from "../api.js";
-import { $, html, toast, alertaForm, comCarregamento, confirmar, mostrarErrosCampos, limparErrosCampos, urlSegura, dataCurta, estrelas } from "../ui.js";
+import { $, html, abrirModal, toast, alertaForm, comCarregamento, confirmar, mostrarErrosCampos, limparErrosCampos, urlSegura, dataCurta, estrelas } from "../ui.js";
 import { iniciarPainel } from "./comum.js";
 import { campoImagem } from "./imagemCampo.js";
 
@@ -92,12 +92,11 @@ function abrirCorte(c = null) {
   fc.imagem_url.value = c?.imagem_url ?? "";
   fc.ativo.checked = c?.ativo ?? true;
   imgCorte.atualizar();
-  fc.style.display = "block";
-  fc.scrollIntoView({ behavior: "smooth" });
+  abrirModal($("#modalCorte"));
 }
 
 $("#btnNovoCorte").addEventListener("click", () => abrirCorte());
-$("#btnCancelarCorte").addEventListener("click", () => (fc.style.display = "none"));
+$("#btnCancelarCorte").addEventListener("click", () => $("#modalCorte").close());
 
 fc.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -118,7 +117,7 @@ fc.addEventListener("submit", async (e) => {
     try {
       if (id) await put(`/admin/galeria/${id}`, dados);
       else await post("/admin/galeria", dados);
-      fc.style.display = "none";
+      $("#modalCorte").close();
       toast("Galeria atualizada.", "sucesso");
       carregarGaleria();
     } catch (err) {

@@ -169,7 +169,7 @@ export async function iniciarCarrinho(usuarioSessao) {
   botao = document.createElement("button");
   botao.type = "button";
   botao.id = "cartBtn";
-  botao.className = "cart-btn";
+  botao.className = "btn-icon cart-btn";
   botao.setAttribute("aria-controls", "cartDrawer");
   botao.setAttribute("aria-expanded", "false");
   botao.innerHTML = html`${ICONE_CARRINHO}<span class="cart-badge" data-count="0">0</span>`.toString();
@@ -185,8 +185,10 @@ export async function iniciarCarrinho(usuarioSessao) {
   drawer.setAttribute("aria-hidden", "true");
   drawer.innerHTML = html`
     <div class="cart-header">
-      <h2>🛍️ Carrinho</h2>
-      <button type="button" class="btn btn-ghost btn-icon cart-fechar" aria-label="Fechar carrinho">✕</button>
+      <h2>Carrinho</h2>
+      <button type="button" class="btn-icon cart-fechar" aria-label="Fechar carrinho">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
     </div>
     <div class="cart-body"></div>
     <div class="cart-footer" hidden>
