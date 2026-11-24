@@ -513,7 +513,7 @@ a.contact-fab-btn { text-decoration: none; }
 .admin-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
 .admin-table .previas-mini { display: flex; gap: 4px; flex-wrap: wrap; }
 .admin-table .previas-mini img, .admin-table .previas-mini video { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; background: var(--bg-elevated); }
-.admin-table .celula-texto { max-width: 340px; overflow-wrap: anywhere; white-space: pre-line; }
+.admin-table .celula-texto { min-width: 180px; max-width: 340px; overflow-wrap: anywhere; white-space: pre-line; }
 .form-secao { margin: 18px 0 10px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 0.95rem; font-weight: 600; }
 .form-secao:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
 .form-row-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 var(--space-4); }
@@ -530,3 +530,27 @@ a.contact-fab-btn { text-decoration: none; }
   dialog.modal { width: calc(100vw - 20px); max-height: 94vh; }
   .modal-body { padding: 18px; }
 }
+
+/* Linhas rótulo/valor e redes nas fichas do painel (mesmo desenho do perfil) */
+.stat-row { display: flex; justify-content: space-between; gap: 12px; font-size: 0.9rem; margin-bottom: var(--space-2); }
+.stat-row span:last-child { font-weight: 600; text-align: right; overflow-wrap: anywhere; min-width: 0; }
+.social-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
+.social-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--radius-full); border: 1px solid var(--border); background: var(--bg-elevated); font-size: 0.8rem; color: var(--text-secondary); text-decoration: none; }
+.social-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Telas médias: o menu tem um item a mais (Feed); recolhe antes de faltar espaço no cabeçalho */
+.nav-actions { flex-shrink: 0; }
+@media (max-width: 1080px) { .nav-link { padding: 0.5rem 0.6rem; font-size: 0.85rem; } }
+@media (max-width: 960px) {
+  .mobile-toggle { display: flex; }
+  .header .nav { display: none; }
+  .header .nav.open {
+    display: flex; flex-direction: column; align-items: stretch; position: absolute; top: var(--header-h); left: 0; right: 0;
+    background: var(--bg-card); border-bottom: 1px solid var(--border); padding: var(--space-4); gap: var(--space-1);
+  }
+}
+
+/* Painel: a tabela rola dentro do cartão em vez de alargar a página */
+.admin-main { min-width: 0; }
+.admin-card, .admin-grid > * { min-width: 0; }
+.admin-table .table-actions { min-width: 150px; }

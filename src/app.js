@@ -22,7 +22,7 @@ export function criarApp() {
         useDefaults: true,
         directives: {
           "default-src": ["'self'"],
-          "script-src": ["'self'"], // sem scripts inline: proteção extra contra XSS
+          "script-src": ["'self'", "'wasm-unsafe-eval'"], // sem scripts inline; wasm só para decodificar modelos 3D
           "script-src-attr": ["'none'"], // sem onclick="..." no HTML
           "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
           "font-src": ["'self'", "https://fonts.gstatic.com"],
