@@ -32,7 +32,7 @@ describe("sistema completo", { skip: MOTIVO_SKIP, concurrency: false }, () => {
 
   async function cadastrar(nome) {
     const nav = new Navegador(base);
-    const r = await nav.post("/api/auth/cadastro", { nome_completo: `${nome} Sobrenome`, email: email(nome), senha: SENHA, telefone: "11987654321" });
+    const r = await nav.post("/api/auth/cadastro", { nome_completo: `${nome} Sobrenome`, email: email(nome), senha: SENHA, telefone: "11987654321", consentimento: true });
     assert.equal(r.status, 201, JSON.stringify(r.json));
     nav.id = r.json.usuario.id_usuario;
     return nav;
@@ -282,6 +282,13 @@ describe("sistema completo", { skip: MOTIVO_SKIP, concurrency: false }, () => {
     r = await cliente.post(`/api/me/agendamentos/${passado.id_agendamento}/avaliacao`, { nota: 4 });
     assert.equal(r.status, 409);
 
+    // Só aparece no site depois da aprovação do salão
+    const antes = await new Navegador(base).get("/api/avaliacoes?limite=50");
+    assert.ok(!antes.json.avaliacoes.some((a) => a.comentario === `Excelente ${s}`));
+    const fila = await admin.get("/api/admin/avaliacoes?status=PENDENTE");
+    const pendente = fila.json.avaliacoes.find((a) => a.comentario === `Excelente ${s}`);
+    assert.ok(pendente);
+    assert.equal((await admin.patch(`/api/admin/avaliacoes/${pendente.id_avaliacao}`, { status_moderacao: "APROVADO" })).status, 200);
     const pub = await new Navegador(base).get("/api/avaliacoes?limite=50");
     const minha = pub.json.avaliacoes.find((a) => a.comentario === `Excelente ${s}`);
     assert.equal(minha.cliente, "cliente S.");
@@ -422,7 +429,7 @@ describe("sistema completo", { skip: MOTIVO_SKIP, concurrency: false }, () => {
     const eu = c.json.clientes.find((x) => x.id_usuario === cliente.id);
     assert.equal(eu.visitas, 1);
 
-    let r = await admin.post("/api/admin/clientes", { nome_completo: "Cliente Balcão", telefone: "11955554444" });
+    let r = await admin.post("/api/admin/clientes", { nome_completo: "Cliente Balcão", telefone: "11955554444", consentimento: true });
     assert.equal(r.status, 201, "cliente de balcão sem e-mail");
     const balcao = r.json.cliente.id_usuario;
     r = await admin.post("/api/admin/agendamentos", {

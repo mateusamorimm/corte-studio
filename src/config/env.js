@@ -19,6 +19,8 @@ const schema = z.object({
   CLOUDINARY_CLOUD_NAME: z.string().regex(/^[a-z0-9_-]+$/i, "CLOUDINARY_CLOUD_NAME inválido").optional(),
   CLOUDINARY_API_KEY: z.string().regex(/^\d+$/, "CLOUDINARY_API_KEY inválida").optional(),
   CLOUDINARY_API_SECRET: z.string().min(10).optional(),
+  // Chave que cifra os documentos de funcionários: 64 caracteres hexadecimais (32 bytes)
+  CHAVE_DADOS: z.string().regex(/^[0-9a-f]{64}$/i, "CHAVE_DADOS deve ter 64 caracteres hexadecimais").optional(),
   // Pasta raiz no Cloudinary (separa produção de testes na mesma conta)
   CLOUDINARY_PASTA: z.string().regex(/^[a-z0-9_-]+$/i, "CLOUDINARY_PASTA inválida").default("studio-corte"),
 });

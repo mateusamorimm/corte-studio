@@ -1,5 +1,6 @@
 // Painel administrativo (/api/admin).
-// ADMIN acessa tudo. BARBEIRO acessa apenas a própria agenda (agendamentos e bloqueios).
+// ADMIN acessa tudo. BARBEIRO acessa a própria agenda (agendamentos e bloqueios) e os cortes que publicou.
+// RECEPCIONISTA acessa dashboard (sem faturamento), agenda, pedidos, reservas e clientes.
 import { Router } from "express";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
@@ -29,7 +30,8 @@ import { obterConfig, salvarConfig } from "../services/configService.js";
 import {
   INCLUDE_AGENDAMENTO,
   STATUS_ATIVOS,
-  criarAgendamento,
+  criarAgendamentos,
+  registrarChegada,
   alterarStatus,
   remarcar,
   criarBloqueio,
@@ -38,32 +40,26 @@ import {
   validarJanelas,
 } from "../services/agendaService.js";
 import { avancarPedido, INCLUDE_PEDIDO } from "../services/lojaService.js";
-import { solicitarRedefinicao } from "../services/authService.js";
+import { usuarioLivre } from "../services/authService.js";
+import { convidar as conviteSeguro, enviarConvite } from "../services/conviteService.js";
+import { INCLUDE_AVALIACAO, avaliacaoPainel, moderarAvaliacao } from "../services/avaliacaoService.js";
+import { situacao } from "../services/fidelidadeService.js";
+import { favoritosDe } from "../services/perfilService.js";
+import { registrarLog } from "../services/logService.js";
+import { urlPertenceAoUsuario } from "../services/midiaService.js";
+import gestaoRoutes from "./gestao.js";
 import { dataLocal, inicioDoMes, localParaUtc, minutosParaTexto, somarDias, timeParaMinutos } from "../lib/tempo.js";
 
 const router = Router();
-const equipe = exigirPerfil("ADMIN", "BARBEIRO");
 const soAdmin = exigirPerfil("ADMIN");
-router.use(equipe);
+const balcao = exigirPerfil("ADMIN", "RECEPCIONISTA");
+const quemCorta = exigirPerfil("ADMIN", "BARBEIRO");
+router.use(exigirPerfil("ADMIN", "BARBEIRO", "RECEPCIONISTA"));
+router.use(gestaoRoutes);
 
 const ehBarbeiro = (req) => req.usuario.tipo_perfil === "BARBEIRO";
+const ehRecepcao = (req) => req.usuario.tipo_perfil === "RECEPCIONISTA";
 const ativoSchema = z.object({ ativo: z.boolean({ error: "Informe se está ativo." }) });
-
-async function enviarConvite(usuario) {
-  if (!usuario.email) throw badRequest("Cadastre um e-mail para enviar o convite.");
-  await solicitarRedefinicao(usuario.email, { assunto: "Seu acesso ao Studio Corte", motivo: "convite" });
-}
-
-// Cadastro já gravado: uma falha no envio do e-mail não desfaz o cadastro, vira aviso.
-async function conviteSeguro(usuario) {
-  try {
-    await enviarConvite(usuario);
-    return null;
-  } catch (err) {
-    console.error("[email] Falha ao enviar convite:", err.message);
-    return "Cadastro salvo, mas o e-mail com o link de acesso não pôde ser enviado. Tente reenviar o convite.";
-  }
-}
 
 async function emailLivre(email, ignorarId = null) {
   if (!email) return;
@@ -85,7 +81,7 @@ async function cpfLivre(cpf, ignorarId = null) {
 
 // ═════════ DASHBOARD ═════════
 
-router.get("/dashboard", soAdmin, async (_req, res) => {
+router.get("/dashboard", balcao, async (req, res) => {
   const cfg = await obterConfig();
   const tz = cfg.fuso_horario;
   const agora = new Date();
@@ -120,9 +116,14 @@ router.get("/dashboard", soAdmin, async (_req, res) => {
     tokens,
     pendentesAgenda,
     pendentesPedidos,
+    reservasVisitante,
+    avaliacoesPendentes,
+    postsPendentes,
+    comentariosPendentes,
+    denuncias,
   ] = await Promise.all([
-    prisma.usuario.count({ where: { tipo_perfil: "CLIENTE", ativo: true } }),
-    prisma.usuario.count({ where: { tipo_perfil: "CLIENTE", data_cadastro: { gte: inicioMes } } }),
+    prisma.usuario.count({ where: { tipo_perfil: "CLIENTE", ativo: true, visitante: false } }),
+    prisma.usuario.count({ where: { tipo_perfil: "CLIENTE", visitante: false, data_cadastro: { gte: inicioMes } } }),
     prisma.agendamento.count({ where: { ...doDia, status: { in: STATUS_ATIVOS } } }),
     prisma.agendamento.count({ where: { ...doDia, status: { in: ["CONFIRMADO", "CONCLUIDO"] } } }),
     faturamento(inicioMes, fimHoje),
@@ -134,9 +135,9 @@ router.get("/dashboard", soAdmin, async (_req, res) => {
       orderBy: { data_hora_inicio: "asc" },
       take: 30,
     }),
-    prisma.agendamento.groupBy({
+    prisma.agendamentoServico.groupBy({
       by: ["id_servico"],
-      where: { status: { in: STATUS_ATIVOS } },
+      where: { agendamento: { status: { in: STATUS_ATIVOS } } },
       _count: true,
       orderBy: { _count: { id_servico: "desc" } },
       take: 4,
@@ -149,6 +150,11 @@ router.get("/dashboard", soAdmin, async (_req, res) => {
     }),
     prisma.agendamento.count({ where: { status: "PENDENTE", data_hora_inicio: { gt: agora } } }),
     prisma.pedido.count({ where: { status: "PENDENTE" } }),
+    prisma.reserva.count({ where: { visitante: true, status: "ATIVA" } }),
+    prisma.avaliacao.count({ where: { status_moderacao: "PENDENTE" } }),
+    prisma.post.count({ where: { status_moderacao: "PENDENTE" } }),
+    prisma.postComentario.count({ where: { status_moderacao: "PENDENTE" } }),
+    prisma.denuncia.count({ where: { resolvida_em: null } }),
   ]);
 
   const nomesServicos = await prisma.servico.findMany({
@@ -166,15 +172,7 @@ router.get("/dashboard", soAdmin, async (_req, res) => {
     prisma.avaliacao.findMany({
       orderBy: { data_avaliacao: "desc" },
       take: 6,
-      include: {
-        agendamento: {
-          select: {
-            cliente: { select: { nome_completo: true } },
-            barbeiro: { select: { nome_completo: true } },
-            servico: { select: { nome_servico: true } },
-          },
-        },
-      },
+      include: INCLUDE_AVALIACAO,
     }),
     prisma.agendamento.findMany({ orderBy: { data_criacao: "desc" }, take: 6, include: INCLUDE_AGENDAMENTO }),
     prisma.pedido.findMany({
@@ -183,7 +181,7 @@ router.get("/dashboard", soAdmin, async (_req, res) => {
       include: { cliente: { select: { nome_completo: true } }, itens: { select: { quantidade: true } } },
     }),
     prisma.usuario.findMany({
-      where: { tipo_perfil: "CLIENTE" },
+      where: { tipo_perfil: "CLIENTE", visitante: false },
       orderBy: { data_cadastro: "desc" },
       take: 6,
       select: { nome_completo: true, data_cadastro: true },
@@ -191,12 +189,12 @@ router.get("/dashboard", soAdmin, async (_req, res) => {
   ]);
   const atividade = [
     ...favs.map((f) => ({ tipo: "favorito", quando: f.data_favorito, quem: f.cliente.nome_completo, alvo: f.corte.nome_corte })),
-    ...avals.map((a) => ({
+    ...avals.map(avaliacaoPainel).map((a) => ({
       tipo: "avaliacao",
       quando: a.data_avaliacao,
-      quem: a.agendamento.cliente.nome_completo,
-      alvo: a.agendamento.servico.nome_servico,
-      profissional: a.agendamento.barbeiro.nome_completo,
+      quem: a.cliente,
+      alvo: a.referencia,
+      profissional: a.profissional,
       nota: a.nota,
     })),
     ...ags.map((a) => ({
@@ -218,6 +216,7 @@ router.get("/dashboard", soAdmin, async (_req, res) => {
     .sort((a, b) => b.quando - a.quando)
     .slice(0, 8);
 
+  const admin = req.usuario.tipo_perfil === "ADMIN"; // recepção não vê faturamento nem pedidos de senha
   const variacao = fatAnterior.isZero() ? null : fatMes.sub(fatAnterior).div(fatAnterior).mul(100).toFixed(1);
 
   res.json({
@@ -227,8 +226,8 @@ router.get("/dashboard", soAdmin, async (_req, res) => {
       novos_clientes_mes: novosClientes,
       atendimentos_hoje: atendimentosHoje,
       confirmados_hoje: confirmadosHoje,
-      faturamento_mes: fatMes.toFixed(2),
-      variacao_faturamento: variacao,
+      faturamento_mes: admin ? fatMes.toFixed(2) : null,
+      variacao_faturamento: admin ? variacao : null,
       avaliacao_media: notas._avg.nota,
       total_avaliacoes: notas._count,
     },
@@ -239,13 +238,20 @@ router.get("/dashboard", soAdmin, async (_req, res) => {
       quantidade: p._count,
     })),
     atividade,
-    solicitacoes_senha: tokens.map((t) => ({
+    solicitacoes_senha: (admin ? tokens : []).map((t) => ({
       nome: t.usuario.nome_completo,
       email: t.usuario.email,
       data: t.data_criacao,
       usado: Boolean(t.usado_em),
     })),
-    notificacoes: { agendamentos_pendentes: pendentesAgenda, pedidos_pendentes: pendentesPedidos },
+    notificacoes: {
+      agendamentos_pendentes: pendentesAgenda,
+      pedidos_pendentes: pendentesPedidos,
+      reservas_visitante: reservasVisitante,
+      ...(admin
+        ? { avaliacoes_pendentes: avaliacoesPendentes, posts_pendentes: postsPendentes, comentarios_pendentes: comentariosPendentes, denuncias }
+        : {}),
+    },
   });
 });
 
@@ -266,7 +272,7 @@ function filtroBusca(busca) {
 // Opções para o select de cliente (equipe agenda pelo telefone/balcão)
 router.get("/clientes/opcoes", validar({ query: buscaQuery }), async (req, res) => {
   const clientes = await prisma.usuario.findMany({
-    where: { tipo_perfil: "CLIENTE", ativo: true, ...filtroBusca(req.valid.query.busca) },
+    where: { tipo_perfil: "CLIENTE", ativo: true, visitante: false, ...filtroBusca(req.valid.query.busca) },
     select: { id_usuario: true, nome_completo: true, telefone: true, email: true },
     orderBy: { nome_completo: "asc" },
     take: 20,
@@ -274,10 +280,10 @@ router.get("/clientes/opcoes", validar({ query: buscaQuery }), async (req, res) 
   res.json({ clientes });
 });
 
-router.get("/clientes", soAdmin, validar({ query: buscaQuery }), async (req, res) => {
+router.get("/clientes", balcao, validar({ query: buscaQuery }), async (req, res) => {
   const { busca, inativos } = req.valid.query;
   const clientes = await prisma.usuario.findMany({
-    where: { tipo_perfil: "CLIENTE", ...(inativos ? {} : { ativo: true }), ...filtroBusca(busca) },
+    where: { tipo_perfil: "CLIENTE", visitante: false, ...(inativos ? {} : { ativo: true }), ...filtroBusca(busca) },
     select: { ...CAMPOS_USUARIO_PUBLICO, senha_hash: true },
     orderBy: { nome_completo: "asc" },
     take: 500,
@@ -308,7 +314,7 @@ router.get("/clientes", soAdmin, validar({ query: buscaQuery }), async (req, res
   });
 });
 
-router.post("/clientes", soAdmin, validar({ body: clienteAdminSchema }), async (req, res) => {
+router.post("/clientes", balcao, validar({ body: clienteAdminSchema }), async (req, res) => {
   const { enviar_convite, ...dados } = req.valid.body;
   await emailLivre(dados.email);
   await cpfLivre(dados.cpf);
@@ -323,6 +329,7 @@ router.post("/clientes", soAdmin, validar({ body: clienteAdminSchema }), async (
     },
     select: CAMPOS_USUARIO_PUBLICO,
   });
+  await registrarLog("cliente.criacao", { autor: req.usuario, entidade: "usuario", id: cliente.id_usuario });
   const aviso = enviar_convite && cliente.email ? await conviteSeguro(cliente) : null;
   res.status(201).json({ cliente, aviso });
 });
@@ -333,9 +340,14 @@ async function clienteDoPainel(id) {
   return c;
 }
 
-router.get("/clientes/:id", soAdmin, validar({ params: idParam }), async (req, res) => {
+router.get("/clientes/:id", balcao, validar({ params: idParam }), async (req, res) => {
   const cliente = await clienteDoPainel(req.valid.params.id);
-  const [agendamentos, pedidos] = await Promise.all([
+  const [fidelidade, favoritos, redes, concluidos, faltas, agendamentos, pedidos] = await Promise.all([
+    situacao(cliente.id_usuario),
+    favoritosDe(cliente.id_usuario),
+    prisma.redeSocialUsuario.findMany({ where: { id_usuario: cliente.id_usuario }, orderBy: { ordem: "asc" }, select: { rede: true, rotulo: true, url: true } }),
+    prisma.agendamento.aggregate({ where: { id_cliente: cliente.id_usuario, status: "CONCLUIDO" }, _count: true, _sum: { preco_registrado: true }, _max: { data_hora_inicio: true } }),
+    prisma.agendamento.count({ where: { id_cliente: cliente.id_usuario, status: "NAO_COMPARECEU" } }),
     prisma.agendamento.findMany({
       where: { id_cliente: cliente.id_usuario },
       include: INCLUDE_AGENDAMENTO,
@@ -344,10 +356,25 @@ router.get("/clientes/:id", soAdmin, validar({ params: idParam }), async (req, r
     }),
     prisma.pedido.findMany({ where: { id_cliente: cliente.id_usuario }, include: INCLUDE_PEDIDO, orderBy: { data_pedido: "desc" }, take: 50 }),
   ]);
-  res.json({ cliente, agendamentos, pedidos });
+  const compras = pedidos.filter((p) => p.status === "CONCLUIDO").reduce((t, p) => t.add(p.valor_total), new Prisma.Decimal(0));
+  res.json({
+    cliente,
+    agendamentos,
+    pedidos,
+    fidelidade,
+    favoritos,
+    redes,
+    estatisticas: {
+      visitas: concluidos._count,
+      faltas,
+      ultima_visita: concluidos._max.data_hora_inicio,
+      total_gasto: compras.add(concluidos._sum.preco_registrado ?? 0).toFixed(2),
+      compras: pedidos.filter((p) => p.status === "CONCLUIDO").length,
+    },
+  });
 });
 
-router.put("/clientes/:id", soAdmin, validar({ params: idParam, body: clienteAdminSchema }), async (req, res) => {
+router.put("/clientes/:id", balcao, validar({ params: idParam, body: clienteAdminSchema }), async (req, res) => {
   const atual = await clienteDoPainel(req.valid.params.id);
   const { enviar_convite, ...dados } = req.valid.body;
   if (atual.email && !dados.email) throw badRequest("O e-mail de acesso de um cliente não pode ser apagado.");
@@ -364,6 +391,7 @@ router.put("/clientes/:id", soAdmin, validar({ params: idParam, body: clienteAdm
     },
     select: CAMPOS_USUARIO_PUBLICO,
   });
+  await registrarLog("cliente.edicao", { autor: req.usuario, entidade: "usuario", id: cliente.id_usuario });
   const aviso = enviar_convite && cliente.email ? await conviteSeguro(cliente) : null;
   res.json({ cliente, aviso });
 });
@@ -375,10 +403,11 @@ router.patch("/clientes/:id/ativo", soAdmin, validar({ params: idParam, body: at
     data: { ativo: req.valid.body.ativo },
     select: CAMPOS_USUARIO_PUBLICO,
   });
+  await registrarLog(req.valid.body.ativo ? "cliente.reativacao" : "cliente.desativacao", { autor: req.usuario, entidade: "usuario", id: cliente.id_usuario });
   res.json({ cliente });
 });
 
-router.post("/clientes/:id/convite", soAdmin, validar({ params: idParam }), async (req, res) => {
+router.post("/clientes/:id/convite", balcao, validar({ params: idParam }), async (req, res) => {
   await enviarConvite(await clienteDoPainel(req.valid.params.id));
   res.json({ mensagem: "Link de acesso enviado para o e-mail do cliente." });
 });
@@ -390,6 +419,7 @@ const SELECT_EQUIPE = {
   senha_hash: true,
   servicos_oferecidos: { select: { id_servico: true } },
   disponibilidades: { orderBy: [{ dia_semana: "asc" }, { hora_inicio: "asc" }] },
+  perfil_profissional: true,
 };
 
 const formatarMembro = ({ senha_hash, servicos_oferecidos, disponibilidades, ...m }) => ({
@@ -409,8 +439,15 @@ router.get("/equipe", async (req, res) => {
     select: SELECT_EQUIPE,
     orderBy: [{ ativo: "desc" }, { nome_completo: "asc" }],
   });
-  res.json({ equipe: membros.map(formatarMembro) });
+  // A recepção precisa dos nomes, serviços e horários para agendar — não dos dados pessoais da equipe.
+  const reduzir = ({ id_usuario, nome_completo, avatar_url, tipo_perfil, ativo, servicos, disponibilidade, perfil_profissional }) => ({
+    id_usuario, nome_completo, avatar_url, tipo_perfil, ativo, servicos, disponibilidade, perfil_profissional,
+  });
+  const lista = membros.map(formatarMembro);
+  res.json({ equipe: ehRecepcao(req) ? lista.filter((m) => m.ativo).map(reduzir) : lista });
 });
+
+const dadosPerfil = ({ bio, ...perfil }) => perfil;
 
 async function servicosExistem(ids) {
   if (!ids.length) return;
@@ -422,6 +459,7 @@ router.post("/equipe", soAdmin, validar({ body: equipeSchema }), async (req, res
   const d = req.valid.body;
   validarJanelas(d.disponibilidade);
   await emailLivre(d.email);
+  if (d.usuario) await usuarioLivre(d.usuario);
   await servicosExistem(d.servicos);
   const membro = await prisma.usuario.create({
     data: {
@@ -430,11 +468,14 @@ router.post("/equipe", soAdmin, validar({ body: equipeSchema }), async (req, res
       telefone: d.telefone ?? null,
       tipo_perfil: d.tipo_perfil,
       avatar_url: d.avatar_url ?? null,
+      usuario: d.usuario ?? null,
+      ...(d.perfil ? { bio: d.perfil.bio ?? null, perfil_profissional: { create: dadosPerfil(d.perfil) } } : {}),
       servicos_oferecidos: { create: [...new Set(d.servicos)].map((id_servico) => ({ id_servico })) },
     },
     select: { id_usuario: true, email: true },
   });
   await salvarDisponibilidade(membro.id_usuario, d.disponibilidade);
+  await registrarLog("equipe.criacao", { autor: req.usuario, entidade: "usuario", id: membro.id_usuario, detalhes: { perfil: d.tipo_perfil } });
   const aviso = await conviteSeguro(membro);
   const criado = await prisma.usuario.findUnique({ where: { id_usuario: membro.id_usuario }, select: SELECT_EQUIPE });
   res.status(201).json({ membro: formatarMembro(criado), aviso });
@@ -465,6 +506,7 @@ router.put("/equipe/:id", soAdmin, validar({ params: idParam, body: equipeSchema
   }
   validarJanelas(d.disponibilidade);
   await emailLivre(d.email, atual.id_usuario);
+  if (d.usuario) await usuarioLivre(d.usuario, atual.id_usuario);
   await servicosExistem(d.servicos);
   await prisma.$transaction([
     prisma.usuario.update({
@@ -475,14 +517,20 @@ router.put("/equipe/:id", soAdmin, validar({ params: idParam, body: equipeSchema
         telefone: d.telefone ?? null,
         tipo_perfil: d.tipo_perfil,
         avatar_url: d.avatar_url ?? null,
+        ...(d.usuario === undefined ? {} : { usuario: d.usuario }),
+        ...(d.perfil?.bio === undefined ? {} : { bio: d.perfil.bio }),
       },
     }),
+    ...(d.perfil
+      ? [prisma.perfilProfissional.upsert({ where: { id_usuario: atual.id_usuario }, create: { id_usuario: atual.id_usuario, ...dadosPerfil(d.perfil) }, update: dadosPerfil(d.perfil) })]
+      : []),
     prisma.barbeiroServico.deleteMany({ where: { id_barbeiro: atual.id_usuario } }),
     prisma.barbeiroServico.createMany({
       data: [...new Set(d.servicos)].map((id_servico) => ({ id_barbeiro: atual.id_usuario, id_servico })),
     }),
   ]);
   await salvarDisponibilidade(atual.id_usuario, d.disponibilidade);
+  await registrarLog("equipe.edicao", { autor: req.usuario, entidade: "usuario", id: atual.id_usuario, detalhes: { perfil: d.tipo_perfil } });
   const membro = await prisma.usuario.findUnique({ where: { id_usuario: atual.id_usuario }, select: SELECT_EQUIPE });
   res.json({ membro: formatarMembro(membro) });
 });
@@ -498,6 +546,7 @@ router.patch("/equipe/:id/ativo", soAdmin, validar({ params: idParam, body: ativ
     if (futuros) throw conflict(`Este profissional tem ${futuros} agendamento(s) futuro(s). Remarque ou cancele antes de desativar.`);
   }
   await prisma.usuario.update({ where: { id_usuario: atual.id_usuario }, data: { ativo: req.valid.body.ativo } });
+  await registrarLog(req.valid.body.ativo ? "equipe.reativacao" : "equipe.desativacao", { autor: req.usuario, entidade: "usuario", id: atual.id_usuario });
   const membro = await prisma.usuario.findUnique({ where: { id_usuario: atual.id_usuario }, select: SELECT_EQUIPE });
   res.json({ membro: formatarMembro(membro) });
 });
@@ -520,13 +569,13 @@ router.get("/bloqueios", validar({ query: z.object({ profissional: z.coerce.numb
   res.json({ bloqueios });
 });
 
-router.post("/bloqueios", validar({ body: bloqueioSchema }), async (req, res) => {
+router.post("/bloqueios", quemCorta, validar({ body: bloqueioSchema }), async (req, res) => {
   const b = req.valid.body;
   const bloqueio = await criarBloqueio({ id_barbeiro: b.id_barbeiro, inicio: b.inicio, fim: b.fim, motivo: b.motivo ?? null, ator: req.usuario });
   res.status(201).json({ bloqueio });
 });
 
-router.delete("/bloqueios/:id", validar({ params: idParam }), async (req, res) => {
+router.delete("/bloqueios/:id", quemCorta, validar({ params: idParam }), async (req, res) => {
   await removerBloqueio(req.valid.params.id, req.usuario);
   res.json({ ok: true });
 });
@@ -552,6 +601,7 @@ router.get("/agendamentos", validar({ query: listaAgendamentosQuery }), async (r
       { cliente: { nome_completo: { contains: q.busca, mode: "insensitive" } } },
       { servico: { nome_servico: { contains: q.busca, mode: "insensitive" } } },
       { barbeiro: { nome_completo: { contains: q.busca, mode: "insensitive" } } },
+      ...(/^[A-Za-z0-9]{6}$/.test(q.busca) ? [{ reserva: { codigo: q.busca.toUpperCase() } }] : []),
       ...(q.busca.replace(/\D/g, "").length >= 3 ? [{ cliente: { telefone: { contains: q.busca.replace(/\D/g, "") } } }] : []),
     ];
   }
@@ -568,16 +618,23 @@ router.post("/agendamentos", validar({ body: agendamentoEquipeSchema }), async (
   const b = req.valid.body;
   const idBarbeiro = ehBarbeiro(req) ? req.usuario.id_usuario : b.id_barbeiro ?? null;
   if (ehBarbeiro(req) && b.id_barbeiro && b.id_barbeiro !== req.usuario.id_usuario) throw forbidden();
-  const agendamento = await criarAgendamento({
+  const { reserva, agendamentos } = await criarAgendamentos({
     id_cliente: b.id_cliente,
-    id_servico: b.id_servico,
+    servicos: b.servicos,
     id_barbeiro: idBarbeiro,
     inicio: b.inicio,
+    pessoas: b.pessoas,
+    cortes: b.cortes,
     observacao: b.observacao ?? null,
     porEquipe: true,
     status: b.status,
   });
-  res.status(201).json({ agendamento });
+  await registrarLog("agendamento.criacao", { autor: req.usuario, entidade: "agendamento", id: agendamentos[0].id_agendamento, detalhes: { codigo: reserva.codigo } });
+  res.status(201).json({ agendamento: agendamentos[0], agendamentos, codigo: reserva.codigo });
+});
+
+router.post("/agendamentos/:id/chegada", validar({ params: idParam }), async (req, res) => {
+  res.json({ agendamento: await registrarChegada(req.valid.params.id, req.usuario) });
 });
 
 router.patch("/agendamentos/:id/status", validar({ params: idParam, body: statusAgendamentoSchema }), async (req, res) => {
@@ -600,23 +657,31 @@ router.put("/agendamentos/:id", validar({ params: idParam, body: remarcarSchema 
 router.get("/servicos", async (_req, res) => {
   const servicos = await prisma.servico.findMany({
     orderBy: [{ ativo: "desc" }, { ordem_exibicao: "asc" }, { nome_servico: "asc" }],
-    include: { _count: { select: { agendamentos: true, barbeiros: true } } },
+    include: { _count: { select: { itens_agenda: true, barbeiros: true } } },
   });
   res.json({ servicos });
 });
 
 router.post("/servicos", soAdmin, validar({ body: servicoSchema }), async (req, res) => {
-  res.status(201).json({ servico: await prisma.servico.create({ data: req.valid.body }) });
+  const servico = await prisma.servico.create({ data: req.valid.body });
+  await registrarLog("servico.criacao", { autor: req.usuario, entidade: "servico", id: servico.id_servico });
+  res.status(201).json({ servico });
 });
 
 router.put("/servicos/:id", soAdmin, validar({ params: idParam, body: servicoSchema }), async (req, res) => {
-  res.json({ servico: await prisma.servico.update({ where: { id_servico: req.valid.params.id }, data: req.valid.body }) });
+  const servico = await prisma.servico.update({ where: { id_servico: req.valid.params.id }, data: req.valid.body });
+  await registrarLog("servico.edicao", { autor: req.usuario, entidade: "servico", id: servico.id_servico });
+  res.json({ servico });
 });
 
 // Remoção lógica: preserva o histórico de agendamentos.
 router.delete("/servicos/:id", soAdmin, validar({ params: idParam }), async (req, res) => {
   const futuros = await prisma.agendamento.count({
-    where: { id_servico: req.valid.params.id, status: { in: ["PENDENTE", "CONFIRMADO"] }, data_hora_inicio: { gt: new Date() } },
+    where: {
+      OR: [{ id_servico: req.valid.params.id }, { servicos: { some: { id_servico: req.valid.params.id } } }],
+      status: { in: ["PENDENTE", "CONFIRMADO"] },
+      data_hora_inicio: { gt: new Date() },
+    },
   });
   if (futuros) throw conflict(`Há ${futuros} agendamento(s) futuro(s) deste serviço. Conclua ou cancele antes de desativá-lo.`);
   res.json({ servico: await prisma.servico.update({ where: { id_servico: req.valid.params.id }, data: { ativo: false } }) });
@@ -630,11 +695,14 @@ router.get("/produtos", soAdmin, async (_req, res) => {
 });
 
 router.post("/produtos", soAdmin, validar({ body: produtoSchema }), async (req, res) => {
-  res.status(201).json({ produto: await prisma.produto.create({ data: req.valid.body }) });
+  const produto = await prisma.produto.create({ data: req.valid.body });
+  await registrarLog("produto.criacao", { autor: req.usuario, entidade: "produto", id: produto.id_produto });
+  res.status(201).json({ produto });
 });
 
 router.put("/produtos/:id", soAdmin, validar({ params: idParam, body: produtoSchema }), async (req, res) => {
   const produto = await prisma.produto.update({ where: { id_produto: req.valid.params.id }, data: req.valid.body });
+  await registrarLog("produto.edicao", { autor: req.usuario, entidade: "produto", id: produto.id_produto, detalhes: { estoque: produto.quantidade_estoque } });
   if (!produto.ativo) await prisma.itemCarrinho.deleteMany({ where: { id_produto: produto.id_produto } });
   res.json({ produto });
 });
@@ -649,12 +717,13 @@ router.delete("/produtos/:id", soAdmin, validar({ params: idParam }), async (req
 
 // ═════════ PEDIDOS ═════════
 
-router.get("/pedidos", soAdmin, validar({ query: listaPedidosQuery }), async (req, res) => {
-  const { status, busca } = req.valid.query;
+router.get("/pedidos", balcao, validar({ query: listaPedidosQuery }), async (req, res) => {
+  const { status, busca, visitante } = req.valid.query;
   const pedidos = await prisma.pedido.findMany({
     where: {
       ...(status ? { status } : {}),
-      ...(busca ? { cliente: filtroBusca(busca) } : {}),
+      ...(visitante === undefined ? {} : visitante ? { reserva: { visitante: true } } : { OR: [{ id_reserva: null }, { reserva: { visitante: false } }] }),
+      ...(busca ? { AND: [{ OR: [{ cliente: filtroBusca(busca) }, { reserva: { codigo: busca.toUpperCase().slice(0, 6) } }] }] } : {}),
     },
     include: INCLUDE_PEDIDO,
     orderBy: { data_pedido: "desc" },
@@ -663,56 +732,80 @@ router.get("/pedidos", soAdmin, validar({ query: listaPedidosQuery }), async (re
   res.json({ pedidos });
 });
 
-router.patch("/pedidos/:id/status", soAdmin, validar({ params: idParam, body: statusPedidoSchema }), async (req, res) => {
-  res.json({ pedido: await avancarPedido(req.valid.params.id, req.valid.body.status) });
+router.patch("/pedidos/:id/status", balcao, validar({ params: idParam, body: statusPedidoSchema }), async (req, res) => {
+  res.json({ pedido: await avancarPedido(req.valid.params.id, req.valid.body.status, req.usuario) });
 });
 
 // ═════════ GALERIA ═════════
 
-router.get("/galeria", soAdmin, async (_req, res) => {
+// Profissional vê e edita só os cortes que publicou; o administrador, todos.
+const INCLUDE_CORTE = { _count: { select: { favoritos: true } }, autor: { select: { id_usuario: true, nome_completo: true } } };
+
+router.get("/galeria", quemCorta, async (req, res) => {
   const cortes = await prisma.corteGaleria.findMany({
+    where: ehBarbeiro(req) ? { id_autor: req.usuario.id_usuario } : {},
     orderBy: [{ ativo: "desc" }, { ordem_exibicao: "asc" }, { id_corte: "asc" }],
-    include: { _count: { select: { favoritos: true } } },
+    include: INCLUDE_CORTE,
   });
   res.json({ cortes });
 });
 
-router.post("/galeria", soAdmin, validar({ body: corteGaleriaSchema }), async (req, res) => {
-  res.status(201).json({ corte: await prisma.corteGaleria.create({ data: req.valid.body }) });
+async function corteEditavel(req) {
+  const corte = await prisma.corteGaleria.findUnique({ where: { id_corte: req.valid.params.id } });
+  if (!corte) throw notFound("Corte não encontrado.");
+  if (ehBarbeiro(req) && corte.id_autor !== req.usuario.id_usuario) throw forbidden("Você só pode alterar os cortes que publicou.");
+  return corte;
+}
+
+// Profissional só usa arquivos enviados por ele; o 3D é sempre opcional.
+async function conferirMidiaCorte(req, atual = null) {
+  if (!ehBarbeiro(req)) return;
+  const d = req.valid.body;
+  for (const campo of ["imagem_url", "modelo_3d_url"]) {
+    if (!d[campo] || d[campo] === atual?.[campo] || d[campo].startsWith("https://sketchfab.com/")) continue;
+    if (!(await urlPertenceAoUsuario(d[campo], req.usuario.id_usuario))) throw badRequest("Use um arquivo enviado por você pelo botão de envio.");
+  }
+}
+
+router.post("/galeria", quemCorta, validar({ body: corteGaleriaSchema }), async (req, res) => {
+  await conferirMidiaCorte(req);
+  const corte = await prisma.corteGaleria.create({ data: { ...req.valid.body, id_autor: ehBarbeiro(req) ? req.usuario.id_usuario : null }, include: INCLUDE_CORTE });
+  await registrarLog("corte.criacao", { autor: req.usuario, entidade: "corte_galeria", id: corte.id_corte });
+  res.status(201).json({ corte });
 });
 
-router.put("/galeria/:id", soAdmin, validar({ params: idParam, body: corteGaleriaSchema }), async (req, res) => {
-  res.json({ corte: await prisma.corteGaleria.update({ where: { id_corte: req.valid.params.id }, data: req.valid.body }) });
+router.put("/galeria/:id", quemCorta, validar({ params: idParam, body: corteGaleriaSchema }), async (req, res) => {
+  const atual = await corteEditavel(req);
+  await conferirMidiaCorte(req, atual);
+  const corte = await prisma.corteGaleria.update({ where: { id_corte: atual.id_corte }, data: req.valid.body, include: INCLUDE_CORTE });
+  await registrarLog("corte.edicao", { autor: req.usuario, entidade: "corte_galeria", id: corte.id_corte });
+  res.json({ corte });
 });
 
-router.delete("/galeria/:id", soAdmin, validar({ params: idParam }), async (req, res) => {
-  res.json({ corte: await prisma.corteGaleria.update({ where: { id_corte: req.valid.params.id }, data: { ativo: false } }) });
+router.delete("/galeria/:id", quemCorta, validar({ params: idParam }), async (req, res) => {
+  const atual = await corteEditavel(req);
+  const corte = await prisma.corteGaleria.update({ where: { id_corte: atual.id_corte }, data: { ativo: false }, include: INCLUDE_CORTE });
+  await registrarLog("corte.ocultacao", { autor: req.usuario, entidade: "corte_galeria", id: corte.id_corte });
+  res.json({ corte });
 });
 
 // ═════════ AVALIAÇÕES (moderação) ═════════
 
-router.get("/avaliacoes", soAdmin, async (_req, res) => {
+const avaliacoesAdminQuery = z.object({ status: z.preprocess((v) => (v === "" ? undefined : v), z.enum(["PENDENTE", "APROVADO", "REJEITADO"]).optional()) });
+router.get("/avaliacoes", soAdmin, validar({ query: avaliacoesAdminQuery }), async (req, res) => {
   const avaliacoes = await prisma.avaliacao.findMany({
+    where: req.valid.query.status ? { status_moderacao: req.valid.query.status } : {},
     orderBy: { data_avaliacao: "desc" },
     take: 300,
-    include: {
-      agendamento: {
-        select: {
-          data_hora_inicio: true,
-          cliente: { select: { nome_completo: true } },
-          barbeiro: { select: { nome_completo: true } },
-          servico: { select: { nome_servico: true } },
-        },
-      },
-    },
+    include: INCLUDE_AVALIACAO,
   });
-  res.json({ avaliacoes });
+  res.json({ avaliacoes: avaliacoes.map(avaliacaoPainel) });
 });
 
 router.patch("/avaliacoes/:id", soAdmin, validar({ params: idParam, body: visibilidadeSchema }), async (req, res) => {
-  res.json({
-    avaliacao: await prisma.avaliacao.update({ where: { id_avaliacao: req.valid.params.id }, data: { visivel: req.valid.body.visivel } }),
-  });
+  const { visivel, status_moderacao } = req.valid.body;
+  const dados = { ...(visivel === undefined ? {} : { visivel }), ...(status_moderacao ? { status_moderacao } : {}) };
+  res.json({ avaliacao: await moderarAvaliacao(req.valid.params.id, dados, req.usuario) });
 });
 
 // ═════════ CONFIGURAÇÕES ═════════
@@ -724,7 +817,13 @@ router.get("/config", soAdmin, async (_req, res) => {
 router.patch("/config", soAdmin, validar({ body: configSchema.partial() }), async (req, res) => {
   const dados = Object.fromEntries(Object.entries(req.valid.body).filter(([, v]) => v !== undefined));
   if (!Object.keys(dados).length) throw badRequest("Nada para salvar.");
-  res.json({ config: await salvarConfig(dados) });
+  const atual = await obterConfig();
+  if ((dados.nivel_ouro ?? atual.nivel_ouro) <= (dados.nivel_prata ?? atual.nivel_prata)) {
+    throw badRequest("O nível Ouro deve exigir mais pontos que o Prata.", [{ campo: "nivel_ouro", mensagem: "Deve ser maior que o Prata." }]);
+  }
+  const config = await salvarConfig(dados);
+  await registrarLog("config.edicao", { autor: req.usuario, entidade: "configuracao_salao", id: 1, detalhes: { campos: Object.keys(dados) } });
+  res.json({ config });
 });
 
 export default router;

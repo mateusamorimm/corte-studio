@@ -2,9 +2,13 @@
 // Toda escrita que afeta a agenda de um profissional roda numa transação que começa com
 // pg_advisory_xact_lock(1001, id_barbeiro) e revalida tudo depois do lock (ver docs/ARQUITETURA.md).
 // As restrições EXCLUDE do banco são a última barreira contra sobreposição.
+import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { AppError, badRequest, conflict, forbidden, notFound } from "../lib/errors.js";
 import { obterConfig } from "./configService.js";
+import { abrirReservaDoCliente, sincronizarReserva } from "./codigoService.js";
+import { creditar, estornar } from "./fidelidadeService.js";
+import { registrarLog } from "./logService.js";
 import {
   dataLocal,
   diaDaSemana,
@@ -18,6 +22,8 @@ export const STATUS_ATIVOS = ["PENDENTE", "CONFIRMADO", "CONCLUIDO"]; // os mesm
 const PERFIS_PROFISSIONAL = ["BARBEIRO", "ADMIN"];
 const MAX_AGENDAMENTOS_FUTUROS_CLIENTE = 5;
 const MIN = 60 * 1000;
+export const MAX_PESSOAS = 4;
+export const OPCOES_TX = { timeout: 20000, maxWait: 10000 };
 
 const travarProfissional = (tx, idBarbeiro) => tx.$executeRaw`SELECT pg_advisory_xact_lock(1001, ${idBarbeiro}::int)`;
 
@@ -28,22 +34,36 @@ export const INCLUDE_AGENDAMENTO = {
   cliente: { select: { id_usuario: true, nome_completo: true, telefone: true, email: true, avatar_url: true } },
   barbeiro: { select: { id_usuario: true, nome_completo: true, avatar_url: true } },
   servico: { select: { id_servico: true, nome_servico: true, icone: true, duracao_minutos: true } },
-  avaliacao: { select: { nota: true, comentario: true, visivel: true, data_avaliacao: true } },
+  avaliacao: { select: { nota: true, comentario: true, visivel: true, status_moderacao: true, data_avaliacao: true } },
+  servicos: {
+    orderBy: { ordem: "asc" },
+    select: { preco_registrado: true, duracao_minutos: true, servico: { select: { id_servico: true, nome_servico: true, icone: true } } },
+  },
+  cortes: { select: { corte: { select: { id_corte: true, nome_corte: true, imagem_url: true } } } },
+  reserva: { select: { id_reserva: true, codigo: true, visitante: true, status: true } },
 };
 
-async function servicoAtivo(cliente, idServico) {
-  const servico = await cliente.servico.findFirst({ where: { id_servico: idServico, ativo: true } });
-  if (!servico) throw notFound("Serviço não encontrado ou indisponível.");
-  return servico;
+// Serviços ativos na ordem pedida (sem repetir).
+async function servicosAtivos(cliente, ids) {
+  const unicos = [...new Set(ids)];
+  if (!unicos.length) throw badRequest("Escolha pelo menos um serviço.");
+  const lista = await cliente.servico.findMany({ where: { id_servico: { in: unicos }, ativo: true } });
+  if (lista.length !== unicos.length) throw notFound("Serviço não encontrado ou indisponível.");
+  return unicos.map((id) => lista.find((s) => s.id_servico === id));
 }
 
-// Profissionais ativos que realizam o serviço (com as disponibilidades).
-export function profissionaisDoServico(idServico, cliente = prisma, idBarbeiro = null) {
-  return cliente.usuario.findMany({
+const duracaoTotal = (servicos) => servicos.reduce((t, s) => t + s.duracao_minutos, 0);
+const precoTotal = (servicos) => servicos.reduce((t, s) => t.add(s.preco), new Prisma.Decimal(0));
+const linhasServico = (servicos) =>
+  servicos.map((s, ordem) => ({ id_servico: s.id_servico, preco_registrado: s.preco, duracao_minutos: s.duracao_minutos, ordem }));
+
+// Profissionais ativos que realizam TODOS os serviços (com as disponibilidades).
+function profissionaisDosServicos(ids, idBarbeiro = null) {
+  return prisma.usuario.findMany({
     where: {
       ativo: true,
       tipo_perfil: { in: PERFIS_PROFISSIONAL },
-      servicos_oferecidos: { some: { id_servico: idServico } },
+      AND: ids.map((id_servico) => ({ servicos_oferecidos: { some: { id_servico } } })),
       ...(idBarbeiro ? { id_usuario: idBarbeiro } : {}),
     },
     select: { id_usuario: true, nome_completo: true, avatar_url: true, disponibilidades: true },
@@ -51,8 +71,9 @@ export function profissionaisDoServico(idServico, cliente = prisma, idBarbeiro =
   });
 }
 
-// Lista os horários livres de um dia para um serviço (opcionalmente de um profissional).
-export async function horariosDisponiveis({ id_servico, data, id_barbeiro = null, porEquipe = false, ignorarId = null }) {
+// Lista os horários livres de um dia para um ou mais serviços (opcionalmente de um profissional).
+// Várias pessoas: com profissional escolhido, em sequência com ele; sem escolha, ao mesmo tempo com profissionais diferentes.
+export async function horariosDisponiveis({ servicos: idsServicos, data, id_barbeiro = null, pessoas = 1, porEquipe = false, ignorarId = null }) {
   const cfg = await obterConfig();
   const tz = cfg.fuso_horario;
   const agora = new Date();
@@ -62,9 +83,10 @@ export async function horariosDisponiveis({ id_servico, data, id_barbeiro = null
     return { data, horarios: [], aviso: `Agendamentos abertos até ${cfg.janela_agendamento_dias} dias à frente.` };
   }
 
-  const servico = await servicoAtivo(prisma, id_servico);
-  const duracao = servico.duracao_minutos;
-  const profissionais = await profissionaisDoServico(id_servico, prisma, id_barbeiro);
+  const servicos = await servicosAtivos(prisma, idsServicos);
+  const duracaoPessoa = duracaoTotal(servicos);
+  const duracao = id_barbeiro ? duracaoPessoa * pessoas : duracaoPessoa;
+  const profissionais = await profissionaisDosServicos(servicos.map((x) => x.id_servico), id_barbeiro);
   if (!profissionais.length) return { data, horarios: [] };
 
   const ids = profissionais.map((p) => p.id_usuario);
@@ -105,12 +127,14 @@ export async function horariosDisponiveis({ id_servico, data, id_barbeiro = null
     }
   }
 
-  const horarios = [...porHorario.values()].sort((a, b) => a.inicio.localeCompare(b.inicio));
-  return { data, duracao_minutos: duracao, horarios };
+  const horarios = [...porHorario.values()]
+    .filter((h) => id_barbeiro || h.profissionais.length >= pessoas)
+    .sort((a, b) => a.inicio.localeCompare(b.inicio));
+  return { data, duracao_minutos: duracaoPessoa, preco_total: precoTotal(servicos).toFixed(2), horarios };
 }
 
 // Revalida um horário dentro da transação (depois do lock do profissional).
-async function validarHorario(tx, { idBarbeiro, servico, inicio, fim, ignorarId = null, cfg, porEquipe, idCliente = null }) {
+async function validarHorario(tx, { idBarbeiro, servicos, inicio, fim, ignorarId = null, cfg, porEquipe, idCliente = null, ignorarReserva = null }) {
   const tz = cfg.fuso_horario;
   const agora = new Date();
 
@@ -118,12 +142,13 @@ async function validarHorario(tx, { idBarbeiro, servico, inicio, fim, ignorarId 
     where: { id_usuario: idBarbeiro, ativo: true, tipo_perfil: { in: PERFIS_PROFISSIONAL } },
     select: {
       nome_completo: true,
-      servicos_oferecidos: { where: { id_servico: servico.id_servico }, select: { id_servico: true } },
+      servicos_oferecidos: { where: { id_servico: { in: servicos.map((x) => x.id_servico) } }, select: { id_servico: true } },
       disponibilidades: true,
     },
   });
   if (!prof) throw notFound("Profissional não encontrado.");
-  if (!prof.servicos_oferecidos.length) throw conflict(`${prof.nome_completo} não realiza o serviço "${servico.nome_servico}".`);
+  const naoFaz = servicos.find((x) => !prof.servicos_oferecidos.some((o) => o.id_servico === x.id_servico));
+  if (naoFaz) throw conflict(`${prof.nome_completo} não realiza o serviço "${naoFaz.nome_servico}".`);
 
   if (inicio <= agora) throw badRequest("Escolha um horário no futuro.");
   if (!porEquipe) {
@@ -164,6 +189,7 @@ async function validarHorario(tx, { idBarbeiro, servico, inicio, fim, ignorarId 
         id_cliente: idCliente,
         status: { in: ["PENDENTE", "CONFIRMADO"] },
         ...(ignorarId ? { id_agendamento: { not: ignorarId } } : {}),
+        ...(ignorarReserva ? { OR: [{ id_reserva: null }, { id_reserva: { not: ignorarReserva } }] } : {}),
         ...sobrepoe(inicio, fim),
       },
       select: { id_agendamento: true },
@@ -177,13 +203,79 @@ async function clienteAtivo(idCliente) {
   if (!c) throw notFound("Cliente não encontrado ou desativado.");
 }
 
-// Cria um agendamento. Sem profissional escolhido, usa o primeiro livre no horário.
-export async function criarAgendamento({ id_cliente, id_servico, id_barbeiro = null, inicio, observacao = null, porEquipe = false, status = "PENDENTE" }) {
-  const cfg = await obterConfig();
-  const servico = await servicoAtivo(prisma, id_servico);
-  const fim = new Date(inicio.getTime() + servico.duracao_minutos * MIN);
-  await clienteAtivo(id_cliente);
+async function cortesAtivos(ids) {
+  const unicos = [...new Set(ids ?? [])];
+  if (!unicos.length) return [];
+  const n = await prisma.corteGaleria.count({ where: { id_corte: { in: unicos }, ativo: true } });
+  if (n !== unicos.length) throw badRequest("Algum dos cortes escolhidos não está mais disponível.");
+  return unicos;
+}
 
+// Reúne o que não precisa de trava: serviços, cortes e profissionais candidatos.
+export async function prepararAgendamento({ servicos: ids, id_barbeiro = null, inicio, cortes = [], pessoas = 1, porEquipe = false }) {
+  const cfg = await obterConfig();
+  const [servicos, idsCortes] = await Promise.all([servicosAtivos(prisma, ids), cortesAtivos(cortes)]);
+  if (pessoas > MAX_PESSOAS) throw badRequest(`No máximo ${MAX_PESSOAS} pessoas por reserva.`);
+  let candidatos = [id_barbeiro];
+  if (!id_barbeiro) {
+    const livres = await horariosDisponiveis({ servicos: ids, data: dataLocal(inicio, cfg.fuso_horario), pessoas, porEquipe });
+    const slot = livres.horarios.find((h) => new Date(h.inicio).getTime() === inicio.getTime());
+    candidatos = slot ? slot.profissionais.map((p) => p.id_usuario) : [];
+    if (candidatos.length < pessoas) throw new AppError(409, "Esse horário não está mais disponível. Escolha outro.", "CONFLITO_HORARIO");
+  }
+  return { cfg, servicos, cortes: idsCortes, candidatos, id_barbeiro, inicio, pessoas, porEquipe };
+}
+
+// Grava os atendimentos dentro da transação recebida (tudo ou nada).
+export async function agendarNaTransacao(tx, prep, { id_cliente, id_reserva, observacao = null, status = "PENDENTE" }) {
+  const { cfg, servicos, cortes, candidatos, id_barbeiro, inicio, pessoas, porEquipe } = prep;
+  for (const b of [...candidatos].sort((x, y) => x - y)) await travarProfissional(tx, b); // ordem fixa evita deadlock
+  const duracao = duracaoTotal(servicos) * MIN;
+  const disponiveis = [...candidatos];
+  const criados = [];
+
+  for (let i = 0; i < pessoas; i++) {
+    const comeco = id_barbeiro ? new Date(inicio.getTime() + i * duracao) : inicio;
+    const fim = new Date(comeco.getTime() + duracao);
+    let escolhido = null;
+    let ultimoErro = null;
+    for (const idBarbeiro of id_barbeiro ? [id_barbeiro] : [...disponiveis]) {
+      try {
+        await validarHorario(tx, { idBarbeiro, servicos, inicio: comeco, fim, cfg, porEquipe, idCliente: id_cliente, ignorarReserva: id_reserva });
+        escolhido = idBarbeiro;
+        break;
+      } catch (err) {
+        ultimoErro = err;
+        if (id_barbeiro || !(err instanceof AppError) || err.status !== 409) throw err;
+      }
+    }
+    if (!escolhido) throw ultimoErro ?? new AppError(409, "Esse horário não está mais disponível. Escolha outro.", "CONFLITO_HORARIO");
+    if (!id_barbeiro) disponiveis.splice(disponiveis.indexOf(escolhido), 1);
+    criados.push(
+      await tx.agendamento.create({
+        data: {
+          id_cliente,
+          id_barbeiro: escolhido,
+          id_servico: servicos[0].id_servico,
+          data_hora_inicio: comeco,
+          data_hora_fim: fim,
+          preco_registrado: precoTotal(servicos),
+          status,
+          observacao_cliente: observacao,
+          id_reserva,
+          servicos: { create: linhasServico(servicos) },
+          cortes: { create: cortes.map((id_corte) => ({ id_corte })) },
+        },
+        include: INCLUDE_AGENDAMENTO,
+      })
+    );
+  }
+  return criados;
+}
+
+// Cria um ou mais atendimentos (vários serviços, várias pessoas) com um código de reserva.
+export async function criarAgendamentos({ id_cliente, servicos, id_barbeiro = null, inicio, observacao = null, cortes = [], pessoas = 1, porEquipe = false, status = "PENDENTE" }) {
+  await clienteAtivo(id_cliente);
   if (!porEquipe) {
     const futuros = await prisma.agendamento.count({
       where: { id_cliente, status: { in: ["PENDENTE", "CONFIRMADO"] }, data_hora_inicio: { gt: new Date() } },
@@ -192,42 +284,12 @@ export async function criarAgendamento({ id_cliente, id_servico, id_barbeiro = n
       throw conflict(`Você já tem ${futuros} horários marcados. Conclua ou cancele um antes de agendar outro.`);
     }
   }
-
-  let candidatos;
-  if (id_barbeiro) candidatos = [id_barbeiro];
-  else {
-    const livres = await horariosDisponiveis({ id_servico, data: dataLocal(inicio, cfg.fuso_horario), porEquipe });
-    const slot = livres.horarios.find((h) => new Date(h.inicio).getTime() === inicio.getTime());
-    candidatos = slot ? slot.profissionais.map((p) => p.id_usuario) : [];
-    if (!candidatos.length) throw new AppError(409, "Esse horário não está mais disponível. Escolha outro.", "CONFLITO_HORARIO");
-  }
-
-  let ultimoErro;
-  for (const idBarbeiro of candidatos) {
-    try {
-      return await prisma.$transaction(async (tx) => {
-        await travarProfissional(tx, idBarbeiro);
-        await validarHorario(tx, { idBarbeiro, servico, inicio, fim, cfg, porEquipe, idCliente: id_cliente });
-        return tx.agendamento.create({
-          data: {
-            id_cliente,
-            id_barbeiro: idBarbeiro,
-            id_servico,
-            data_hora_inicio: inicio,
-            data_hora_fim: fim,
-            preco_registrado: servico.preco,
-            status,
-            observacao_cliente: observacao,
-          },
-          include: INCLUDE_AGENDAMENTO,
-        });
-      });
-    } catch (err) {
-      ultimoErro = err;
-      if (id_barbeiro || !(err instanceof AppError) || err.status !== 409) throw err;
-    }
-  }
-  throw ultimoErro;
+  const prep = await prepararAgendamento({ servicos, id_barbeiro, inicio, cortes, pessoas, porEquipe });
+  return prisma.$transaction(async (tx) => {
+    const reserva = await abrirReservaDoCliente(tx, id_cliente, observacao);
+    const agendamentos = await agendarNaTransacao(tx, prep, { id_cliente, id_reserva: reserva.id_reserva, observacao, status });
+    return { reserva, agendamentos };
+  }, OPCOES_TX);
 }
 
 async function carregar(id, ator) {
@@ -284,15 +346,42 @@ export async function alterarStatus({ id, status, motivo = null, ator }) {
         status,
         cancelado_em: status === "CANCELADO" ? new Date() : null,
         motivo_cancelamento: status === "CANCELADO" ? motivo : null,
+        falta_automatica: false,
+        ...(status === "CONCLUIDO" && !atual.chegou_em ? { chegou_em: new Date() } : {}),
       },
     });
     if (count !== 1) throw new AppError(409, "O agendamento foi alterado por outra pessoa. Atualize a página.", "CONCORRENCIA");
+    if (status === "CONCLUIDO") {
+      await creditar(tx, {
+        idUsuario: atual.id_cliente,
+        origem: "ATENDIMENTO",
+        idOrigem: id,
+        valor: atual.preco_registrado,
+        motivo: `Atendimento concluído nº ${id}`,
+      });
+    } else if (atual.status === "CONCLUIDO") {
+      await estornar(tx, { origem: "ATENDIMENTO", idOrigem: id, motivo: `Conclusão do atendimento nº ${id} desfeita` });
+    }
+    await sincronizarReserva(tx, atual.id_reserva, { motivo: status === "CANCELADO" ? motivo : null });
+    await registrarLog("agendamento.status", { autor: ator, entidade: "agendamento", id, detalhes: { de: atual.status, para: status, motivo } }, tx);
     return tx.agendamento.findUnique({ where: { id_agendamento: id }, include: INCLUDE_AGENDAMENTO });
-  });
+  }, OPCOES_TX);
 }
 
-// Remarcação pela equipe: novo horário, profissional e/ou serviço.
-export async function remarcar({ id, id_servico, id_barbeiro, inicio, ator }) {
+// Check-in no balcão: registra a chegada (evita a falta automática) e confirma o horário.
+export async function registrarChegada(id, ator) {
+  const atual = await carregar(id, ator);
+  if (!["PENDENTE", "CONFIRMADO"].includes(atual.status)) throw conflict("Só atendimentos pendentes ou confirmados recebem chegada.");
+  await prisma.agendamento.updateMany({
+    where: { id_agendamento: id, status: atual.status },
+    data: { chegou_em: atual.chegou_em ?? new Date(), status: "CONFIRMADO" },
+  });
+  await registrarLog("agendamento.chegada", { autor: ator, entidade: "agendamento", id });
+  return prisma.agendamento.findUnique({ where: { id_agendamento: id }, include: INCLUDE_AGENDAMENTO });
+}
+
+// Remarcação pela equipe: novo horário, profissional e/ou serviços.
+export async function remarcar({ id, id_servico = null, servicos: ids = null, id_barbeiro, inicio, ator }) {
   const atual = await carregar(id, ator);
   if (!["PENDENTE", "CONFIRMADO"].includes(atual.status)) {
     throw conflict("Só agendamentos pendentes ou confirmados podem ser remarcados.");
@@ -301,25 +390,35 @@ export async function remarcar({ id, id_servico, id_barbeiro, inicio, ator }) {
     throw forbidden("Você só pode remarcar para a sua própria agenda.");
   }
   const cfg = await obterConfig();
-  const servico = await servicoAtivo(prisma, id_servico);
-  const fim = new Date(inicio.getTime() + servico.duracao_minutos * MIN);
+  const linhas = await prisma.agendamentoServico.findMany({ where: { id_agendamento: id }, orderBy: { ordem: "asc" } });
+  const atuais = linhas.length ? linhas.map((l) => l.id_servico) : [atual.id_servico];
+  // Só o serviço principal informado e igual ao atual: mantém a lista completa.
+  const pedidos = ids?.length ? ids : id_servico && id_servico !== atual.id_servico ? [id_servico] : atuais;
+  const mesmos = pedidos.length === atuais.length && pedidos.every((x) => atuais.includes(x));
+  const servicos = await servicosAtivos(prisma, pedidos);
+  const fim = new Date(inicio.getTime() + duracaoTotal(servicos) * MIN);
 
   return prisma.$transaction(async (tx) => {
     for (const b of [...new Set([atual.id_barbeiro, id_barbeiro])].sort((a, b) => a - b)) await travarProfissional(tx, b);
-    await validarHorario(tx, { idBarbeiro: id_barbeiro, servico, inicio, fim, ignorarId: id, cfg, porEquipe: true, idCliente: atual.id_cliente });
+    await validarHorario(tx, { idBarbeiro: id_barbeiro, servicos, inicio, fim, ignorarId: id, cfg, porEquipe: true, idCliente: atual.id_cliente, ignorarReserva: atual.id_reserva });
     const { count } = await tx.agendamento.updateMany({
       where: { id_agendamento: id, status: atual.status },
       data: {
         id_barbeiro,
-        id_servico,
+        id_servico: servicos[0].id_servico,
         data_hora_inicio: inicio,
         data_hora_fim: fim,
-        preco_registrado: id_servico === atual.id_servico ? atual.preco_registrado : servico.preco,
+        preco_registrado: mesmos ? atual.preco_registrado : precoTotal(servicos),
       },
     });
     if (count !== 1) throw new AppError(409, "O agendamento foi alterado por outra pessoa. Atualize a página.", "CONCORRENCIA");
+    if (!mesmos || !linhas.length) {
+      await tx.agendamentoServico.deleteMany({ where: { id_agendamento: id } });
+      await tx.agendamentoServico.createMany({ data: linhasServico(servicos).map((l) => ({ ...l, id_agendamento: id })) });
+    }
+    await registrarLog("agendamento.remarcacao", { autor: ator, entidade: "agendamento", id, detalhes: { de: atual.data_hora_inicio, para: inicio } }, tx);
     return tx.agendamento.findUnique({ where: { id_agendamento: id }, include: INCLUDE_AGENDAMENTO });
-  });
+  }, OPCOES_TX);
 }
 
 // Cancelamento pelo próprio cliente, respeitando a antecedência mínima configurada.
@@ -337,18 +436,8 @@ export async function cancelarPeloCliente(id, idCliente, motivo = null) {
     data: { status: "CANCELADO", cancelado_em: new Date(), motivo_cancelamento: motivo ?? "Cancelado pelo cliente" },
   });
   if (count !== 1) throw conflict("Este agendamento não pode mais ser cancelado.");
+  await sincronizarReserva(prisma, ag.id_reserva, { motivo: motivo ?? "Cancelado pelo cliente" });
   return prisma.agendamento.findUnique({ where: { id_agendamento: id }, include: INCLUDE_AGENDAMENTO });
-}
-
-export async function avaliar(id, idCliente, { nota, comentario }) {
-  const ag = await prisma.agendamento.findFirst({
-    where: { id_agendamento: id, id_cliente: idCliente },
-    select: { status: true, avaliacao: { select: { id_avaliacao: true } } },
-  });
-  if (!ag) throw notFound("Agendamento não encontrado.");
-  if (ag.status !== "CONCLUIDO") throw conflict("Só é possível avaliar atendimentos concluídos.");
-  if (ag.avaliacao) throw conflict("Este atendimento já foi avaliado.");
-  return prisma.avaliacao.create({ data: { id_agendamento: id, nota, comentario } }); // UNIQUE cobre a corrida
 }
 
 // ───────── Bloqueios (folgas, férias, compromissos) ─────────

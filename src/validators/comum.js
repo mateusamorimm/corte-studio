@@ -178,3 +178,52 @@ export const emailOpcional = z.preprocess(
   (v) => (typeof v === "string" && v.trim() === "" ? null : v),
   email.nullable().optional()
 );
+
+// Nome de login: 3 a 30 caracteres, letras minúsculas, números, ponto ou _.
+export const nomeUsuario = z.preprocess(
+  (v) => (typeof v === "string" ? v.trim().toLowerCase().replace(/^@/, "") || null : v),
+  z
+    .string()
+    .regex(/^[a-z0-9][a-z0-9._]{2,29}$/, "Nome de usuário: 3 a 30 letras, números, ponto ou _.")
+    .nullable()
+    .optional()
+);
+
+// Link clicável seguro: https, e-mail ou telefone.
+export const urlContato = z
+  .string({ error: "Informe o link." })
+  .trim()
+  .max(300, "Link muito longo.")
+  .refine((s) => {
+    try {
+      const u = new URL(s);
+      return u.protocol === "https:" ? Boolean(u.hostname.includes(".")) : /^(mailto:[^@\s]+@[^@\s]+|tel:\+?[0-9]{8,15})$/.test(s);
+    } catch {
+      return false;
+    }
+  }, "Link inválido. Use um endereço https://, e-mail ou telefone.");
+
+export const area = z.enum(["BARBEARIA", "CABELEIREIRO", "AMBOS"], { error: "Área inválida." });
+
+// Modelo 3D opcional: arquivo .glb no nosso Cloudinary ou link do Sketchfab (vira o endereço de incorporação).
+export const modelo3d = z.preprocess(
+  (v) => {
+    if (typeof v !== "string") return v;
+    const s = v.trim();
+    if (!s) return null;
+    const id = s.match(/^https:\/\/(?:www\.)?sketchfab\.com\/(?:3d-models\/(?:[\w-]*-)?|models\/)([0-9a-f]{32})(?:[/?#].*)?$/i)?.[1];
+    return id ? `https://sketchfab.com/models/${id.toLowerCase()}/embed` : s;
+  },
+  z
+    .string()
+    .max(500)
+    .refine(
+      (s) => /^https:\/\/res\.cloudinary\.com\/[\w-]+\/raw\/upload\/.+\.glb$/i.test(s) || /^https:\/\/sketchfab\.com\/models\/[0-9a-f]{32}\/embed$/.test(s),
+      "Envie um arquivo .glb ou cole o link de um modelo do Sketchfab."
+    )
+    .nullable()
+    .optional()
+);
+
+const vazio = (v) => (v === "" ? undefined : v);
+export const opcionalQuery = (schema) => z.preprocess(vazio, schema.optional());

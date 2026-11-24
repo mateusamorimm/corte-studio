@@ -15,7 +15,7 @@ test("CPF: dígitos verificadores", () => {
 });
 
 test("telefone aceita +55 e formatos comuns, recusa números incompletos", () => {
-  const tel = (t) => cadastroSchema.safeParse({ nome_completo: "Ana Souza", email: "a@b.com", senha: "abc12345", telefone: t });
+  const tel = (t) => cadastroSchema.safeParse({ nome_completo: "Ana Souza", email: "a@b.com", senha: "abc12345", telefone: t, consentimento: true });
   assert.equal(tel("+55 (11) 98765-4321").data.telefone, "11987654321");
   assert.equal(tel("5511987654321").data.telefone, "11987654321");
   assert.equal(tel("55 11 3333-4444").data.telefone, "1133334444");
@@ -25,7 +25,7 @@ test("telefone aceita +55 e formatos comuns, recusa números incompletos", () =>
 });
 
 test("cadastro: normaliza e-mail, telefone e CPF; campos opcionais vazios", () => {
-  const r = cadastroSchema.parse({ nome_completo: " Ana Souza ", email: " ANA@Exemplo.com ", senha: "abc12345", telefone: "(11) 3333-4444", cpf: "", data_nascimento: "" });
+  const r = cadastroSchema.parse({ nome_completo: " Ana Souza ", email: " ANA@Exemplo.com ", senha: "abc12345", telefone: "(11) 3333-4444", cpf: "", data_nascimento: "", consentimento: true });
   assert.equal(r.email, "ana@exemplo.com");
   assert.equal(r.nome_completo, "Ana Souza");
   assert.equal(r.telefone, "1133334444");
@@ -34,7 +34,7 @@ test("cadastro: normaliza e-mail, telefone e CPF; campos opcionais vazios", () =
 });
 
 test("senha: exige 8+ caracteres com letras e números, máx. 72 bytes", () => {
-  const base = { nome_completo: "Ana Souza", email: "a@b.com", telefone: "11999998888" };
+  const base = { nome_completo: "Ana Souza", email: "a@b.com", telefone: "11999998888", consentimento: true };
   assert.throws(() => cadastroSchema.parse({ ...base, senha: "abcdefgh" }));
   assert.throws(() => cadastroSchema.parse({ ...base, senha: "12345678" }));
   assert.throws(() => cadastroSchema.parse({ ...base, senha: "a1" + "x".repeat(80) }));

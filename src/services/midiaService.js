@@ -3,7 +3,7 @@
 // Cloudinary, valida pasta/formato/tamanho e registra na tabela midia; o que não passa é apagado).
 import { prisma } from "../lib/prisma.js";
 import { env } from "../config/env.js";
-import { AppError, badRequest, forbidden, notFound } from "../lib/errors.js";
+import { AppError, badRequest, conflict, forbidden, notFound } from "../lib/errors.js";
 import { parametrosEnvio, urlEnvio, obterRecurso, destruir } from "../lib/cloudinary.js";
 
 const MB = 1024 * 1024;
@@ -14,7 +14,8 @@ export const TIPOS = {
   MODELO_3D: { resourceType: "raw", formatos: ["glb"], limite: 10 * MB },
 };
 
-const TODOS = ["CLIENTE", "BARBEIRO", "ADMIN"];
+const TODOS = ["CLIENTE", "BARBEIRO", "RECEPCIONISTA", "ADMIN"];
+const QUEM_CORTA = ["BARBEIRO", "ADMIN"]; // foto do corte e, se quiser, o modelo 3D
 export const FINALIDADES = {
   AVATAR: { tipos: ["IMAGEM"], perfis: TODOS },
   CAPA: { tipos: ["IMAGEM"], perfis: TODOS },
@@ -22,10 +23,10 @@ export const FINALIDADES = {
   POST: { tipos: ["IMAGEM", "VIDEO"], perfis: TODOS },
   PRODUTO: { tipos: ["IMAGEM"], perfis: ["ADMIN"] },
   SERVICO: { tipos: ["IMAGEM"], perfis: ["ADMIN"] },
-  GALERIA: { tipos: ["IMAGEM"], perfis: ["ADMIN"] },
+  GALERIA: { tipos: ["IMAGEM"], perfis: QUEM_CORTA },
   SALAO: { tipos: ["IMAGEM"], perfis: ["ADMIN"] },
   EQUIPE: { tipos: ["IMAGEM"], perfis: ["ADMIN"] },
-  CORTE_3D: { tipos: ["MODELO_3D"], perfis: ["ADMIN"] },
+  CORTE_3D: { tipos: ["MODELO_3D"], perfis: QUEM_CORTA },
 };
 
 // Pasta exclusiva por finalidade e usuário: studio-corte/avatar/u12
@@ -100,10 +101,14 @@ export async function excluirMidia(usuario, idMidia) {
   const m = await prisma.midia.findUnique({ where: { id_midia: idMidia } });
   if (!m) throw notFound("Mídia não encontrada.");
   if (m.id_usuario !== usuario.id_usuario && usuario.tipo_perfil !== "ADMIN") throw forbidden();
+  if (await prisma.postMidia.findUnique({ where: { id_midia: m.id_midia } })) {
+    throw conflict("Este arquivo está em uma publicação. Exclua a publicação para removê-lo.");
+  }
   await destruir(m.resource_type, m.public_id);
   await prisma.$transaction([
     prisma.usuario.updateMany({ where: { avatar_url: m.url }, data: { avatar_url: null } }),
     prisma.usuario.updateMany({ where: { capa_url: m.url }, data: { capa_url: null } }),
+    prisma.corteGaleria.updateMany({ where: { modelo_3d_url: m.url }, data: { modelo_3d_url: null } }),
     prisma.midia.delete({ where: { id_midia: m.id_midia } }),
   ]);
 }
