@@ -64,6 +64,7 @@ function abrirAba(nome, { rolar = false } = {}) {
     const ativa = t.dataset.tab === nome;
     t.classList.toggle("active", ativa);
     t.setAttribute("aria-selected", String(ativa));
+    if (ativa) t.parentElement.scrollLeft = t.offsetLeft - (t.parentElement.clientWidth - t.offsetWidth) / 2;
   });
   $$(".tab-panel").forEach((p) => (p.hidden = p.id !== `tab-${nome}`));
   if (location.hash !== `#${nome}`) history.replaceState(null, "", `#${nome}`);

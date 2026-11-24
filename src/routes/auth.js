@@ -10,6 +10,9 @@ import { emitirCsrf } from "../middlewares/csrf.js";
 
 const router = Router();
 
+// Só e-mails vão para o log: num campo livre a pessoa pode ter digitado a senha por engano.
+const identificadorLog = (v) => (v.includes("@") ? v : "(nome de usuário)");
+
 function iniciarSessao(res, usuario) {
   const sid = criarSessao(res, usuario);
   emitirCsrf(res, sid); // novo token CSRF vinculado à nova sessão
@@ -32,7 +35,7 @@ router.post("/login", limiteLogin, validar({ body: loginSchema }), async (req, r
   try {
     usuario = await autenticar(req.valid.body.email, req.valid.body.senha);
   } catch (err) {
-    await registrarLog("login.falha", { detalhes: { identificador: req.valid.body.email, motivo: err.code } });
+    await registrarLog("login.falha", { detalhes: { identificador: identificadorLog(req.valid.body.email), motivo: err.code } });
     throw err;
   }
   await registrarLog("login.sucesso", { autor: usuario, entidade: "usuario", id: usuario.id_usuario });

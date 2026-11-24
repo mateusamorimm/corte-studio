@@ -35,6 +35,8 @@ function montarCabecalho(usuario) {
     painel.className = "btn btn-outline btn-sm";
     painel.textContent = "Painel";
     chip.before(painel);
+    // No celular o botão não cabe no cabeçalho: o atalho vai para o menu
+    nav?.insertAdjacentHTML("beforeend", html`<a href="${painel.getAttribute("href")}" class="nav-link so-celular">Painel</a>`.toString());
   }
 }
 

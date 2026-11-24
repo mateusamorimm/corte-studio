@@ -618,6 +618,9 @@ describe("funcionalidades completas", { skip: MOTIVO_SKIP, concurrency: false },
     assert.equal(eq.email, undefined, "sem dados pessoais da equipe");
     assert.equal((await nav.recep.post("/api/admin/bloqueios", { id_barbeiro: ids.barbeiro, inicio: segunda("17:00").inicio, fim: segunda("17:30").inicio })).status, 403);
     assert.equal((await nav.recep.patch(`/api/admin/clientes/${ids.cliente}/ativo`, { ativo: false })).status, 403);
+    const edicao = { nome_completo: "Carla Cliente Silva", telefone: "11988887777" };
+    assert.equal((await nav.recep.put(`/api/admin/clientes/${ids.cliente}`, { ...edicao, email: email("invasor") })).status, 403, "não troca o e-mail de quem tem acesso");
+    ok(await nav.recep.put(`/api/admin/clientes/${ids.cliente}`, { ...edicao, email: email("cliente") }));
     const ag = ok(await nav.recep.post("/api/admin/agendamentos", { id_cliente: ids.outro, servicos: [criados.servicos[0]], inicio: segunda("16:30").inicio }), 201);
     ok(await nav.recep.post(`/api/admin/agendamentos/${ag.agendamento.id_agendamento}/chegada`));
   });

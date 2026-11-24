@@ -69,8 +69,27 @@ export async function iniciarPainel(perfis = ["ADMIN"]) {
         <div class="role">${ROTULO[usuario.tipo_perfil] ?? usuario.tipo_perfil}</div>
       </div>`.toString();
   }
+  montarMenuCelular();
   ligarSair(sair);
   return usuario;
+}
+
+// No celular o menu fica recolhido para o conteúdo aparecer primeiro
+function montarMenuCelular() {
+  const lateral = $(".admin-sidebar");
+  if (!lateral || $("#btnMenuPainel")) return;
+  const botao = document.createElement("button");
+  botao.type = "button";
+  botao.id = "btnMenuPainel";
+  botao.className = "btn btn-outline btn-sm";
+  botao.setAttribute("aria-controls", "adminNav");
+  botao.setAttribute("aria-expanded", "false");
+  botao.textContent = "☰ Menu";
+  lateral.querySelector(".logo").after(botao);
+  botao.addEventListener("click", () => {
+    const aberto = lateral.classList.toggle("menu-aberto");
+    botao.setAttribute("aria-expanded", String(aberto));
+  });
 }
 
 // Abas simples do painel: botões [data-aba] e blocos #aba-<nome>

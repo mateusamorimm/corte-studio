@@ -34,12 +34,23 @@ npm run dev:teste        # servidor na porta 3001 usando a branch de teste (.env
 
 | Perfil | O que acessa |
 |---|---|
-| Visitante | Home (serviços, galeria, produtos, avaliações, mapa), consulta de horários livres, cadastro e login |
-| **CLIENTE** | Agendar, cancelar (até X h antes) e avaliar atendimentos; favoritos e imagens de referência; carrinho e pedidos; perfil completo (foto, capa, bio, redes, senha) |
-| **BARBEIRO** | Painel → Atendimentos: só a própria agenda (confirmar, concluir, falta, remarcar, bloquear horários) |
-| **ADMIN** | Painel completo: dashboard, serviços, clientes, produtos, pedidos, atendimentos, equipe, configurações e editor de conteúdo |
+| Visitante | Site, catálogo, feed (leitura), reserva de horário/produtos com código, consulta da reserva |
+| Cliente | Tudo do visitante + agendamentos, carrinho/checkout, favoritos, fidelidade, avaliações, feed e perfil com privacidade |
+| Recepcionista | Painel: dashboard (sem faturamento), pedidos, reservas por código, agenda de todos, clientes e o próprio ponto |
+| Profissional (BARBEIRO) | Painel: a própria agenda e bloqueios, o próprio perfil profissional e os cortes que publicou (foto obrigatória, 3D opcional) |
+| Administrador | Tudo, inclusive recepcionistas, fidelidade, moderação, contatos, configurações e auditoria |
 
-A permissão é sempre conferida no servidor; o frontend só esconde o que o perfil não pode usar.
+As permissões são conferidas no servidor em toda requisição; o menu apenas esconde o que não se pode usar.
+
+## Funcionalidades
+
+- **Catálogo** com áreas (barbearia/cabeleireiro), cortes, serviços, profissionais e produtos; favoritos dos três tipos.
+- **Cortes**: a foto é o padrão; o modelo 3D (`.glb` ou Sketchfab) só aparece se o profissional adicionar.
+- **Agendamento** com vários serviços, cortes de referência e até 4 pessoas; com ou sem conta (código de 6 caracteres).
+- **Checkout** com desconto de fidelidade calculado no servidor; pagamento sempre no salão.
+- **Feed** com fotos, vídeos, curtidas, comentários, denúncias e moderação; **perfis públicos** com privacidade.
+- **Avaliações** por critério, só de quem foi atendido ou comprou, com fila de aprovação.
+- **Fidelidade** (extrato de pontos, níveis, recompensas), **recepção** (contrato, documentos cifrados, ponto), **auditoria**.
 
 ## Estrutura
 

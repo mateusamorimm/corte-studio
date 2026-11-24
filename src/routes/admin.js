@@ -378,6 +378,11 @@ router.put("/clientes/:id", balcao, validar({ params: idParam, body: clienteAdmi
   const atual = await clienteDoPainel(req.valid.params.id);
   const { enviar_convite, ...dados } = req.valid.body;
   if (atual.email && !dados.email) throw badRequest("O e-mail de acesso de um cliente não pode ser apagado.");
+  // Trocar o e-mail de quem já tem senha permitiria assumir a conta: só o administrador.
+  if (ehRecepcao(req) && dados.email !== atual.email) {
+    const { senha_hash } = await prisma.usuario.findUnique({ where: { id_usuario: atual.id_usuario }, select: { senha_hash: true } });
+    if (senha_hash) throw forbidden("Só o administrador altera o e-mail de um cliente que já tem acesso. O próprio cliente também pode trocar no perfil.");
+  }
   await emailLivre(dados.email, atual.id_usuario);
   await cpfLivre(dados.cpf, atual.id_usuario);
   const cliente = await prisma.usuario.update({

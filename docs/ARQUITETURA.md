@@ -87,3 +87,42 @@ tests/             node:test
 - CSP: `connect-src` libera `api.cloudinary.com` e `res.cloudinary.com`; `media-src` libera `res.cloudinary.com`.
 - Imagens antigas (tabela `imagem`) → `scripts/migrar-imagens-cloudinary.mjs` (simula por padrão; `--executar` envia e troca as referências, sem apagar a tabela antiga).
 - Ordem de implantação: migration `20261119000000_midia_cloudinary` → variáveis `CLOUDINARY_*` no Render → deploy do código → migração das imagens.
+
+## Reservas e visitantes
+- Todo agendamento feito pelo site ou pela equipe e todo pedido recebe uma `reserva` com código de 6 caracteres (sem I, O, 0, 1).
+- Visitante informa só nome, telefone e e-mail (com aceite registrado). É criado um `usuario` provisório (`visitante = true`, sem
+  e-mail de login e sem senha). O e-mail digitado fica na reserva e nunca vira login sozinho.
+- A consulta pública exige código **e** telefone (por POST, para o telefone não ir para endereços e logs). Limites: 10 reservas/h por IP e
+  3 abertas por telefone (trava `pg_advisory_xact_lock(1004, hashtext(telefone))`).
+- No balcão, "Concluir + cadastrar" transforma o provisório em cliente (convite por e-mail) ou transfere o histórico para uma conta existente.
+- Horário + produtos da mesma reserva entram na mesma transação: ou tudo é gravado, ou nada.
+- `rotinaService`: falta automática (visitante sem check-in após a tolerância) e pedido com prazo vencido (devolve estoque e pontos).
+  É disparada pelo tráfego da API, no máximo uma vez por minuto, para não manter o Neon acordado; trava `1003`.
+
+## Vários serviços e pessoas
+- `agendamento_servico` guarda a lista; `agendamento.id_servico` continua sendo o serviço principal (compatível com dados antigos).
+- Várias pessoas = atendimentos irmãos na mesma reserva: com profissional escolhido, em sequência; sem escolha, ao mesmo tempo com
+  profissionais diferentes. As travas `1001` são obtidas em ordem crescente.
+
+## Fidelidade
+- `movimento_pontos` é só de inclusão; saldo = soma. O crédito acontece na mesma transação do UPDATE condicional que conclui o
+  atendimento/pedido (uma vez por conclusão; desfazer estorna). Nível usa os pontos acumulados (gastar não rebaixa).
+- Resgate: trava `1002` por cliente, melhor recompensa ativa, desconto calculado no servidor; cancelar devolve os pontos.
+
+## Feed, avaliações e moderação
+- Publica na hora: equipe, clientes com algo concluído ou já aprovados antes. Conta nova fica pendente. Decidir encerra as denúncias.
+- Mídia de publicação precisa ter sido enviada pelo autor (finalidade POST) e é apagada do Cloudinary junto com a publicação.
+- Avaliação só do que fez parte do atendimento/pedido concluído; uma por atendimento/pedido (UNIQUE + CHECK).
+
+## Dados sensíveis da equipe
+- Documentos em AES-256-GCM (`src/lib/cifra.js`, chave `CHAVE_DADOS`), mascarados na lista; abrir a ficha gera registro na auditoria.
+- `log_auditoria` é gravado só pelo servidor, descarta campos sensíveis e não tem rota de escrita.
+- Recepcionista não troca o e-mail de cliente que já tem senha (evita tomada de conta).
+
+## Visualizador 3D
+- `public/vendor/model-viewer-4.1.0.min.js` (BSD-3) servido por nós e baixado só quando a pessoa pede o 3D.
+  A CSP libera `'wasm-unsafe-eval'` apenas para o decodificador de malhas; scripts inline continuam proibidos.
+
+## Publicação destas mudanças (quando autorizada)
+1. Ponto de recuperação no Neon. 2. `prisma migrate deploy` no banco principal (`20261119…`, `20261124000000…`, `20261124000100…`, todas aditivas).
+3. Variáveis no Render: `CLOUDINARY_*`, `CHAVE_DADOS`, `APP_URL`, SMTP. 4. Publicar o código. As migrations vêm **antes** do código.

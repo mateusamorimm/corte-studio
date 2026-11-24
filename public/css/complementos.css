@@ -554,3 +554,36 @@ a.contact-fab-btn { text-decoration: none; }
 .admin-main { min-width: 0; }
 .admin-card, .admin-grid > * { min-width: 0; }
 .admin-table .table-actions { min-width: 150px; }
+
+/* Celular: cabeçalho, perfil e busca cabem na tela */
+.mobile-toggle { align-items: center; justify-content: center; }
+.perfil-grid > * { min-width: 0; }
+.nav .so-celular { display: none; }
+@media (max-width: 800px) { .perfil-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 600px) {
+  .nav .so-celular { display: block; }
+  .header .user-chip > span:not(.avatar) { display: none; }
+  .header .user-chip { padding: 4px; }
+  .filter-bar .search-input { max-width: none; margin-left: 0; flex-basis: 100%; }
+  .filtro-3d { margin-left: 0; }
+}
+@media (max-width: 480px) { .header .nav-actions > .btn-primary { display: none; } }
+
+/* Painel no celular: menu recolhido */
+#btnMenuPainel { display: none; }
+@media (max-width: 900px) {
+  .admin-sidebar { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); position: sticky; top: 0; z-index: 40; max-height: 100vh; overflow-y: auto; }
+  .admin-sidebar .logo { margin-bottom: 0 !important; }
+  #btnMenuPainel { display: inline-flex; }
+  .admin-sidebar > nav, .admin-sidebar > nav + div { display: none !important; width: 100%; }
+  .admin-sidebar.menu-aberto > nav { display: flex !important; margin-top: 12px; }
+  .admin-sidebar.menu-aberto > nav + div { display: block !important; }
+  .admin-main { padding: var(--space-5) var(--space-4); }
+}
+/* Perfil no celular: primeiro a aba escolhida, depois os resumos */
+@media (max-width: 800px) { .perfil-grid > .perfil-sidebar { order: 2; } }
+.admin-card div[style*="display:flex"] > .form-input { min-width: 0; }
+.perfil-actions { margin-top: 10px; }
+.miniatura { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: var(--bg-elevated); flex-shrink: 0; }
+.admin-acoes { display: flex; gap: 6px; flex-wrap: wrap; }
+.text-accent { color: var(--accent); }

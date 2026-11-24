@@ -10,6 +10,7 @@ const area = $("#checkout");
 const { usuario, config } = await iniciarVitrine();
 let resumo = null;
 let forma = "PIX";
+let finalizado = false; // depois de confirmar, o carrinho esvaziado não redesenha a página
 
 const FORMAS = [
   ["PIX", "Pix no salão", "Pague pelo QR Code do balcão na retirada."],
@@ -122,6 +123,7 @@ async function enviar(e) {
           forma_pagamento: forma,
           usar_desconto: $("#usarDesconto")?.checked ?? true,
         });
+        finalizado = true;
         await recarregarCarrinho();
         concluido(pedido.reserva.codigo, pedido.valor_total, pedido.prazo_retirada);
       } else {
@@ -135,6 +137,7 @@ async function enviar(e) {
           data_retirada: form.data_retirada.value,
           itens: resumo.itens.map((i) => ({ id_produto: i.id_produto, quantidade: i.quantidade })),
         });
+        finalizado = true;
         esvaziarCarrinhoVisitante();
         concluido(reserva.codigo, reserva.pedido.total, reserva.pedido.prazo_retirada);
       }
@@ -170,7 +173,7 @@ async function atualizar() {
 }
 // O carrinho lateral mudou enquanto o checkout está aberto
 window.addEventListener("carrinho:atualizado", async (e) => {
-  if (!resumo || !$("#formCheckout")) return;
+  if (finalizado || !resumo || !$("#formCheckout")) return;
   const chave = (l) => l.map((i) => `${i.id_produto}x${i.quantidade}`).sort().join();
   if (chave(e.detail.itens) === chave(resumo.itens)) return;
   toast("Carrinho atualizado.", "info");
