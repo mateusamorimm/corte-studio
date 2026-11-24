@@ -16,7 +16,7 @@ export function obterUsuario({ forcar = false } = {}) {
 
 export function destinoPorPerfil(usuario) {
   if (!usuario) return "/login.html";
-  if (usuario.tipo_perfil === "ADMIN") return "/admin/index.html";
+  if (["ADMIN", "RECEPCIONISTA"].includes(usuario.tipo_perfil)) return "/admin/index.html";
   if (usuario.tipo_perfil === "BARBEIRO") return "/admin/agendamentos.html";
   return "/perfil.html";
 }

@@ -2,7 +2,7 @@
 // menu mobile, botão de conta/painel, carrinho em gaveta, rodapé e balão de contatos.
 import { get } from "./api.js";
 import { $, html, avatar, toast } from "./ui.js";
-import { obterUsuario } from "./sessao.js";
+import { destinoPorPerfil, obterUsuario } from "./sessao.js";
 import { iniciarCarrinho } from "./carrinho.js";
 import { montarBalaoContatos, montarRodape } from "./contatos.js";
 
@@ -31,7 +31,7 @@ function montarCabecalho(usuario) {
   btnLogin.replaceWith(chip);
   if (usuario.tipo_perfil !== "CLIENTE") {
     const painel = document.createElement("a");
-    painel.href = usuario.tipo_perfil === "ADMIN" ? "admin/index.html" : "admin/agendamentos.html";
+    painel.href = destinoPorPerfil(usuario);
     painel.className = "btn btn-outline btn-sm";
     painel.textContent = "Painel";
     chip.before(painel);

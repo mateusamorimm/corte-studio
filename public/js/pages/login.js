@@ -25,7 +25,7 @@ form.addEventListener("submit", async (e) => {
   limparErrosCampos(form);
 
   const erros = validarForm(form, {
-    email: regras.email,
+    email: (v) => (!v.trim() ? "Informe o e-mail ou usuário." : v.includes("@") ? regras.email(v) : null),
     senha: (v) => (v ? null : "Informe a senha."),
   });
   if (mostrarErrosCampos(form, erros)) return;

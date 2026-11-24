@@ -229,6 +229,14 @@ export const STATUS_PEDIDO = {
   CONCLUIDO: { rotulo: "CONCLUÍDO", classe: "badge-success" },
   CANCELADO: { rotulo: "CANCELADO", classe: "badge-accent" },
 };
+export const STATUS_RESERVA = {
+  ATIVA: { rotulo: "ATIVA", classe: "badge-info" },
+  CONCLUIDA: { rotulo: "CONCLUÍDA", classe: "badge-success" },
+  CANCELADA: { rotulo: "CANCELADA", classe: "badge-accent" },
+  EXPIRADA: { rotulo: "EXPIRADA", classe: "badge-warning" },
+};
+// "Corte + Barba": todos os serviços de um agendamento
+export const nomesServicos = (a) => (a.servicos?.length ? a.servicos.map((s) => s.servico.nome_servico).join(" + ") : a.servico.nome_servico);
 export const badgeStatus = (mapa, status) => {
   const s = mapa[status] ?? { rotulo: status, classe: "badge-info" };
   return html`<span class="badge ${s.classe}">${s.rotulo}</span>`;

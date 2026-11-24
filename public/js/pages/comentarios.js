@@ -2,24 +2,27 @@
 import { get } from "../api.js";
 import { $, $$, html, estrelas, avatar, tempoRelativo, comCarregamento, toast } from "../ui.js";
 
-// Cartão detalhado (layout da página de comentários do colega)
+// Cartão detalhado (layout da página de comentários do colega), com a nota de cada critério
+const nome = (a) => (a.id_cliente ? html`<a href="${`perfil-publico.html?id=${a.id_cliente}`}">${a.cliente}</a>` : a.cliente);
 const cartao = (a) => html`
   <article class="comentario-detail">
     <div class="header-row">
       ${avatar({ nome_completo: a.cliente, avatar_url: a.avatar_url })}
       <div>
-        <div style="font-weight:600">${a.cliente}</div>
+        <div style="font-weight:600">${nome(a)}</div>
         <div class="text-muted" style="font-size:0.8rem">${tempoRelativo(a.data_avaliacao)}</div>
       </div>
     </div>
-    <div><span class="alvo-badge">Serviço: ${a.servico}</span> <span class="alvo-badge">Profissional: ${a.profissional}</span></div>
+    <div><span class="alvo-badge">${a.tipo === "COMPRA" ? "Compra" : "Serviço"}: ${a.servico}</span>${a.profissional ? html` <span class="alvo-badge">Profissional: ${a.profissional}</span>` : ""}</div>
     <div class="stars-gold" aria-label="Nota ${a.nota} de 5">${estrelas(a.nota)}</div>
-    <p>${a.comentario || "Avaliou o atendimento."}</p>
+    ${a.notas.length ? html`<div class="nota-chips">${a.notas.map((n) => html`<span class="nota-chip">${n.nome} <span class="s" aria-label="${n.nota} de 5">${estrelas(n.nota)}</span></span>`)}</div>` : ""}
+    <p>${a.comentario || "Avaliou sem comentário."}</p>
   </article>`;
 import { iniciarVitrine } from "../vitrine.js";
 
 const POR_PAGINA = 12;
 let nota = "";
+let alvo = "";
 let pagina = 1;
 let paginas = 1;
 
@@ -48,6 +51,7 @@ async function carregar({ acrescentar = false } = {}) {
   const lista = $("#lista");
   const q = new URLSearchParams({ limite: String(POR_PAGINA), pagina: String(pagina) });
   if (nota) q.set("nota", nota);
+  if (alvo) q.set("alvo", alvo);
   const r = await get(`/avaliacoes?${q}`);
   paginas = r.paginas;
   if (pagina === 1) renderResumo(r);
@@ -57,24 +61,27 @@ async function carregar({ acrescentar = false } = {}) {
     lista.innerHTML =
       cartoes ||
       html`<p class="estado-vazio">${
-        r.total ? "Nenhuma avaliação com essa nota." : "Ainda não há avaliações. Depois do seu atendimento, avalie pelo seu perfil."
+        r.total ? "Nenhuma avaliação com esse filtro." : "Ainda não há avaliações. Depois do seu atendimento, avalie pelo seu perfil."
       }</p>`.toString();
   }
   $("#btnMais").hidden = pagina >= paginas;
 }
 
-$(".filter-bar").addEventListener("click", async (e) => {
-  const chip = e.target.closest(".chip");
-  if (!chip) return;
-  nota = chip.dataset.nota;
-  pagina = 1;
-  $$(".filter-bar .chip").forEach((c) => { c.setAttribute("aria-pressed", String(c === chip)); c.classList.toggle("active", c === chip); });
-  try {
-    await carregar();
-  } catch (err) {
-    toast(err.message, "erro");
-  }
-});
+for (const [id, campo] of [["#filtroNota", "nota"], ["#filtroAlvo", "alvo"]]) {
+  $(id).addEventListener("click", async (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+    if (campo === "nota") nota = chip.dataset.nota;
+    else alvo = chip.dataset.alvo;
+    pagina = 1;
+    $$(`${id} .chip`).forEach((c) => { c.setAttribute("aria-pressed", String(c === chip)); c.classList.toggle("active", c === chip); });
+    try {
+      await carregar();
+    } catch (err) {
+      toast(err.message, "erro");
+    }
+  });
+}
 
 $("#btnMais").addEventListener("click", (e) =>
   comCarregamento(e.currentTarget, async () => {

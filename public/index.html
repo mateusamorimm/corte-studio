@@ -29,6 +29,7 @@
         <a href="#localizacao" class="nav-link">Local</a>
         <a href="#agendar" class="nav-link">Agendar</a>
         <a href="#avaliacoes" class="nav-link">Avaliações</a>
+        <a href="feed.html" class="nav-link">Feed</a>
       </nav>
 
       <div class="nav-actions">
@@ -98,6 +99,16 @@
       </div>
     </section>
 
+    <!-- PROFISSIONAIS -->
+    <section class="section" id="equipe" aria-labelledby="equipe-title" hidden>
+      <div class="container">
+        <span class="section-label">Equipe</span>
+        <h2 class="section-title" id="equipe-title">Nossos profissionais</h2>
+        <p class="section-subtitle">Conheça o trabalho de quem vai cuidar do seu visual.</p>
+        <div class="prof-grid" id="equipeGrid"></div>
+      </div>
+    </section>
+
     <!-- LOCALIZAÇÃO -->
     <section class="section" id="localizacao" style="background: var(--bg-secondary);" aria-labelledby="local-title">
       <div class="container local-grid">
@@ -143,80 +154,11 @@
           <h2 id="agendar-title" style="margin-bottom:8px">Marcar horário</h2>
           <p class="text-muted" style="margin-bottom:16px">Escolha o serviço, o profissional, o dia e um horário livre. O salão confirma o atendimento.</p>
           <button type="button" class="btn btn-primary btn-lg" data-abrir-agendamento>Abrir agendamento</button>
-          <p class="text-muted" style="font-size:0.8rem;margin-top:12px">Acompanhe e cancele seus horários em <a href="perfil.html#agendamentos" style="color:var(--accent)">Meu perfil</a>.</p>
+          <p class="text-muted" style="font-size:0.8rem;margin-top:12px">Acompanhe e cancele seus horários em <a href="perfil.html#agendamentos" style="color:var(--accent)">Meu perfil</a> ou, sem conta, <a href="reserva.html" style="color:var(--accent)">consulte pelo código da reserva</a>.</p>
         </div>
       </div>
     </section>
   </main>
-
-  <!-- Modal de agendamento -->
-  <dialog class="modal modal-lg" id="modalAgendar" aria-labelledby="agendarModalTitulo">
-    <div class="modal-body">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px">
-        <h3 class="modal-title" id="agendarModalTitulo" style="margin:0">Marcar horário</h3>
-        <button type="button" class="btn btn-ghost btn-sm" data-fechar aria-label="Fechar">Fechar ✕</button>
-      </div>
-
-      <form id="formAgendamento" novalidate>
-        <div id="agAlerta" class="form-alert" hidden></div>
-        <div id="agDadosCliente">
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="agNome">Nome completo</label>
-              <input type="text" class="form-input" id="agNome" readonly>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="agTel">WhatsApp / Telefone</label>
-              <input type="tel" class="form-input" id="agTel" readonly>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="agEmail">E-mail</label>
-            <input type="email" class="form-input" id="agEmail" readonly>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="agServico">Serviço desejado *</label>
-          <select class="form-select" id="agServico" name="id_servico" required>
-            <option value="">Selecione...</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="agProfissional">Profissional</label>
-          <select class="form-select" id="agProfissional" name="id_barbeiro">
-            <option value="">Qualquer profissional disponível</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label" for="agData">Data do atendimento *</label>
-            <input type="date" class="form-input" id="agData" name="data" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="agHorario">Horário disponível *</label>
-            <select class="form-select" id="agHorario" name="inicio" required disabled>
-              <option value="">Escolha serviço e data</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="agMsg">Observações (opcional)</label>
-          <textarea class="form-textarea" id="agMsg" name="observacao" maxlength="500" placeholder="Algum detalhe para o profissional…"></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary btn-lg" style="width:100%" id="agEnviar">Solicitar agendamento</button>
-        <p class="text-muted" style="margin-top:12px;text-align:center;font-size:0.85rem" id="agRodape"></p>
-      </form>
-
-      <div id="agSucesso" class="form-alert form-alert-sucesso" style="text-align:center" hidden>
-        ✅ <strong>Solicitação enviada!</strong><br>
-        <span id="agSucessoTexto">O salão recebeu seu pedido e vai confirmar o horário em breve.</span>
-        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px">
-          <a href="perfil.html#agendamentos" class="btn btn-outline btn-sm">Ver meus agendamentos</a>
-          <button type="button" class="btn btn-ghost btn-sm" id="agNovo">Marcar outro horário</button>
-        </div>
-      </div>
-    </div>
-  </dialog>
 
   <!-- FOOTER -->
   <footer class="footer" role="contentinfo">
@@ -225,6 +167,7 @@
         <div>
           <a href="index.html" class="logo">Studio<span>Corte</span></a>
           <p class="text-muted" style="margin-top:12px;font-size:0.9rem;max-width:260px" id="rodapeEndereco" hidden></p>
+          <p class="text-muted" style="margin-top:12px;font-size:0.85rem;max-width:260px" id="rodapeSobre" hidden></p>
         </div>
         <div>
           <h4>Navegação</h4>
@@ -232,6 +175,7 @@
           <a href="#cortes">Galeria</a>
           <a href="catalogo.html">Catálogo</a>
           <a href="comentarios.html">Avaliações</a>
+          <a href="feed.html">Feed da comunidade</a>
           <a href="#agendar">Agendar</a>
         </div>
         <div>
@@ -240,6 +184,8 @@
           <a href="cadastro.html">Criar conta</a>
           <a href="perfil.html">Meu perfil</a>
           <a href="recuperar-senha.html">Recuperar senha</a>
+          <a href="reserva.html">Consultar reserva</a>
+          <a href="privacidade.html">Privacidade</a>
         </div>
         <div>
           <h4>Contato</h4>
@@ -248,7 +194,7 @@
       </div>
       <div class="footer-bottom">
         <span>© <span id="anoAtual">2026</span> <span id="rodapeNome">Studio Corte</span></span>
-        <span>Cortes com precisão • Agende com confiança</span>
+        <span data-slogan>Cortes com precisão • Agende com confiança</span>
       </div>
     </div>
   </footer>

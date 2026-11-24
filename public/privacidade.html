@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Política de privacidade — Studio Corte</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/home.css">
+  <link rel="stylesheet" href="css/complementos.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Pular para o conteúdo</a>
+
+  <header class="header" role="banner">
+    <div class="container header-inner">
+      <a href="index.html" class="logo" aria-label="Studio Corte - Início">Studio<span>Corte</span></a>
+      <nav class="nav" id="mainNav" aria-label="Principal">
+        <a href="index.html#servicos" class="nav-link">Serviços</a>
+        <a href="index.html#cortes" class="nav-link">Galeria</a>
+        <a href="index.html#produtos" class="nav-link">Produtos</a>
+        <a href="index.html#localizacao" class="nav-link">Local</a>
+        <a href="index.html#agendar" class="nav-link">Agendar</a>
+        <a href="comentarios.html" class="nav-link">Avaliações</a>
+        <a href="feed.html" class="nav-link">Feed</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="login.html" class="btn btn-ghost btn-sm" id="btnLogin">Entrar</a>
+        <a href="index.html#agendar" class="btn btn-primary btn-sm" data-abrir-agendamento>Agendar</a>
+        <button class="mobile-toggle btn-icon" id="mobileToggle" aria-label="Abrir menu" aria-expanded="false" aria-controls="mainNav">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="section">
+      <div class="container texto-longo">
+        <p class="breadcrumb"><a href="index.html">Início</a> · Privacidade</p>
+        <h1 class="section-title">Política de privacidade</h1>
+        <p class="text-muted">Versão 2026-11</p>
+        <h2>O que guardamos</h2>
+        <p>Nome, e-mail, telefone e senha (guardada apenas em formato cifrado, que ninguém consegue ler) para a sua conta. CPF, endereço e nascimento só se você informar. Também ficam registrados os seus atendimentos, pedidos, favoritos, avaliações, publicações e pontos de fidelidade.</p>
+        <h2>Reservas sem conta</h2>
+        <p>Pedimos só nome, telefone e e-mail, usados para organizar a sua reserva. A consulta exige o código da reserva e o telefone informado.</p>
+        <h2>O que outras pessoas veem</h2>
+        <p>Nada do seu cadastro é público por padrão. Em “Meu perfil → Privacidade” você decide se quer um perfil público e o que aparece nele. O CPF nunca é exibido. Publicações, comentários e avaliações aprovados aparecem com o seu primeiro nome e a inicial do sobrenome.</p>
+        <h2>Para que usamos</h2>
+        <p>Para agendar e realizar atendimentos, separar pedidos, calcular pontos e descontos e manter a segurança do sistema (registros de acesso e de alterações). Não vendemos nem repassamos os seus dados para publicidade.</p>
+        <h2>Onde ficam</h2>
+        <p>Os dados ficam no banco de dados do salão e as fotos, vídeos e modelos 3D no serviço de mídia Cloudinary. Se o salão usar o Sketchfab em um corte, o visualizador 3D é carregado desse serviço só quando você pede para ver.</p>
+        <h2>Seus direitos</h2>
+        <p>Você pode ver e corrigir os seus dados em “Meu perfil”, excluir as suas publicações e pedir ao salão uma cópia, a correção ou a exclusão do cadastro pelos contatos oficiais do site.</p>
+        <p><a href="index.html" class="btn btn-outline btn-sm">Voltar ao site</a></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a href="index.html" class="logo">Studio<span>Corte</span></a>
+          <p class="text-muted" style="margin-top:12px;font-size:0.9rem;max-width:260px" id="rodapeEndereco" hidden></p>
+          <p class="text-muted" style="margin-top:12px;font-size:0.85rem;max-width:260px" id="rodapeSobre" hidden></p>
+        </div>
+        <div>
+          <h4>Navegação</h4>
+          <a href="index.html#servicos">Serviços</a>
+          <a href="index.html#cortes">Galeria</a>
+          <a href="catalogo.html">Catálogo</a>
+          <a href="comentarios.html">Avaliações</a>
+          <a href="feed.html">Feed da comunidade</a>
+          <a href="index.html#agendar">Agendar</a>
+        </div>
+        <div>
+          <h4>Conta</h4>
+          <a href="login.html">Entrar</a>
+          <a href="cadastro.html">Criar conta</a>
+          <a href="perfil.html">Meu perfil</a>
+          <a href="recuperar-senha.html">Recuperar senha</a>
+          <a href="reserva.html">Consultar reserva</a>
+          <a href="privacidade.html">Privacidade</a>
+        </div>
+        <div>
+          <h4>Contato</h4>
+          <div id="rodapeContatos"></div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span id="anoAtual">2026</span> <span id="rodapeNome">Studio Corte</span></span>
+        <span data-slogan>Cortes com precisão • Agende com confiança</span>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="js/pages/privacidade.js"></script>
+</body>
+</html>

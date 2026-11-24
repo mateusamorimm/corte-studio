@@ -1,6 +1,7 @@
 // Contatos oficiais do salão (balão flutuante + coluna do rodapé), a partir da configuração do banco.
 // Só gera links de esquemas conhecidos (https, tel, mailto, wa.me); textos sempre escapados.
 import { $, html, raw, urlSegura, telefoneFormatado } from "./ui.js";
+import { linkSeguro, redePorId } from "./social.js";
 
 const ICONE_CHAT = raw(
   '<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.8.48 3.48 1.32 4.94L2 22l5.2-1.28A9.96 9.96 0 0012 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.56 0-3.02-.42-4.28-1.14l-.3-.18-3.16.78.8-3.08-.2-.32A7.94 7.94 0 014 12c0-4.42 3.58-8 8-8s8 3.58 8 8-3.58 8-8 8z"/></svg>'
@@ -21,6 +22,12 @@ export function contatosOficiais(c) {
   if (tiktok) lista.push({ ico: "🎵", rotulo: "TikTok", valor: tiktok.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, ""), url: tiktok });
   if (c.email_contato && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email_contato)) {
     lista.push({ ico: "✉️", rotulo: "E-mail", valor: c.email_contato, url: `mailto:${c.email_contato}` });
+  }
+  // Contatos extras cadastrados no painel (sem repetir os que já vieram da configuração)
+  for (const extra of c.contatos ?? []) {
+    if (linkSeguro(extra.url) && !lista.some((x) => x.url === extra.url)) {
+      lista.push({ ico: redePorId(extra.tipo).ico, rotulo: extra.rotulo, valor: extra.valor, url: extra.url });
+    }
   }
   return lista;
 }
@@ -87,6 +94,12 @@ export function montarRodape(config) {
           .join("")
       : html`<span class="text-muted">Em breve.</span>`.toString();
   }
+  const sobre = $("#rodapeSobre");
+  if (sobre) {
+    sobre.textContent = config.sobre ?? "";
+    sobre.hidden = !config.sobre;
+  }
+  if (config.slogan) document.querySelectorAll("[data-slogan]").forEach((el) => (el.textContent = config.slogan));
   const end = $("#rodapeEndereco");
   if (end) {
     end.textContent = config.endereco ?? "";

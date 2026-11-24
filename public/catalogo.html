@@ -26,10 +26,11 @@
         <a href="index.html#localizacao" class="nav-link">Local</a>
         <a href="index.html#agendar" class="nav-link">Agendar</a>
         <a href="comentarios.html" class="nav-link">Avaliações</a>
+        <a href="feed.html" class="nav-link">Feed</a>
       </nav>
       <div class="nav-actions">
         <a href="login.html" class="btn btn-ghost btn-sm" id="btnLogin">Entrar</a>
-        <a href="index.html#agendar" class="btn btn-primary btn-sm">Agendar</a>
+        <a href="index.html#agendar" class="btn btn-primary btn-sm" data-abrir-agendamento>Agendar</a>
         <button class="mobile-toggle btn-icon" id="mobileToggle" aria-label="Abrir menu" aria-expanded="false" aria-controls="mainNav">
           <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
@@ -44,12 +45,20 @@
         <h1 class="section-title" style="margin-bottom:8px">Catálogo</h1>
         <p class="section-subtitle">Serviços com preço e duração, cortes para se inspirar e produtos para levar o visual para casa.</p>
 
-        <div class="filter-bar" role="group" aria-label="Filtrar catálogo">
+        <div class="filter-bar filtro-tipo" role="group" aria-label="Filtrar catálogo">
           <button type="button" class="chip active" data-tipo="todos" aria-pressed="true">Tudo<span class="qtd" id="qtdTodos"></span></button>
           <button type="button" class="chip" data-tipo="servicos" aria-pressed="false">Serviços<span class="qtd" id="qtdServicos"></span></button>
           <button type="button" class="chip" data-tipo="cortes" aria-pressed="false">Cortes<span class="qtd" id="qtdCortes"></span></button>
+          <button type="button" class="chip" data-tipo="profissionais" aria-pressed="false">Profissionais<span class="qtd" id="qtdProfissionais"></span></button>
           <button type="button" class="chip" data-tipo="produtos" aria-pressed="false">Produtos<span class="qtd" id="qtdProdutos"></span></button>
           <input type="search" class="form-input search-input" id="buscaCatalogo" placeholder="Buscar no catálogo..." aria-label="Buscar no catálogo">
+        </div>
+
+        <div class="filter-bar filtro-area" role="group" aria-label="Filtrar por área">
+          <button type="button" class="chip active" data-area="" aria-pressed="true">Todas as áreas</button>
+          <button type="button" class="chip" data-area="BARBEARIA" aria-pressed="false">Barbearia</button>
+          <button type="button" class="chip" data-area="CABELEIREIRO" aria-pressed="false">Cabeleireiro</button>
+          <label class="check-item filtro-3d" id="filtro3d" hidden><input type="checkbox" id="so3d"> Só com modelo 3D</label>
         </div>
 
         <div id="catalogo" aria-live="polite">
@@ -65,6 +74,7 @@
         <div>
           <a href="index.html" class="logo">Studio<span>Corte</span></a>
           <p class="text-muted" style="margin-top:12px;font-size:0.9rem;max-width:260px" id="rodapeEndereco" hidden></p>
+          <p class="text-muted" style="margin-top:12px;font-size:0.85rem;max-width:260px" id="rodapeSobre" hidden></p>
         </div>
         <div>
           <h4>Navegação</h4>
@@ -72,6 +82,7 @@
           <a href="index.html#cortes">Galeria</a>
           <a href="catalogo.html">Catálogo</a>
           <a href="comentarios.html">Avaliações</a>
+          <a href="feed.html">Feed da comunidade</a>
           <a href="index.html#agendar">Agendar</a>
         </div>
         <div>
@@ -80,6 +91,8 @@
           <a href="cadastro.html">Criar conta</a>
           <a href="perfil.html">Meu perfil</a>
           <a href="recuperar-senha.html">Recuperar senha</a>
+          <a href="reserva.html">Consultar reserva</a>
+          <a href="privacidade.html">Privacidade</a>
         </div>
         <div>
           <h4>Contato</h4>
@@ -88,7 +101,7 @@
       </div>
       <div class="footer-bottom">
         <span>© <span id="anoAtual">2026</span> <span id="rodapeNome">Studio Corte</span></span>
-        <span>Cortes com precisão • Agende com confiança</span>
+        <span data-slogan>Cortes com precisão • Agende com confiança</span>
       </div>
     </div>
   </footer>

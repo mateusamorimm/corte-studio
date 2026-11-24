@@ -22,12 +22,11 @@ export function criarApp() {
         useDefaults: true,
         directives: {
           "default-src": ["'self'"],
-          // Sem scripts inline (proteção extra contra XSS); wasm só para o visualizador 3D servido por nós
-          "script-src": ["'self'", "'wasm-unsafe-eval'"],
+          "script-src": ["'self'"], // sem scripts inline: proteção extra contra XSS
           "script-src-attr": ["'none'"], // sem onclick="..." no HTML
           "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
           "font-src": ["'self'", "https://fonts.gstatic.com"],
-          "img-src": ["'self'", "data:", "https:"],
+          "img-src": ["'self'", "data:", "blob:", "https:"], // blob: prévias de envio e texturas 3D
           "frame-src": ["https://www.google.com", "https://maps.google.com", "https://sketchfab.com"],
           // Envio direto do navegador ao Cloudinary (assinado pelo servidor) e vídeos/modelos 3D de lá
           "connect-src": ["'self'", "blob:", "https://api.cloudinary.com", "https://res.cloudinary.com"],

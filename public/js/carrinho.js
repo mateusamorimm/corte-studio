@@ -1,8 +1,54 @@
 // Carrinho em gaveta (botão no cabeçalho + painel lateral), comum às páginas públicas.
-// Os dados vêm sempre da API (/api/me/carrinho); nada é guardado no navegador.
-// Eventos emitidos em window: "carrinho:atualizado" (detail = carrinho) e "pedido:criado" (detail = pedido).
+// Com conta, o carrinho fica no servidor (/api/me/carrinho). Sem conta, a seleção fica só nesta aba até
+// virar uma reserva gravada no servidor (preço e estoque são sempre conferidos lá).
+// Evento emitido em window: "carrinho:atualizado" (detail = carrinho).
 import { get, post, patch, del } from "./api.js";
-import { $, html, raw, moeda, urlSegura, toast, comCarregamento, confirmar } from "./ui.js";
+import { $, html, raw, moeda, urlSegura, toast } from "./ui.js";
+
+const CHAVE_VISITANTE = "sc_carrinho_visitante";
+let memoria = null; // se o navegador bloquear o armazenamento da aba
+
+// [{ id_produto, quantidade }]
+export function carrinhoVisitante() {
+  if (memoria) return memoria.map((i) => ({ ...i }));
+  try {
+    const lista = JSON.parse(sessionStorage.getItem(CHAVE_VISITANTE) || "[]");
+    return Array.isArray(lista) ? lista.filter((i) => Number.isInteger(i?.id_produto) && i.quantidade > 0) : [];
+  } catch {
+    return [];
+  }
+}
+function gravarVisitante(lista) {
+  try {
+    sessionStorage.setItem(CHAVE_VISITANTE, JSON.stringify(lista));
+  } catch {
+    memoria = lista;
+  }
+}
+export function esvaziarCarrinhoVisitante() {
+  memoria = null;
+  gravarVisitante([]);
+  if (drawer) recarregarCarrinho();
+}
+
+// Monta o carrinho do visitante com os dados atuais dos produtos.
+export async function carregarCarrinhoVisitante() {
+  const lista = carrinhoVisitante();
+  if (!lista.length) return { itens: [], total: "0" };
+  const { produtos } = await get("/produtos");
+  const itens = lista
+    .map((i) => ({ ...i, produto: produtos.find((p) => p.id_produto === i.id_produto) }))
+    .filter((i) => i.produto)
+    .map((i) => ({ ...i, produto: { ...i.produto, ativo: true } }));
+  return { itens, total: String(itens.reduce((t, i) => t + Number(i.produto.preco) * i.quantidade, 0)) };
+}
+
+async function mudarVisitante(id, quantidade) {
+  const lista = carrinhoVisitante().filter((i) => i.id_produto !== id);
+  if (quantidade > 0) lista.push({ id_produto: id, quantidade });
+  gravarVisitante(lista);
+  return carregarCarrinhoVisitante();
+}
 
 let usuario = null;
 let carrinho = { itens: [], total: "0" };
@@ -36,16 +82,6 @@ function renderizar() {
   if (!drawer) return;
   const corpo = $(".cart-body", drawer);
   const rodape = $(".cart-footer", drawer);
-  const voltar = encodeURIComponent(location.pathname + location.search + location.hash);
-
-  if (!usuario) {
-    corpo.innerHTML = html`<div class="cart-empty">
-        <p>Entre na sua conta para montar seu carrinho e reservar produtos para retirada no salão.</p>
-        <a class="btn btn-primary btn-sm" href="login.html?voltar=${voltar}">Entrar na conta</a>
-      </div>`.toString();
-    rodape.hidden = true;
-    return;
-  }
   if (!carrinho.itens.length) {
     corpo.innerHTML = html`<div class="cart-empty">
         <p>Seu carrinho está vazio.</p>
@@ -58,7 +94,7 @@ function renderizar() {
   corpo.innerHTML = carrinho.itens
     .map((i) => {
       const p = i.produto;
-      const max = Math.min(99, p.quantidade_estoque);
+      const max = Math.min(usuario ? 99 : 20, p.quantidade_estoque);
       return html`
       <div class="cart-item">
         <img src="${urlSegura(p.imagem_url, "")}" alt="" loading="lazy" data-fallback="produto">
@@ -106,23 +142,29 @@ export function fecharCarrinho() {
   botao?.setAttribute("aria-expanded", "false");
 }
 
-// Adiciona um produto (usado pela home e pelo catálogo). Sem login, leva para entrar.
+// Adiciona um produto (usado pela home e pelo catálogo).
 export async function adicionarAoCarrinho(idProduto, { abrir = true } = {}) {
-  if (!usuario) {
-    toast("Entre na sua conta para adicionar produtos ao carrinho.", "info");
-    location.href = `login.html?voltar=${encodeURIComponent(location.pathname + location.search + location.hash)}`;
-    return;
+  const id = Number(idProduto);
+  if (usuario) definirCarrinho(await post("/me/carrinho", { id_produto: id, quantidade: 1 }));
+  else {
+    const atual = carrinho.itens.find((i) => i.id_produto === id)?.quantidade ?? 0;
+    const novo = await mudarVisitante(id, atual + 1);
+    const item = novo.itens.find((i) => i.id_produto === id);
+    const limite = Math.min(20, item?.produto.quantidade_estoque ?? 0);
+    if (item && item.quantidade > limite) {
+      await mudarVisitante(id, limite);
+      throw new Error(`Só temos ${limite} unidade(s) de "${item.produto.nome_produto}".`);
+    }
+    definirCarrinho(novo);
   }
-  definirCarrinho(await post("/me/carrinho", { id_produto: Number(idProduto), quantidade: 1 }));
   toast("Produto adicionado ao carrinho.", "sucesso");
   if (abrir) abrirCarrinho();
 }
 
-// Recarrega do servidor (ex.: o perfil alterou o carrinho pela própria seção).
+// Recarrega os dados (ex.: o checkout finalizou o pedido).
 export async function recarregarCarrinho() {
-  if (!usuario) return;
   try {
-    definirCarrinho(await get("/me/carrinho"));
+    definirCarrinho(usuario ? await get("/me/carrinho") : await carregarCarrinhoVisitante());
   } catch {
     /* mantém o estado atual */
   }
@@ -131,28 +173,15 @@ export async function recarregarCarrinho() {
 async function aoClicar(e) {
   const qtd = e.target.closest("[data-qtd]");
   const rem = e.target.closest("[data-remover]");
-  const fin = e.target.closest(".cart-finalizar");
   try {
     if (qtd) {
-      const item = carrinho.itens.find((i) => String(i.produto.id_produto) === qtd.dataset.qtd);
+      const id = Number(qtd.dataset.qtd);
+      const nova = carrinho.itens.find((i) => i.produto.id_produto === id).quantidade + Number(qtd.dataset.delta);
       qtd.disabled = true;
-      definirCarrinho(await patch(`/me/carrinho/${qtd.dataset.qtd}`, { quantidade: item.quantidade + Number(qtd.dataset.delta) }));
+      definirCarrinho(usuario ? await patch(`/me/carrinho/${id}`, { quantidade: nova }) : await mudarVisitante(id, nova));
     } else if (rem) {
       rem.disabled = true;
-      definirCarrinho(await del(`/me/carrinho/${rem.dataset.remover}`));
-    } else if (fin) {
-      const ok = await confirmar(`Confirmar pedido de ${moeda(carrinho.total)}? Pagamento e retirada no salão.`, {
-        titulo: "Finalizar compra",
-        confirmar: "Confirmar pedido",
-      });
-      if (!ok) return;
-      await comCarregamento(fin, async () => {
-        const { pedido } = await post("/me/pedidos", {});
-        definirCarrinho({ itens: [], total: "0" });
-        window.dispatchEvent(new CustomEvent("pedido:criado", { detail: pedido }));
-        fecharCarrinho();
-        toast(`Pedido #${pedido.id_pedido} realizado! Acompanhe em Meu Perfil.`, "sucesso", 6000);
-      }, "Finalizando...");
+      definirCarrinho(usuario ? await del(`/me/carrinho/${rem.dataset.remover}`) : await mudarVisitante(Number(rem.dataset.remover), 0));
     }
   } catch (err) {
     toast(err.message, "erro");
@@ -194,7 +223,7 @@ export async function iniciarCarrinho(usuarioSessao) {
     <div class="cart-footer" hidden>
       <div class="cart-total"><span>Total</span><span class="cart-total-valor">R$ 0,00</span></div>
       <small class="form-hint">Pagamento e retirada no salão. Os itens ficam reservados para você.</small>
-      <button type="button" class="btn btn-primary cart-finalizar">Finalizar compra</button>
+      <a class="btn btn-primary cart-finalizar" href="checkout.html">Finalizar compra</a>
     </div>`.toString();
   document.body.append(overlay, drawer);
 

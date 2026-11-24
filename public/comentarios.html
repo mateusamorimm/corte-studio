@@ -26,6 +26,7 @@
         <a href="index.html#localizacao" class="nav-link">Local</a>
         <a href="index.html#agendar" class="nav-link">Agendar</a>
         <a href="comentarios.html" class="nav-link active" aria-current="page">Avaliações</a>
+        <a href="feed.html" class="nav-link">Feed</a>
       </nav>
       <div class="nav-actions">
         <a href="login.html" class="btn btn-ghost btn-sm" id="btnLogin">Entrar</a>
@@ -42,7 +43,7 @@
       <div class="container">
         <p class="breadcrumb"><a href="index.html">Início</a> · Comentários</p>
         <h1 class="section-title">Comentários e avaliações</h1>
-        <p class="section-subtitle">Opiniões de quem foi atendido no salão. Só clientes com atendimento concluído podem avaliar.</p>
+        <p class="section-subtitle">Opiniões de quem foi atendido no salão. Só clientes com atendimento ou compra concluída podem avaliar.</p>
 
         <div class="avaliacoes-resumo" id="resumo" hidden>
           <div>
@@ -59,7 +60,16 @@
           <a href="perfil.html#agendamentos" class="btn btn-primary btn-sm">Avaliar meu atendimento</a>
         </div>
 
-        <div class="filter-bar" role="group" aria-label="Filtrar por nota">
+        <div class="filter-bar" id="filtroAlvo" role="group" aria-label="Filtrar pelo que foi avaliado">
+          <button type="button" class="chip active" data-alvo="" aria-pressed="true">Tudo</button>
+          <button type="button" class="chip" data-alvo="SERVICO" aria-pressed="false">Serviços</button>
+          <button type="button" class="chip" data-alvo="CORTE" aria-pressed="false">Cortes</button>
+          <button type="button" class="chip" data-alvo="PRODUTO" aria-pressed="false">Produtos</button>
+          <button type="button" class="chip" data-alvo="PROFISSIONAL" aria-pressed="false">Profissionais</button>
+          <button type="button" class="chip" data-alvo="SALAO" aria-pressed="false">Estabelecimento</button>
+          <button type="button" class="chip" data-alvo="MULTI" aria-pressed="false">Vários critérios</button>
+        </div>
+        <div class="filter-bar" id="filtroNota" role="group" aria-label="Filtrar por nota">
           <button type="button" class="chip active" data-nota="" aria-pressed="true">Todas</button>
           <button type="button" class="chip" data-nota="5" aria-pressed="false">★★★★★</button>
           <button type="button" class="chip" data-nota="4" aria-pressed="false">★★★★</button>
@@ -83,6 +93,7 @@
         <div>
           <a href="index.html" class="logo">Studio<span>Corte</span></a>
           <p class="text-muted" style="margin-top:12px;font-size:0.9rem;max-width:260px" id="rodapeEndereco" hidden></p>
+          <p class="text-muted" style="margin-top:12px;font-size:0.85rem;max-width:260px" id="rodapeSobre" hidden></p>
         </div>
         <div>
           <h4>Navegação</h4>
@@ -90,6 +101,7 @@
           <a href="index.html#cortes">Galeria</a>
           <a href="catalogo.html">Catálogo</a>
           <a href="comentarios.html">Avaliações</a>
+          <a href="feed.html">Feed da comunidade</a>
           <a href="index.html#agendar">Agendar</a>
         </div>
         <div>
@@ -98,6 +110,8 @@
           <a href="cadastro.html">Criar conta</a>
           <a href="perfil.html">Meu perfil</a>
           <a href="recuperar-senha.html">Recuperar senha</a>
+          <a href="reserva.html">Consultar reserva</a>
+          <a href="privacidade.html">Privacidade</a>
         </div>
         <div>
           <h4>Contato</h4>
@@ -106,7 +120,7 @@
       </div>
       <div class="footer-bottom">
         <span>© <span id="anoAtual">2026</span> <span id="rodapeNome">Studio Corte</span></span>
-        <span>Cortes com precisão • Agende com confiança</span>
+        <span data-slogan>Cortes com precisão • Agende com confiança</span>
       </div>
     </div>
   </footer>

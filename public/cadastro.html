@@ -59,6 +59,17 @@
           </div>
         </div>
         <p class="form-hint" id="dicaSenha" style="margin:-8px 0 16px">Mínimo de 8 caracteres, com letras e números.</p>
+        <div class="form-group">
+          <label class="form-label" for="usuario">Nome de usuário (opcional)</label>
+          <input type="text" class="form-input" id="usuario" name="usuario" autocomplete="username" maxlength="30" placeholder="ex.: ana.souza" autocapitalize="none" spellcheck="false">
+          <small class="form-hint">Com ele você também pode entrar sem digitar o e-mail.</small>
+        </div>
+        <div class="form-group">
+          <label class="check-item" style="align-items:flex-start">
+            <input type="checkbox" id="consentimento" name="consentimento">
+            <span style="font-size:0.85rem">Li e aceito a <a href="privacidade.html" target="_blank" style="color:var(--accent)">política de privacidade</a>.</span>
+          </label>
+        </div>
         <button type="submit" class="btn btn-primary btn-lg">Criar conta</button>
       </form>
 

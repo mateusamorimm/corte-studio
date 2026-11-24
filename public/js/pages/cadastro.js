@@ -30,6 +30,8 @@ form.addEventListener("submit", async (e) => {
     cpf: regras.cpfOpcional,
     senha: regras.senha,
     confirmar: (v, f) => (v === f.senha.value ? null : "As senhas não conferem."),
+    usuario: (v) => (!v.trim() || /^@?[a-z0-9][a-z0-9._]{2,29}$/i.test(v.trim()) ? null : "3 a 30 letras, números, ponto ou _."),
+    consentimento: (_v, f) => (f.consentimento.checked ? null : "Aceite a política de privacidade para criar a conta."),
   });
   if (mostrarErrosCampos(form, erros)) return;
 
@@ -41,6 +43,8 @@ form.addEventListener("submit", async (e) => {
         telefone: form.telefone.value,
         cpf: form.cpf.value,
         data_nascimento: form.data_nascimento.value,
+        usuario: form.usuario.value,
+        consentimento: form.consentimento.checked,
         senha: form.senha.value,
       });
       location.replace(destinoAposLogin(usuario));

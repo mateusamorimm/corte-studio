@@ -148,18 +148,23 @@ async function enviarCloudinary(arquivo, finalidade, tipo) {
     const motivo = /format/i.test(enviado?.error?.message ?? "") ? "Formato de arquivo não permitido." : "O envio do arquivo falhou. Tente novamente.";
     throw new ApiError(res.status, { codigo: "MIDIA_FALHA", mensagem: motivo });
   }
-  const { url } = await api("POST", "/midia/confirmar", { finalidade, tipo, public_id: enviado.public_id });
-  return url;
+  return api("POST", "/midia/confirmar", { finalidade, tipo, public_id: enviado.public_id }); // { id_midia, url, tipo }
 }
 
-// Envia uma imagem e devolve a URL. finalidade: AVATAR, CAPA, REFERENCIA, PRODUTO, GALERIA, SALAO, EQUIPE...
-export async function enviarImagem(original, { finalidade = "REFERENCIA" } = {}) {
+// Envia uma imagem e devolve a URL (ou, com registro: true, o registro da mídia com o id — só no Cloudinary).
+// finalidade: AVATAR, CAPA, REFERENCIA, POST, PRODUTO, GALERIA, SALAO, EQUIPE...
+export async function enviarImagem(original, { finalidade = "REFERENCIA", registro = false } = {}) {
   const arquivo = await comprimirImagem(original);
-  return (await usaCloudinary()) ? enviarCloudinary(arquivo, finalidade, "IMAGEM") : enviarLocal(arquivo);
+  if (await usaCloudinary()) {
+    const m = await enviarCloudinary(arquivo, finalidade, "IMAGEM");
+    return registro ? m : m.url;
+  }
+  if (registro) throw new ApiError(503, { mensagem: "Envio de fotos para o feed indisponível no momento." });
+  return enviarLocal(arquivo);
 }
 
-// Vídeos e modelos 3D só existem no Cloudinary.
-export async function enviarArquivo(arquivo, { finalidade, tipo }) {
+// Vídeos e modelos 3D só existem no Cloudinary. Devolve { id_midia, url, tipo }.
+export async function enviarMidia(arquivo, { finalidade, tipo }) {
   if (!(await usaCloudinary())) throw new ApiError(503, { mensagem: "Envio de vídeos e modelos 3D indisponível no momento." });
   return enviarCloudinary(arquivo, finalidade, tipo);
 }

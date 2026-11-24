@@ -22,6 +22,7 @@
         <a href="index.html#servicos" class="nav-link">Serviços</a>
         <a href="index.html#produtos" class="nav-link">Produtos</a>
         <a href="index.html#agendar" class="nav-link">Agendar</a>
+        <a href="feed.html" class="nav-link">Feed</a>
       </nav>
       <div class="nav-actions">
         <a href="admin/index.html" class="btn btn-outline btn-sm" id="linkPainel" hidden>Painel</a>
@@ -55,17 +56,21 @@
         <div class="perfil-actions">
           <a href="index.html#agendar" class="btn btn-primary btn-sm">Marcar horário</a>
           <button type="button" class="btn btn-outline btn-sm" data-ir-aba="dados">Editar dados</button>
+          <a class="btn btn-outline btn-sm" id="linkPerfilPublico" href="#">Ver perfil público</a>
           <button type="button" class="btn btn-outline btn-sm" id="btnEnviarCorte">⬆ Enviar imagem de corte</button>
         </div>
       </div>
     </div>
 
     <div class="perfil-tabs" role="tablist" aria-label="Seções do perfil">
-      <button type="button" class="perfil-tab" role="tab" data-tab="agendamentos" aria-controls="tab-agendamentos">Agendamentos</button>
+      <button type="button" class="perfil-tab" role="tab" data-tab="feed" aria-controls="tab-feed">Feed</button>
       <button type="button" class="perfil-tab" role="tab" data-tab="favoritos" aria-controls="tab-favoritos">Favoritos</button>
+      <button type="button" class="perfil-tab" role="tab" data-tab="agendamentos" aria-controls="tab-agendamentos">Agendamentos</button>
       <button type="button" class="perfil-tab" role="tab" data-tab="historico" aria-controls="tab-historico">Histórico de compras</button>
+      <button type="button" class="perfil-tab" role="tab" data-tab="fidelidade" aria-controls="tab-fidelidade">Fidelidade</button>
       <button type="button" class="perfil-tab" role="tab" data-tab="redes" aria-controls="tab-redes">Redes sociais</button>
       <button type="button" class="perfil-tab" role="tab" data-tab="conta" aria-controls="tab-conta">Conta / login</button>
+      <button type="button" class="perfil-tab" role="tab" data-tab="privacidade" aria-controls="tab-privacidade">Privacidade</button>
       <button type="button" class="perfil-tab" role="tab" data-tab="dados" aria-controls="tab-dados">Dados pessoais</button>
     </div>
 
@@ -80,12 +85,27 @@
           <div class="stat-row"><span>Cliente desde</span><span id="statMembro">—</span></div>
         </div>
         <div class="card">
-          <h3>Seus dados</h3>
-          <p class="text-muted" style="font-size:0.85rem">E-mail, telefone e CPF ficam visíveis só para você e para o salão.</p>
+          <h3>Fidelidade</h3>
+          <div class="stat-row"><span>Nível</span><span id="statNivel">—</span></div>
+          <div class="stat-row"><span>Pontos</span><span id="statPontos">—</span></div>
+          <div class="stat-row"><span>Desconto ativo</span><span id="statDesconto">—</span></div>
+          <button type="button" class="btn btn-outline btn-sm btn-block" data-ir-aba="fidelidade" style="margin-top:8px">Ver fidelidade</button>
+        </div>
+        <div class="card">
+          <h3>Privacidade</h3>
+          <p class="text-muted" style="font-size:0.85rem;margin-bottom:10px" id="statPrivacidade"></p>
+          <button type="button" class="btn btn-outline btn-sm btn-block" data-ir-aba="privacidade">Ajustar privacidade</button>
         </div>
       </aside>
 
       <div>
+        <!-- FEED -->
+        <div id="tab-feed" class="tab-panel" role="tabpanel" hidden>
+          <div id="compositor"></div>
+          <div class="feed-list" id="meusPosts" aria-live="polite"></div>
+          <div style="text-align:center;margin-top:16px"><button type="button" class="btn btn-outline btn-sm" id="btnMaisPosts" hidden>Carregar mais</button></div>
+        </div>
+
         <!-- AGENDAMENTOS -->
         <div id="tab-agendamentos" class="tab-panel" role="tabpanel">
           <div class="card" style="overflow:hidden">
@@ -109,6 +129,14 @@
             </div>
             <div class="favoritos-grid" id="favoritosGrid"></div>
           </div>
+          <div class="card" style="padding:var(--space-5);margin-top:var(--space-4)">
+            <h3 style="margin-bottom:8px">Serviços favoritos</h3>
+            <div id="favServicos"></div>
+          </div>
+          <div class="card" style="padding:var(--space-5);margin-top:var(--space-4)">
+            <h3 style="margin-bottom:8px">Produtos favoritos</h3>
+            <div id="favProdutos"></div>
+          </div>
         </div>
 
         <!-- HISTÓRICO DE COMPRAS -->
@@ -118,8 +146,22 @@
               <p class="text-muted" style="font-size:0.85rem">Pagamento e retirada no salão. Pedidos pendentes podem ser cancelados.</p></div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Data</th><th>Produto</th><th>Qtd</th><th>Valor</th><th>Status</th></tr></thead>
-                <tbody id="historicoCompras"><tr><td colspan="5" class="estado-vazio">Carregando...</td></tr></tbody>
+                <thead><tr><th>Código</th><th>Data</th><th>Produto</th><th>Qtd</th><th>Valor</th><th>Status</th></tr></thead>
+                <tbody id="historicoCompras"><tr><td colspan="6" class="estado-vazio">Carregando...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- FIDELIDADE -->
+        <div id="tab-fidelidade" class="tab-panel" role="tabpanel" hidden>
+          <div class="card" style="padding:var(--space-5)" id="fidelidadeBox"><p class="text-muted">Carregando...</p></div>
+          <div class="card" style="overflow:hidden;margin-top:var(--space-4)">
+            <div style="padding:var(--space-5) var(--space-5) 0"><h3>Extrato de pontos</h3></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Data</th><th>Motivo</th><th>Pontos</th></tr></thead>
+                <tbody id="extratoPontos"><tr><td colspan="3" class="estado-vazio">Carregando...</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -128,36 +170,77 @@
         <!-- REDES SOCIAIS -->
         <div id="tab-redes" class="tab-panel" role="tabpanel" hidden>
           <form class="card" style="padding:var(--space-5)" id="formRedes" novalidate>
-            <h3 style="margin-bottom:12px">Suas redes e contatos</h3>
+            <h3 style="margin-bottom:12px">Adicionar rede ou contato</h3>
             <div id="alertaRedes" class="form-alert" hidden></div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label" for="pInstagram">Instagram</label>
-                <input class="form-input" id="pInstagram" name="instagram" placeholder="@seuusuario" maxlength="80">
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="pTiktok">TikTok</label>
-                <input class="form-input" id="pTiktok" name="tiktok" placeholder="@seuusuario" maxlength="80">
-              </div>
-            </div>
             <div class="form-group">
-              <label class="form-label" for="pWhatsapp">WhatsApp</label>
-              <input class="form-input" id="pWhatsapp" name="whatsapp" type="tel" placeholder="(11) 99999-0000">
+              <label class="form-label" for="rModo">Como quer adicionar?</label>
+              <select class="form-select" id="rModo" name="modo">
+                <option value="link">Colar o link</option>
+                <option value="usuario">Escolher a rede e informar o usuário</option>
+              </select>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm">Salvar redes</button>
+            <div class="form-group" data-modo="link">
+              <label class="form-label" for="rLink">Link, e-mail ou telefone</label>
+              <input class="form-input" id="rLink" name="link" maxlength="300" placeholder="https://instagram.com/seuusuario" autocapitalize="none">
+              <small class="form-hint" id="rDetectada"></small>
+            </div>
+            <div class="form-row" data-modo="usuario" hidden>
+              <div class="form-group">
+                <label class="form-label" for="rRede">Rede</label>
+                <select class="form-select" id="rRede" name="rede"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="rUsuario">Usuário</label>
+                <input class="form-input" id="rUsuario" name="nomeUsuario" maxlength="120" autocapitalize="none">
+              </div>
+            </div>
+            <div class="form-group" id="rDominioBloco" hidden>
+              <label class="form-label" for="rDominio">Domínio do site</label>
+              <input class="form-input" id="rDominio" name="dominio" maxlength="100" placeholder="exemplo.com" autocapitalize="none">
+            </div>
+            <label class="check-item" style="margin-bottom:16px"><input type="checkbox" name="publico" checked> Mostrar no meu perfil público</label>
+            <button type="submit" class="btn btn-primary btn-sm">Adicionar</button>
           </form>
+          <div class="card" style="padding:var(--space-5);margin-top:var(--space-4)">
+            <h3 style="margin-bottom:8px">Redes cadastradas</h3>
+            <div id="listaRedes"></div>
+          </div>
         </div>
 
         <!-- CONTA / LOGIN -->
         <div id="tab-conta" class="tab-panel" role="tabpanel" hidden>
-          <form class="card" style="padding:var(--space-5)" id="formSenha" novalidate>
-            <h3 style="margin-bottom:12px">E-mail e senha de acesso</h3>
-            <div id="alertaSenha" class="form-alert" hidden></div>
+          <form class="card" style="padding:var(--space-5);margin-bottom:var(--space-4)" id="formUsuario" novalidate>
+            <h3 style="margin-bottom:12px">Nome de usuário</h3>
+            <div id="alertaUsuario" class="form-alert" hidden></div>
             <div class="form-group">
-              <label class="form-label" for="pEmail">E-mail de login</label>
-              <input class="form-input" id="pEmail" type="email" readonly>
-              <small class="form-hint">Para trocar o e-mail de login, fale com o salão.</small>
+              <label class="form-label" for="pUsuario">Usuário para entrar (opcional)</label>
+              <input class="form-input" id="pUsuario" name="usuario" maxlength="30" autocapitalize="none" spellcheck="false" autocomplete="username" placeholder="ex.: ana.souza">
             </div>
+            <button type="submit" class="btn btn-primary btn-sm">Salvar usuário</button>
+          </form>
+          <form class="card" style="padding:var(--space-5);margin-bottom:var(--space-4)" id="formEmail" novalidate>
+            <h3 style="margin-bottom:12px">E-mail de acesso</h3>
+            <div id="alertaEmail" class="form-alert" hidden></div>
+            <div class="form-group">
+              <label class="form-label" for="pEmail">E-mail atual</label>
+              <input class="form-input" id="pEmail" type="email" readonly>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="pNovoEmail">Novo e-mail</label>
+                <input class="form-input" id="pNovoEmail" name="novo_email" type="email" maxlength="160" autocomplete="email">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="pSenhaEmail">Senha atual</label>
+                <input class="form-input" id="pSenhaEmail" name="senha_atual" type="password" autocomplete="current-password">
+              </div>
+            </div>
+            <small class="form-hint" style="margin:-8px 0 16px">Enviamos um link ao novo endereço. A troca só vale depois de confirmada.</small>
+            <button type="submit" class="btn btn-primary btn-sm">Trocar e-mail</button>
+          </form>
+          <form class="card" style="padding:var(--space-5)" id="formSenha" novalidate>
+            <h3 style="margin-bottom:12px">Senha de acesso</h3>
+            <div id="alertaSenha" class="form-alert" hidden></div>
             <div class="form-group">
               <label class="form-label" for="sAtual">Senha atual</label>
               <input class="form-input" id="sAtual" name="senha_atual" type="password" autocomplete="current-password" required>
@@ -176,6 +259,27 @@
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
               <button type="submit" class="btn btn-primary btn-sm">Alterar senha</button>
               <a href="recuperar-senha.html" class="btn btn-ghost btn-sm">Esqueci a senha atual</a>
+            </div>
+          </form>
+        </div>
+
+        <!-- PRIVACIDADE -->
+        <div id="tab-privacidade" class="tab-panel" role="tabpanel" hidden>
+          <form class="card" style="padding:var(--space-5)" id="formPrivacidade" novalidate>
+            <h3 style="margin-bottom:4px">Privacidade</h3>
+            <p class="text-muted" style="font-size:0.85rem">Você decide o que outras pessoas veem. O CPF nunca é público.</p>
+            <div class="opcoes-privacidade">
+              <label class="check-item"><input type="checkbox" name="perfil_publico"><span><strong>Ter um perfil público</strong><small>Desligado, ninguém abre o seu perfil; só as publicações que você fizer aparecem no feed.</small></span></label>
+              <label class="check-item"><input type="checkbox" name="mostrar_bio"><span>Mostrar bio</span></label>
+              <label class="check-item"><input type="checkbox" name="mostrar_estatisticas"><span>Mostrar visitas e número de publicações</span></label>
+              <label class="check-item"><input type="checkbox" name="mostrar_favoritos"><span>Mostrar favoritos</span></label>
+              <label class="check-item"><input type="checkbox" name="mostrar_email"><span>Mostrar e-mail</span></label>
+              <label class="check-item"><input type="checkbox" name="mostrar_telefone"><span>Mostrar telefone</span></label>
+              <label class="check-item"><input type="checkbox" name="mostrar_nascimento"><span>Mostrar aniversário <small>Só dia e mês, sem o ano.</small></span></label>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="submit" class="btn btn-primary btn-sm">Salvar privacidade</button>
+              <a href="privacidade.html" class="btn btn-ghost btn-sm">Política de privacidade</a>
             </div>
           </form>
         </div>
@@ -240,27 +344,6 @@
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost btn-sm" data-fechar>Cancelar</button>
         <button type="submit" class="btn btn-primary btn-sm">Enviar</button>
-      </div>
-    </form>
-  </dialog>
-
-  <!-- Avaliar atendimento -->
-  <dialog class="modal modal-sm" id="modalAvaliar" aria-labelledby="tituloModalAvaliar">
-    <form class="modal-body" id="formAvaliar" novalidate>
-      <h3 class="modal-title" id="tituloModalAvaliar">Avaliar atendimento</h3>
-      <p class="text-secondary" id="avaliarResumo" style="font-size:0.9rem;margin-bottom:16px;"></p>
-      <div id="alertaAvaliar" class="form-alert" hidden></div>
-      <div class="form-group">
-        <span class="form-label">Nota</span>
-        <div class="estrelas-input" id="seletorNota" role="radiogroup" aria-label="Nota de 1 a 5"></div>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="aComentario">Comentário (opcional)</label>
-        <textarea class="form-textarea" id="aComentario" name="comentario" rows="3" maxlength="1000" placeholder="Conte como foi o atendimento"></textarea>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-ghost btn-sm" data-fechar>Cancelar</button>
-        <button type="submit" class="btn btn-primary btn-sm">Enviar avaliação</button>
       </div>
     </form>
   </dialog>
