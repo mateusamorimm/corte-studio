@@ -10,27 +10,16 @@
   <link rel="stylesheet" href="../css/base.css">
   <link rel="stylesheet" href="../css/components.css">
   <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/complementos.css">
 </head>
 <body>
   <div class="admin-layout">
-    <aside class="sidebar" id="sidebar">
-      <a href="../index.html" class="logo">Studio<span>Corte</span></a>
-      <nav class="sidebar-nav" aria-label="Menu do painel">
-        <a href="index.html" class="sidebar-link" data-so-admin>🏠 Dashboard</a>
-        <a href="servicos.html" class="sidebar-link" data-so-admin>✂️ Serviços</a>
-        <a href="clientes.html" class="sidebar-link active" data-so-admin>👥 Clientes</a>
-        <a href="produtos.html" class="sidebar-link" data-so-admin>🛍️ Produtos</a>
-        <a href="pedidos.html" class="sidebar-link" data-so-admin>📦 Pedidos</a>
-        <a href="agendamentos.html" class="sidebar-link">📅 Atendimentos</a>
-        <a href="equipe.html" class="sidebar-link" data-so-admin>💈 Equipe</a>
-        <a href="configuracoes.html" class="sidebar-link" data-so-admin>⚙️ Configurações</a>
-      </nav>
-      <div class="sidebar-footer">
-        <div class="sidebar-user">
-          <span class="avatar avatar-iniciais" aria-hidden="true"></span>
-          <div><div class="name">&nbsp;</div><div class="role">&nbsp;</div></div>
-        </div>
-        <button class="btn btn-ghost btn-sm" data-sair style="width:100%;">Sair da Conta</button>
+    <aside class="admin-sidebar">
+      <a href="../index.html" class="logo" style="display:block;margin-bottom:24px">Studio<span>Corte</span></a>
+      <nav id="adminNav" aria-label="Menu do painel"></nav>
+      <div style="margin-top:auto;padding-top:24px">
+        <div class="sidebar-user"></div>
+        <button type="button" class="btn btn-ghost btn-sm" data-sair style="width:100%">Sair</button>
       </div>
     </aside>
 
@@ -38,7 +27,7 @@
       <div class="admin-header">
         <div>
           <h1>Gerenciamento de Clientes</h1>
-          <p class="sub">Cadastre, edite e acompanhe o histórico dos clientes.</p>
+          <p class="text-muted">Cadastre, edite e acompanhe o histórico dos clientes.</p>
         </div>
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
           <label class="check-item"><input type="checkbox" id="mostrarInativos"> Mostrar desativados</label>
@@ -72,8 +61,8 @@
       </div>
 
       <!-- Form novo/editar -->
-      <div class="admin-card" id="formCliente" style="display:none;max-width:520px;margin-top:24px;">
-        <h3 id="formTitle">Novo Cliente</h3>
+      <dialog class="modal modal-lg" id="formCliente"><div class="modal-body">
+        <h3 class="modal-title" id="formTitle">Novo Cliente</h3>
         <form id="clienteForm" novalidate>
           <div id="alertaCliente" class="form-alert" hidden></div>
           <input type="hidden" id="cliId">
@@ -124,18 +113,18 @@
             <button type="button" class="btn btn-outline" id="btnCancelar">Cancelar</button>
           </div>
         </form>
-      </div>
+      </div></dialog>
 
       <!-- Histórico do cliente -->
-      <div class="admin-card" id="historicoCliente" style="display:none;margin-top:24px;">
-        <h3 id="historicoTitulo">Histórico</h3>
+      <dialog class="modal modal-lg" id="historicoCliente"><div class="modal-body">
+        <h3 class="modal-title" id="historicoTitulo">Histórico</h3>
         <div class="table-wrap">
           <table>
             <thead><tr><th>Data</th><th>Serviço / Produtos</th><th>Profissional</th><th>Status</th><th>Valor</th></tr></thead>
             <tbody id="historicoBody"></tbody>
           </table>
         </div>
-      </div>
+      </div></dialog>
     </main>
   </div>
 

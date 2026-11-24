@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Studio Corte — Barbearia e cabeleireiro. Agende serviços, compre produtos e acompanhe seu visual.">
   <title>Studio Corte — Cortes com precisão • Agende com confiança</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,215 +12,192 @@
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/home.css">
+  <link rel="stylesheet" href="css/complementos.css">
 </head>
 <body>
-  <!-- HEADER -->
-  <header class="header">
-    <div class="container header-inner">
-      <a href="index.html" class="logo">Studio<span>Corte</span></a>
+  <a href="#main" class="skip-link">Pular para o conteúdo</a>
 
-      <nav class="nav" id="mainNav">
+  <!-- HEADER -->
+  <header class="header" role="banner">
+    <div class="container header-inner">
+      <a href="index.html" class="logo" aria-label="Studio Corte - Início">Studio<span>Corte</span></a>
+
+      <nav class="nav" id="mainNav" aria-label="Principal">
         <a href="#servicos" class="nav-link">Serviços</a>
-        <a href="#cortes" class="nav-link">Galeria / Cortes</a>
-        <a href="#localizacao" class="nav-link">Informações</a>
-        <a href="#agendar" class="nav-link">Marcar Horário</a>
+        <a href="#cortes" class="nav-link">Galeria</a>
+        <a href="#produtos" class="nav-link">Produtos</a>
+        <a href="#localizacao" class="nav-link">Local</a>
+        <a href="#agendar" class="nav-link">Agendar</a>
         <a href="#avaliacoes" class="nav-link">Avaliações</a>
+        <a href="feed.html" class="nav-link">Feed</a>
       </nav>
 
       <div class="nav-actions">
-        <a href="login.html" class="btn btn-ghost btn-sm" id="btnLogin">Entrar na Conta</a>
-        <a href="#agendar" class="btn btn-primary btn-sm">Agendar agora</a>
-        <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">
-          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <a href="login.html" class="btn btn-ghost btn-sm" id="btnLogin">Entrar</a>
+        <a href="#agendar" class="btn btn-primary btn-sm" data-abrir-agendamento>Agendar</a>
+        <button class="mobile-toggle btn-icon" id="mobileToggle" aria-label="Abrir menu" aria-expanded="false" aria-controls="mainNav">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- HERO -->
-  <section class="hero">
-    <div class="container hero-grid">
-      <div class="hero-content">
-        <h1 id="heroTitulo">Seu próximo corte,<br><span class="highlight">pensado</span> antes de sentar<br>na cadeira.</h1>
-        <p id="heroSubtitulo">Veja os serviços, escolha o estilo na galeria, confira onde estamos e marque seu horário com o profissional que preferir.</p>
-        <div class="hero-actions">
-          <a href="#servicos" class="btn btn-primary">Ver serviços</a>
-          <a href="#agendar" class="btn btn-outline">Marcar horário</a>
-        </div>
-      </div>
-      <div class="hero-image" id="heroImagem">
-        <div class="placeholder-icon">✂️</div>
-        <span style="position:absolute;bottom:16px;left:16px;font-size:0.8rem;color:var(--text-muted)">IMG do salão / corte</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- GALERIA DE CORTES -->
-  <section class="section" id="cortes">
-    <div class="container">
-      <h2 class="section-title">Lista de cortes</h2>
-      <p class="section-subtitle">Alguns dos resultados que você pode escolher. Clique e imagine no seu visual.</p>
-
-      <div class="cortes-grid" id="cortesGrid" aria-live="polite">
-        <!-- preenchido via JS -->
-      </div>
-    </div>
-  </section>
-
-  <!-- SERVIÇOS -->
-  <section class="section" id="servicos" style="background: var(--bg-secondary);">
-    <div class="container">
-      <span class="section-label">Serviços</span>
-      <h2 class="section-title">O que fazemos e quanto custa</h2>
-      <p class="section-subtitle">Lista clara de cada opção com valores. Sem surpresa na hora de pagar.</p>
-
-      <div class="servicos-grid" id="servicosGrid">
-        <!-- preenchido via JS -->
-      </div>
-    </div>
-  </section>
-
-  <!-- PRODUTOS (só aparece se houver) -->
-  <section class="section" id="produtos" style="display: none;">
-    <div class="container">
-      <span class="section-label">Produtos</span>
-      <h2 class="section-title">Produtos do salão</h2>
-      <p class="section-subtitle">Itens selecionados para você levar o visual perfeito para casa.</p>
-      <div class="produtos-grid" id="produtosGrid"></div>
-    </div>
-  </section>
-
-  <!-- LOCALIZAÇÃO -->
-  <section class="section" id="localizacao">
-    <div class="container local-grid">
-      <div class="local-info">
-        <h2>Onde estamos</h2>
-        <p>Venha nos visitar. Ambiente confortável, profissionais experientes e o melhor café da região enquanto você espera.</p>
-        <div class="local-details">
-          <div class="local-item" id="infoEndereco">📍 <strong>Endereço:</strong> <span></span></div>
-          <div class="local-item" id="infoHorario">🕐 <strong>Horário:</strong> <span></span></div>
-          <div class="local-item" id="infoTelefone">📞 <strong>Telefone:</strong> <span></span></div>
-          <div class="local-item" id="infoWhatsapp">💬 <strong>WhatsApp:</strong> <span></span></div>
-        </div>
-        <div style="margin-top: 28px;">
-          <a href="https://maps.google.com" target="_blank" rel="noopener" class="btn btn-primary" id="btnMapa">Ver no mapa</a>
-        </div>
-      </div>
-      <div class="map-placeholder" id="mapa">
-        🗺️ Mapa interativo (Google Maps embed)
-      </div>
-    </div>
-  </section>
-
-  <!-- AVALIAÇÕES / COMENTÁRIOS -->
-  <section class="section" id="avaliacoes" style="background: var(--bg-secondary);">
-    <div class="container">
-      <span class="section-label">Avaliações</span>
-      <h2 class="section-title">O que nossos clientes dizem</h2>
-      <p class="section-subtitle">Atualizado em tempo real conforme as avaliações chegam.</p>
-
-      <div class="comentarios-grid" id="comentariosGrid">
-        <!-- preenchido via JS -->
-      </div>
-
-      <div style="text-align:center;margin-top:32px;">
-        <button class="btn btn-outline" id="btnVerTodosComentarios">Ver todos os comentários</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- AGENDAR / CONTATO COM O CABELEIREIRO -->
-  <section class="section" id="agendar">
-    <div class="container" style="max-width:560px;">
-      <div style="text-align:center;margin-bottom:32px;">
-        <h2 class="section-title">Marque seu horário</h2>
-        <p class="section-subtitle">Escolha o serviço, o dia e um horário livre. O salão recebe sua solicitação na hora e confirma o atendimento.</p>
-      </div>
-
-      <form id="formAgendamento" class="card" style="padding:32px;" novalidate>
-        <div id="agAlerta" class="form-alert" hidden></div>
-        <div id="agDadosCliente">
-          <div class="form-group">
-            <label class="form-label" for="agNome">Nome completo</label>
-            <input type="text" class="form-input" id="agNome" placeholder="Seu nome" readonly>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="agTel">Telefone / WhatsApp</label>
-            <input type="tel" class="form-input" id="agTel" placeholder="(11) 99999-0000" readonly>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="agEmail">E-mail</label>
-            <input type="email" class="form-input" id="agEmail" placeholder="seu@email.com" readonly>
+  <main id="main">
+    <!-- HERO -->
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-content">
+          <h1 id="heroTitulo">Seu próximo corte,<br><span class="highlight">pensado</span> antes de sentar<br>na cadeira.</h1>
+          <p id="heroSubtitulo">Barbearia e cabeleireiro em um só lugar. Veja os serviços, escolha o estilo, compre produtos e marque o horário — tudo em uma experiência clara e escura.</p>
+          <div class="hero-actions">
+            <a href="#servicos" class="btn btn-primary btn-lg">Ver serviços</a>
+            <a href="#agendar" class="btn btn-outline btn-lg" data-abrir-agendamento>Marcar horário</a>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="agServico">Serviço desejado</label>
-          <select class="form-input" id="agServico" name="id_servico" required>
-            <option value="">Selecione...</option>
-          </select>
+        <div class="hero-image" id="heroImagem" aria-hidden="true">
+          <img src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&h=600&fit=crop" alt="" loading="eager" data-fallback="corte">
         </div>
-        <div class="form-group">
-          <label class="form-label" for="agProfissional">Profissional</label>
-          <select class="form-input" id="agProfissional" name="id_barbeiro">
-            <option value="">Qualquer profissional disponível</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label" for="agData">Data</label>
-            <input type="date" class="form-input" id="agData" name="data" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="agHorario">Horário</label>
-            <select class="form-input" id="agHorario" name="inicio" required disabled>
-              <option value="">Escolha serviço e data</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="agMsg">Mensagem (opcional)</label>
-          <textarea class="form-input" id="agMsg" name="observacao" rows="3" maxlength="500" placeholder="Alguma observação para o profissional"></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;" id="agEnviar">Enviar solicitação</button>
-        <p style="margin-top:16px;text-align:center;color:var(--text-muted);font-size:0.85rem;" id="agRodape">
-          Já tem conta? <a href="login.html?voltar=%2Findex.html%23agendar" style="color:var(--accent);">Entre</a> para salvar favoritos e histórico.
-        </p>
-      </form>
-
-      <div id="agSucesso" style="display:none;margin-top:24px;padding:20px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);border-radius:var(--radius);text-align:center;">
-        ✅ Solicitação enviada!<br>
-        <span id="agSucessoTexto">O salão recebeu seu pedido e vai confirmar o horário em breve.</span><br>
-        <a href="perfil.html#agendamentos" class="btn btn-outline btn-sm" style="margin-top:16px;">Ver meus agendamentos</a>
-        <button type="button" class="btn btn-ghost btn-sm" id="agNovo" style="margin-top:16px;">Marcar outro horário</button>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- FOOTER (ajustado - menor) -->
-  <footer class="footer">
+    <!-- GALERIA DE CORTES -->
+    <section class="section" id="cortes" aria-labelledby="cortes-title">
+      <div class="container">
+        <span class="section-label">Galeria</span>
+        <h2 class="section-title" id="cortes-title">Lista de cortes</h2>
+        <p class="section-subtitle">Resultados reais. Salve seus favoritos e imagine no seu visual.</p>
+        <div class="cortes-grid" id="cortesGrid" aria-live="polite"></div>
+        <div style="text-align:center;margin-top:24px">
+          <a href="catalogo.html?tipo=cortes" class="btn btn-outline">Ver galeria completa →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- SERVIÇOS -->
+    <section class="section" id="servicos" style="background: var(--bg-secondary);" aria-labelledby="servicos-title">
+      <div class="container">
+        <span class="section-label">Serviços</span>
+        <h2 class="section-title" id="servicos-title">O que fazemos e quanto custa</h2>
+        <p class="section-subtitle">Lista clara com valores e duração. Sem surpresa na hora de pagar.</p>
+        <div class="servicos-grid" id="servicosGrid"></div>
+        <div style="text-align:center;margin-top:24px">
+          <a href="catalogo.html?tipo=servicos" class="btn btn-outline">Ver todos os serviços →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRODUTOS -->
+    <section class="section" id="produtos" aria-labelledby="produtos-title" hidden>
+      <div class="container">
+        <span class="section-label">Loja</span>
+        <h2 class="section-title" id="produtos-title">Produtos do salão</h2>
+        <p class="section-subtitle">Leve o visual perfeito para casa. Reserve pelo site e retire no salão.</p>
+        <div class="produtos-grid" id="produtosGrid"></div>
+        <div style="text-align:center;margin-top:24px">
+          <a href="catalogo.html?tipo=produtos" class="btn btn-outline">Ver todos os produtos →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROFISSIONAIS -->
+    <section class="section" id="equipe" aria-labelledby="equipe-title" hidden>
+      <div class="container">
+        <span class="section-label">Equipe</span>
+        <h2 class="section-title" id="equipe-title">Nossos profissionais</h2>
+        <p class="section-subtitle">Conheça o trabalho de quem vai cuidar do seu visual.</p>
+        <div class="prof-grid" id="equipeGrid"></div>
+      </div>
+    </section>
+
+    <!-- LOCALIZAÇÃO -->
+    <section class="section" id="localizacao" style="background: var(--bg-secondary);" aria-labelledby="local-title">
+      <div class="container local-grid">
+        <div class="local-info">
+          <h2 id="local-title">Onde estamos</h2>
+          <p>Venha nos visitar. Ambiente confortável, profissionais experientes e o melhor café da região enquanto você espera.</p>
+          <div class="local-details">
+            <div class="local-item" id="infoEndereco">📍 <span><strong>Endereço:</strong> <span data-valor>—</span></span></div>
+            <div class="local-item" id="infoHorario">🕐 <span><strong>Horário:</strong> <span data-valor>—</span></span></div>
+            <div class="local-item" id="infoTelefone">📞 <span><strong>Telefone:</strong> <span data-valor>—</span></span></div>
+            <div class="local-item" id="infoWhatsapp">💬 <span><strong>WhatsApp:</strong> <span data-valor>—</span></span></div>
+          </div>
+          <div style="margin-top: 28px; display:flex; flex-wrap:wrap; gap:10px;">
+            <a href="#" target="_blank" rel="noopener" class="btn btn-primary" id="btnMapa" hidden>Abrir no Google Maps</a>
+            <a href="#" target="_blank" rel="noopener" class="btn btn-outline" id="btnRota" hidden>Iniciar rota</a>
+          </div>
+          <p class="text-muted" style="font-size:0.75rem;margin-top:10px;max-width:320px">“Iniciar rota” abre o Google Maps (app, se instalado) com navegação até o salão.</p>
+        </div>
+        <div class="map-slot" id="mapa" role="region" aria-label="Mapa da localização">
+          <div class="map-placeholder">🗺️ Endereço do salão em breve</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AVALIAÇÕES -->
+    <section class="section" id="avaliacoes" aria-labelledby="avaliacoes-title">
+      <div class="container">
+        <span class="section-label">Comunidade</span>
+        <h2 class="section-title" id="avaliacoes-title">O que dizem sobre nós</h2>
+        <p class="section-subtitle">As avaliações mais recentes de quem foi atendido no salão.</p>
+        <div class="comentarios-grid" id="comentariosGrid"></div>
+        <div style="text-align:center;margin-top:var(--space-6);display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <a class="btn btn-outline" id="btnVerTodosComentarios" href="comentarios.html">Ver avaliações</a>
+          <a class="btn btn-primary" href="perfil.html#agendamentos">Avaliar meu atendimento</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- AGENDAR -->
+    <section class="section" id="agendar" style="background: var(--bg-secondary);" aria-labelledby="agendar-title">
+      <div class="container">
+        <div class="card" style="padding:28px;text-align:center;max-width:640px;margin:0 auto">
+          <h2 id="agendar-title" style="margin-bottom:8px">Marcar horário</h2>
+          <p class="text-muted" style="margin-bottom:16px">Escolha o serviço, o profissional, o dia e um horário livre. O salão confirma o atendimento.</p>
+          <button type="button" class="btn btn-primary btn-lg" data-abrir-agendamento>Abrir agendamento</button>
+          <p class="text-muted" style="font-size:0.8rem;margin-top:12px">Acompanhe e cancele seus horários em <a href="perfil.html#agendamentos" style="color:var(--accent)">Meu perfil</a> ou, sem conta, <a href="reserva.html" style="color:var(--accent)">consulte pelo código da reserva</a>.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer" role="contentinfo">
     <div class="container">
-      <div class="footer-inner">
-        <a href="index.html" class="logo">Studio<span>Corte</span></a>
-        <div class="footer-links">
+      <div class="footer-grid">
+        <div>
+          <a href="index.html" class="logo">Studio<span>Corte</span></a>
+          <p class="text-muted" style="margin-top:12px;font-size:0.9rem;max-width:260px" id="rodapeEndereco" hidden></p>
+          <p class="text-muted" style="margin-top:12px;font-size:0.85rem;max-width:260px" id="rodapeSobre" hidden></p>
+        </div>
+        <div>
+          <h4>Navegação</h4>
           <a href="#servicos">Serviços</a>
           <a href="#cortes">Galeria</a>
-          <a href="#localizacao">Localização</a>
-          <a href="login.html">Entrar</a>
+          <a href="catalogo.html">Catálogo</a>
+          <a href="comentarios.html">Avaliações</a>
+          <a href="feed.html">Feed da comunidade</a>
+          <a href="#agendar">Agendar</a>
         </div>
-        <div style="display:flex;gap:16px;">
-          <a href="#" aria-label="Instagram" id="linkInstagram" target="_blank" rel="noopener" hidden>📷</a>
-          <a href="#" aria-label="TikTok" id="linkTiktok" target="_blank" rel="noopener" hidden>🎵</a>
-          <a href="#" aria-label="WhatsApp" id="linkWhatsapp" target="_blank" rel="noopener" hidden>💬</a>
+        <div>
+          <h4>Conta</h4>
+          <a href="login.html">Entrar</a>
+          <a href="cadastro.html">Criar conta</a>
+          <a href="perfil.html">Meu perfil</a>
+          <a href="recuperar-senha.html">Recuperar senha</a>
+          <a href="reserva.html">Consultar reserva</a>
+          <a href="privacidade.html">Privacidade</a>
+        </div>
+        <div>
+          <h4>Contato</h4>
+          <div id="rodapeContatos"></div>
         </div>
       </div>
-      <p class="footer-copy">© <span id="anoAtual">2026</span> <span id="nomeSalaoRodape">Studio Corte</span></p>
+      <div class="footer-bottom">
+        <span>© <span id="anoAtual">2026</span> <span id="rodapeNome">Studio Corte</span></span>
+        <span data-slogan>Cortes com precisão • Agende com confiança</span>
+      </div>
     </div>
   </footer>
-
-  <!-- Chat flutuante -->
-  <a href="#" class="chat-float" target="_blank" rel="noopener" aria-label="WhatsApp" id="chatFloat" hidden>
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.8.48 3.48 1.32 4.94L2 22l5.2-1.28A9.96 9.96 0 0012 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.56 0-3.02-.42-4.28-1.14l-.3-.18-3.16.78.8-3.08-.2-.32A7.94 7.94 0 014 12c0-4.42 3.58-8 8-8s8 3.58 8 8-3.58 8-8 8z"/></svg>
-  </a>
 
   <script type="module" src="js/pages/home.js"></script>
 </body>

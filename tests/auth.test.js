@@ -34,7 +34,7 @@ describe("autenticação", { skip: MOTIVO_SKIP }, () => {
 
   test("cadastro valida os dados no backend", async () => {
     const nav = new Navegador(base);
-    const r = await nav.post("/api/auth/cadastro", { nome_completo: "A", email: "x", senha: "123", telefone: "1" });
+    const r = await nav.post("/api/auth/cadastro", { nome_completo: "A", email: "x", senha: "123", telefone: "1", consentimento: true });
     assert.equal(r.status, 400);
     assert.ok(r.json.erro.detalhes.length >= 3);
   });
@@ -42,7 +42,7 @@ describe("autenticação", { skip: MOTIVO_SKIP }, () => {
   test("cadastro recusa CPF inválido", async () => {
     const nav = new Navegador(base);
     const r = await nav.post("/api/auth/cadastro", {
-      nome_completo: "Cliente Teste", email: `cpf.${sufixo()}@${DOMINIO_TESTE}`, senha, telefone: "(11) 98888-7777", cpf: "111.111.111-11",
+      nome_completo: "Cliente Teste", email: `cpf.${sufixo()}@${DOMINIO_TESTE}`, senha, telefone: "(11) 98888-7777", cpf: "111.111.111-11", consentimento: true,
     });
     assert.equal(r.status, 400);
     assert.match(r.json.erro.mensagem, /CPF/);
@@ -51,7 +51,7 @@ describe("autenticação", { skip: MOTIVO_SKIP }, () => {
   test("cadastro cria CLIENTE, normaliza dados e já autentica", async () => {
     const nav = new Navegador(base);
     const r = await nav.post("/api/auth/cadastro", {
-      nome_completo: "  Cliente Teste  ", email: emailCliente.toUpperCase(), senha, telefone: "(11) 98888-7777", cpf: "529.982.247-25", data_nascimento: "1995-04-20",
+      nome_completo: "  Cliente Teste  ", email: emailCliente.toUpperCase(), senha, telefone: "(11) 98888-7777", cpf: "529.982.247-25", data_nascimento: "1995-04-20", consentimento: true,
     });
     assert.equal(r.status, 201, JSON.stringify(r.json));
     assert.equal(r.json.usuario.tipo_perfil, "CLIENTE");
@@ -67,10 +67,10 @@ describe("autenticação", { skip: MOTIVO_SKIP }, () => {
 
   test("cadastro não aceita e-mail ou CPF repetido", async () => {
     const nav = new Navegador(base);
-    const r1 = await nav.post("/api/auth/cadastro", { nome_completo: "Outro", email: emailCliente, senha, telefone: "11977776666" });
+    const r1 = await nav.post("/api/auth/cadastro", { nome_completo: "Outro", email: emailCliente, senha, telefone: "11977776666", consentimento: true });
     assert.equal(r1.status, 409);
     const r2 = await nav.post("/api/auth/cadastro", {
-      nome_completo: "Outro", email: `outro.${sufixo()}@${DOMINIO_TESTE}`, senha, telefone: "11977776666", cpf: "52998224725",
+      nome_completo: "Outro", email: `outro.${sufixo()}@${DOMINIO_TESTE}`, senha, telefone: "11977776666", cpf: "52998224725", consentimento: true,
     });
     assert.equal(r2.status, 409);
     assert.match(r2.json.erro.mensagem, /CPF/);

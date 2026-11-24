@@ -22,13 +22,16 @@ export function criarApp() {
         useDefaults: true,
         directives: {
           "default-src": ["'self'"],
-          "script-src": ["'self'"], // sem scripts inline: proteção extra contra XSS
+          "script-src": ["'self'", "'wasm-unsafe-eval'"], // sem scripts inline; wasm só para decodificar modelos 3D
           "script-src-attr": ["'none'"], // sem onclick="..." no HTML
           "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
           "font-src": ["'self'", "https://fonts.gstatic.com"],
-          "img-src": ["'self'", "data:", "https:"],
-          "frame-src": ["https://www.google.com", "https://maps.google.com"],
-          "connect-src": ["'self'"],
+          "img-src": ["'self'", "data:", "blob:", "https:"], // blob: prévias de envio e texturas 3D
+          "frame-src": ["https://www.google.com", "https://maps.google.com", "https://sketchfab.com"],
+          // Envio direto do navegador ao Cloudinary (assinado pelo servidor) e vídeos/modelos 3D de lá
+          "connect-src": ["'self'", "blob:", "https://api.cloudinary.com", "https://res.cloudinary.com"],
+          "worker-src": ["'self'", "blob:"],
+          "media-src": ["'self'", "https://res.cloudinary.com"],
           "form-action": ["'self'"],
           "upgrade-insecure-requests": isProd ? [] : null,
         },

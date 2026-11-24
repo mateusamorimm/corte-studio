@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Posts — Studio Corte Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/complementos.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <a href="../index.html" class="logo" style="display:block;margin-bottom:24px">Studio<span>Corte</span></a>
+      <nav id="adminNav" aria-label="Menu do painel"></nav>
+      <div style="margin-top:auto;padding-top:24px">
+        <div class="sidebar-user"></div>
+        <button type="button" class="btn btn-ghost btn-sm" data-sair style="width:100%">Sair</button>
+      </div>
+    </aside>
+    <main class="admin-main">
+      <div class="admin-header">
+        <div>
+          <h1>Posts</h1>
+          <p class="text-muted">Publicações do feed: aprove as de contas novas e trate as denúncias.</p>
+        </div>
+        
+      </div>
+      <div class="admin-card">
+        <form class="admin-filtros" id="filtros">
+          <div class="form-group"><label class="form-label" for="pFiltro">Situação</label>
+            <select class="form-input" id="pFiltro" name="filtro"><option value="">Todas</option><option value="PENDENTE">Aguardando aprovação</option><option value="DENUNCIADO">Denunciadas</option><option value="APROVADO">Aprovadas</option><option value="REJEITADO">Recusadas</option></select></div>
+          <div class="form-group" style="flex:1"><label class="form-label" for="pBusca">Buscar</label><input type="search" class="form-input" id="pBusca" name="busca" placeholder="Autor ou texto"></div>
+        </form>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Autor</th><th>Texto</th><th>Mídia</th><th>Data</th><th>Likes</th><th>Situação</th><th>Ações</th></tr></thead>
+            <tbody id="postsBody"><tr><td colspan="7" class="estado-vazio">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="../js/admin/posts.js"></script>
+</body>
+</html>

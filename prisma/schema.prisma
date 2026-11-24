@@ -18,6 +18,7 @@ enum TipoPerfil {
   CLIENTE
   BARBEIRO
   ADMIN
+  RECEPCIONISTA
 }
 
 enum StatusAgendamento {
@@ -35,27 +36,89 @@ enum StatusPedido {
   CANCELADO
 }
 
+enum AreaAtendimento {
+  BARBEARIA
+  CABELEIREIRO
+  AMBOS
+}
+
+enum StatusModeracao {
+  PENDENTE
+  APROVADO
+  REJEITADO
+}
+
+enum AlvoAvaliacao {
+  SALAO
+  SERVICO
+  CORTE
+  PRODUTO
+  PROFISSIONAL
+}
+
+enum OrigemPontos {
+  ATENDIMENTO
+  PEDIDO
+  RESGATE
+  AJUSTE
+}
+
+enum StatusReserva {
+  ATIVA
+  CONCLUIDA
+  CANCELADA
+  EXPIRADA
+}
+
+enum VinculoFuncionario {
+  CLT
+  FREELANCE
+  ESTAGIO
+}
+
+enum StatusContrato {
+  ATIVO
+  ESTAGIO
+  DESLIGADO
+}
+
+enum TipoPonto {
+  ENTRADA
+  SAIDA
+}
+
 // ───────────── USUÁRIOS E AUTENTICAÇÃO ─────────────
 
 model Usuario {
-  id_usuario       Int        @id @default(autoincrement())
-  nome_completo    String     @db.VarChar(120)
-  email            String?    @unique @db.VarChar(160) // sempre minúsculo (CHECK); NULL = cliente de balcão sem acesso
-  cpf              String?    @unique @db.Char(11) // só dígitos; único quando informado
-  telefone         String?    @db.VarChar(20)
-  data_nascimento  DateTime?  @db.Date
-  senha_hash       String?    @db.VarChar(255) // NULL = conta aguardando definição de senha
-  tipo_perfil      TipoPerfil @default(CLIENTE)
-  avatar_url       String?    @db.VarChar(500)
-  capa_url         String?    @db.VarChar(500)
-  bio              String?    @db.VarChar(300)
-  endereco         String?    @db.VarChar(200)
-  instagram        String?    @db.VarChar(60)
-  tiktok           String?    @db.VarChar(60)
-  whatsapp         String?    @db.VarChar(20) // só dígitos
-  ativo            Boolean    @default(true)
-  data_cadastro    DateTime   @default(now()) @db.Timestamptz(3)
-  data_atualizacao DateTime   @updatedAt @db.Timestamptz(3)
+  id_usuario            Int        @id @default(autoincrement())
+  nome_completo         String     @db.VarChar(120)
+  email                 String?    @unique @db.VarChar(160) // sempre minúsculo (CHECK); NULL = cliente de balcão sem acesso
+  cpf                   String?    @unique @db.Char(11) // só dígitos; único quando informado
+  telefone              String?    @db.VarChar(20)
+  data_nascimento       DateTime?  @db.Date
+  senha_hash            String?    @db.VarChar(255) // NULL = conta aguardando definição de senha
+  tipo_perfil           TipoPerfil @default(CLIENTE)
+  avatar_url            String?    @db.VarChar(500)
+  capa_url              String?    @db.VarChar(500)
+  bio                   String?    @db.VarChar(300)
+  endereco              String?    @db.VarChar(200)
+  instagram             String?    @db.VarChar(60)
+  tiktok                String?    @db.VarChar(60)
+  whatsapp              String?    @db.VarChar(20) // só dígitos
+  usuario               String?    @unique @db.VarChar(30) // nome de login opcional (minúsculo, CHECK)
+  visitante             Boolean    @default(false) // cadastro provisório criado por uma reserva sem conta
+  perfil_publico        Boolean    @default(false) // só aparece para outros se o usuário permitir
+  mostrar_email         Boolean    @default(false)
+  mostrar_telefone      Boolean    @default(false)
+  mostrar_nascimento    Boolean    @default(false)
+  mostrar_bio           Boolean    @default(true)
+  mostrar_estatisticas  Boolean    @default(true)
+  mostrar_favoritos     Boolean    @default(true)
+  consentimento_lgpd_em DateTime?  @db.Timestamptz(3)
+  consentimento_versao  String?    @db.VarChar(20)
+  ativo                 Boolean    @default(true)
+  data_cadastro         DateTime   @default(now()) @db.Timestamptz(3)
+  data_atualizacao      DateTime   @updatedAt @db.Timestamptz(3)
 
   agendamentos_cliente  Agendamento[]             @relation("AgendamentoCliente")
   agendamentos_barbeiro Agendamento[]             @relation("AgendamentoBarbeiro")
@@ -68,6 +131,23 @@ model Usuario {
   tokens_senha          TokenRedefinicaoSenha[]
   cortes_enviados       CorteEnviado[]
   imagens               Imagem[]
+  midias                Midia[]
+  perfil_profissional   PerfilProfissional?
+  funcionario           Funcionario?
+  pontos_registrados    RegistroPonto[]
+  redes_sociais         RedeSocialUsuario[]
+  favoritos_servico     FavoritoServico[]
+  favoritos_produto     FavoritoProduto[]
+  posts                 Post[]
+  curtidas              PostCurtida[]
+  comentarios_post      PostComentario[]
+  denuncias             Denuncia[]
+  movimentos_pontos     MovimentoPontos[]
+  reservas              Reserva[]
+  logs                  LogAuditoria[]
+  notas_recebidas       AvaliacaoNota[]
+  cortes_publicados     CorteGaleria[]
+  trocas_email          TrocaEmail[]
 
   @@index([tipo_perfil, ativo])
   @@map("usuario")
@@ -90,21 +170,25 @@ model TokenRedefinicaoSenha {
 // ───────────── SERVIÇOS E AGENDA ─────────────
 
 model Servico {
-  id_servico        Int      @id @default(autoincrement())
-  nome_servico      String   @unique @db.VarChar(100)
-  descricao         String?  @db.VarChar(500)
-  icone             String?  @db.VarChar(16)
-  preco             Decimal  @db.Decimal(10, 2)
-  preco_a_partir_de Boolean  @default(false)
+  id_servico        Int             @id @default(autoincrement())
+  nome_servico      String          @unique @db.VarChar(100)
+  descricao         String?         @db.VarChar(500)
+  icone             String?         @db.VarChar(16)
+  preco             Decimal         @db.Decimal(10, 2)
+  area              AreaAtendimento @default(BARBEARIA)
+  preco_a_partir_de Boolean         @default(false)
   duracao_minutos   Int
-  imagem_url        String?  @db.VarChar(500)
-  ordem_exibicao    Int      @default(0)
-  ativo             Boolean  @default(true)
-  data_cadastro     DateTime @default(now()) @db.Timestamptz(3)
-  data_atualizacao  DateTime @updatedAt @db.Timestamptz(3)
+  imagem_url        String?         @db.VarChar(500)
+  ordem_exibicao    Int             @default(0)
+  ativo             Boolean         @default(true)
+  data_cadastro     DateTime        @default(now()) @db.Timestamptz(3)
+  data_atualizacao  DateTime        @updatedAt @db.Timestamptz(3)
 
   barbeiros    BarbeiroServico[]
   agendamentos Agendamento[]
+  itens_agenda AgendamentoServico[]
+  favoritos    FavoritoServico[]
+  notas        AvaliacaoNota[]
 
   @@index([ativo, ordem_exibicao])
   @@map("servico")
@@ -159,16 +243,23 @@ model Agendamento {
   preco_registrado    Decimal           @db.Decimal(10, 2)
   status              StatusAgendamento @default(PENDENTE)
   observacao_cliente  String?           @db.VarChar(500)
+  id_reserva          Int?
+  chegou_em           DateTime?         @db.Timestamptz(3) // check-in no balcão
+  falta_automatica    Boolean           @default(false)
   cancelado_em        DateTime?         @db.Timestamptz(3)
   motivo_cancelamento String?           @db.VarChar(200)
   data_criacao        DateTime          @default(now()) @db.Timestamptz(3)
   data_atualizacao    DateTime          @updatedAt @db.Timestamptz(3)
 
-  cliente   Usuario    @relation("AgendamentoCliente", fields: [id_cliente], references: [id_usuario], onDelete: Restrict)
-  barbeiro  Usuario    @relation("AgendamentoBarbeiro", fields: [id_barbeiro], references: [id_usuario], onDelete: Restrict)
-  servico   Servico    @relation(fields: [id_servico], references: [id_servico], onDelete: Restrict)
+  cliente   Usuario              @relation("AgendamentoCliente", fields: [id_cliente], references: [id_usuario], onDelete: Restrict)
+  barbeiro  Usuario              @relation("AgendamentoBarbeiro", fields: [id_barbeiro], references: [id_usuario], onDelete: Restrict)
+  servico   Servico              @relation(fields: [id_servico], references: [id_servico], onDelete: Restrict)
   avaliacao Avaliacao?
+  reserva   Reserva?             @relation(fields: [id_reserva], references: [id_reserva], onDelete: SetNull)
+  servicos  AgendamentoServico[]
+  cortes    AgendamentoCorte[]
 
+  @@index([id_reserva])
   @@index([id_barbeiro, data_hora_inicio])
   @@index([id_cliente, data_hora_inicio])
   @@index([status, data_hora_inicio])
@@ -176,30 +267,124 @@ model Agendamento {
 }
 
 model Avaliacao {
-  id_avaliacao   Int      @id @default(autoincrement())
-  id_agendamento Int      @unique
-  nota           Int      @db.SmallInt // 1 a 5
-  comentario     String?  @db.VarChar(1000)
-  visivel        Boolean  @default(true)
-  data_avaliacao DateTime @default(now()) @db.Timestamptz(3)
+  id_avaliacao     Int             @id @default(autoincrement())
+  id_agendamento   Int?            @unique // avaliação de atendimento…
+  id_pedido        Int?            @unique // …ou de compra (CHECK: exatamente um)
+  nota             Int             @db.SmallInt // 1 a 5 (média das notas por critério)
+  status_moderacao StatusModeracao @default(APROVADO)
+  comentario       String?         @db.VarChar(1000)
+  visivel          Boolean         @default(true)
+  data_avaliacao   DateTime        @default(now()) @db.Timestamptz(3)
 
-  agendamento Agendamento @relation(fields: [id_agendamento], references: [id_agendamento], onDelete: Cascade)
+  agendamento Agendamento?    @relation(fields: [id_agendamento], references: [id_agendamento], onDelete: Cascade)
+  pedido      Pedido?         @relation(fields: [id_pedido], references: [id_pedido], onDelete: Cascade)
+  notas       AvaliacaoNota[]
 
+  @@index([status_moderacao])
   @@index([visivel, data_avaliacao])
   @@map("avaliacao")
+}
+
+// Nota por critério: exatamente um alvo por linha (CHECK)
+model AvaliacaoNota {
+  id_nota         Int           @id @default(autoincrement())
+  id_avaliacao    Int
+  alvo            AlvoAvaliacao
+  id_servico      Int?
+  id_corte        Int?
+  id_produto      Int?
+  id_profissional Int?
+  nota            Int           @db.SmallInt
+
+  avaliacao    Avaliacao     @relation(fields: [id_avaliacao], references: [id_avaliacao], onDelete: Cascade)
+  servico      Servico?      @relation(fields: [id_servico], references: [id_servico], onDelete: Cascade)
+  corte        CorteGaleria? @relation(fields: [id_corte], references: [id_corte], onDelete: Cascade)
+  produto      Produto?      @relation(fields: [id_produto], references: [id_produto], onDelete: Cascade)
+  profissional Usuario?      @relation(fields: [id_profissional], references: [id_usuario], onDelete: Cascade)
+
+  @@index([id_avaliacao])
+  @@index([alvo])
+  @@index([id_profissional])
+  @@map("avaliacao_nota")
+}
+
+// Vários serviços no mesmo agendamento (id_servico do agendamento é o principal)
+model AgendamentoServico {
+  id_agendamento   Int
+  id_servico       Int
+  preco_registrado Decimal @db.Decimal(10, 2)
+  duracao_minutos  Int
+  ordem            Int     @default(0)
+
+  agendamento Agendamento @relation(fields: [id_agendamento], references: [id_agendamento], onDelete: Cascade)
+  servico     Servico     @relation(fields: [id_servico], references: [id_servico], onDelete: Restrict)
+
+  @@id([id_agendamento, id_servico])
+  @@index([id_servico])
+  @@map("agendamento_servico")
+}
+
+// Cortes da galeria escolhidos como referência do atendimento
+model AgendamentoCorte {
+  id_agendamento Int
+  id_corte       Int
+
+  agendamento Agendamento  @relation(fields: [id_agendamento], references: [id_agendamento], onDelete: Cascade)
+  corte       CorteGaleria @relation(fields: [id_corte], references: [id_corte], onDelete: Cascade)
+
+  @@id([id_agendamento, id_corte])
+  @@index([id_corte])
+  @@map("agendamento_corte")
+}
+
+// ───────────── RESERVAS (código de balcão, com ou sem conta) ─────────────
+
+model Reserva {
+  id_reserva            Int           @id @default(autoincrement())
+  codigo                String        @unique @db.Char(6)
+  id_cliente            Int
+  visitante             Boolean       @default(false)
+  nome                  String        @db.VarChar(120)
+  telefone              String?       @db.VarChar(20)
+  email                 String?       @db.VarChar(160) // não verificado: nunca vira login sozinho
+  observacao            String?       @db.VarChar(500)
+  status                StatusReserva @default(ATIVA)
+  motivo                String?       @db.VarChar(200)
+  consentimento_lgpd_em DateTime?     @db.Timestamptz(3)
+  consentimento_versao  String?       @db.VarChar(20)
+  criada_em             DateTime      @default(now()) @db.Timestamptz(3)
+  encerrada_em          DateTime?     @db.Timestamptz(3)
+
+  cliente      Usuario       @relation(fields: [id_cliente], references: [id_usuario], onDelete: Cascade)
+  agendamentos Agendamento[]
+  pedido       Pedido?
+
+  @@index([id_cliente])
+  @@index([status, criada_em])
+  @@index([telefone])
+  @@map("reserva")
 }
 
 // ───────────── GALERIA ─────────────
 
 model CorteGaleria {
-  id_corte       Int      @id @default(autoincrement())
-  nome_corte     String   @db.VarChar(100)
-  imagem_url     String   @db.VarChar(500)
-  ordem_exibicao Int      @default(0)
-  ativo          Boolean  @default(true)
-  data_cadastro  DateTime @default(now()) @db.Timestamptz(3)
+  id_corte            Int             @id @default(autoincrement())
+  nome_corte          String          @db.VarChar(100)
+  descricao           String?         @db.VarChar(500)
+  area                AreaAtendimento @default(BARBEARIA)
+  duracao_ref_minutos Int?
+  preco_ref           Decimal?        @db.Decimal(10, 2)
+  modelo_3d_url       String?         @db.VarChar(500) // opcional: .glb no Cloudinary ou embed do Sketchfab
+  id_autor            Int? // profissional que publicou
+  imagem_url          String          @db.VarChar(500)
+  ordem_exibicao      Int             @default(0)
+  ativo               Boolean         @default(true)
+  data_cadastro       DateTime        @default(now()) @db.Timestamptz(3)
 
-  favoritos Favorito[]
+  favoritos    Favorito[]
+  autor        Usuario?           @relation(fields: [id_autor], references: [id_usuario], onDelete: SetNull)
+  agendamentos AgendamentoCorte[]
+  notas        AvaliacaoNota[]
 
   @@index([ativo, ordem_exibicao])
   @@map("corte_galeria")
@@ -231,6 +416,50 @@ model CorteEnviado {
 
   @@index([id_cliente, data_envio])
   @@map("corte_enviado")
+}
+
+// ───────────── MÍDIA NO CLOUDINARY (fotos, vídeos e modelos 3D) ─────────────
+
+enum FinalidadeMidia {
+  AVATAR
+  CAPA
+  REFERENCIA // imagem de corte enviada pelo cliente
+  POST
+  PRODUTO
+  SERVICO
+  GALERIA
+  CORTE_3D
+  SALAO // imagens do site (destaque)
+  EQUIPE
+}
+
+enum TipoMidia {
+  IMAGEM
+  VIDEO
+  MODELO_3D
+}
+
+// Registro de cada arquivo enviado ao Cloudinary, conferido pelo servidor na API do Cloudinary.
+model Midia {
+  id_midia      Int             @id @default(autoincrement())
+  id_usuario    Int? // quem enviou
+  finalidade    FinalidadeMidia
+  tipo          TipoMidia
+  public_id     String          @unique @db.VarChar(255)
+  resource_type String          @db.VarChar(10) // image | video | raw (CHECK)
+  formato       String          @db.VarChar(10)
+  url           String          @unique @db.VarChar(500)
+  bytes         Int
+  largura       Int?
+  altura        Int?
+  duracao_seg   Decimal?        @db.Decimal(8, 2)
+  data_criacao  DateTime        @default(now()) @db.Timestamptz(3)
+
+  usuario Usuario?   @relation(fields: [id_usuario], references: [id_usuario], onDelete: SetNull)
+  post    PostMidia?
+
+  @@index([id_usuario, finalidade])
+  @@map("midia")
 }
 
 // ───────────── IMAGENS (upload armazenado no próprio banco) ─────────────
@@ -265,6 +494,8 @@ model Produto {
 
   itens_carrinho ItemCarrinho[]
   itens_pedido   ItemPedido[]
+  favoritos      FavoritoProduto[]
+  notas          AvaliacaoNota[]
 
   @@index([ativo, categoria])
   @@map("produto")
@@ -285,17 +516,28 @@ model ItemCarrinho {
 }
 
 model Pedido {
-  id_pedido        Int          @id @default(autoincrement())
-  id_cliente       Int
-  valor_total      Decimal      @db.Decimal(10, 2)
-  status           StatusPedido @default(PENDENTE)
-  observacao       String?      @db.VarChar(500)
-  cancelado_em     DateTime?    @db.Timestamptz(3)
-  data_pedido      DateTime     @default(now()) @db.Timestamptz(3)
-  data_atualizacao DateTime     @updatedAt @db.Timestamptz(3)
+  id_pedido           Int          @id @default(autoincrement())
+  id_cliente          Int
+  valor_total         Decimal      @db.Decimal(10, 2)
+  subtotal            Decimal?     @db.Decimal(10, 2)
+  valor_desconto      Decimal      @default(0) @db.Decimal(10, 2)
+  id_recompensa       Int?
+  pontos_usados       Int          @default(0)
+  prazo_retirada      DateTime?    @db.Timestamptz(3)
+  forma_pagamento     String?      @db.VarChar(20) // preferência; o pagamento é no salão
+  motivo_cancelamento String?      @db.VarChar(200)
+  id_reserva          Int?         @unique
+  status              StatusPedido @default(PENDENTE)
+  observacao          String?      @db.VarChar(500)
+  cancelado_em        DateTime?    @db.Timestamptz(3)
+  data_pedido         DateTime     @default(now()) @db.Timestamptz(3)
+  data_atualizacao    DateTime     @updatedAt @db.Timestamptz(3)
 
-  cliente Usuario      @relation(fields: [id_cliente], references: [id_usuario], onDelete: Restrict)
-  itens   ItemPedido[]
+  cliente    Usuario      @relation(fields: [id_cliente], references: [id_usuario], onDelete: Restrict)
+  itens      ItemPedido[]
+  recompensa Recompensa?  @relation(fields: [id_recompensa], references: [id_recompensa], onDelete: SetNull)
+  reserva    Reserva?     @relation(fields: [id_reserva], references: [id_reserva], onDelete: SetNull)
+  avaliacao  Avaliacao?
 
   @@index([id_cliente, data_pedido])
   @@index([status, data_pedido])
@@ -339,7 +581,278 @@ model ConfiguracaoSalao {
   antecedencia_minima_minutos   Int      @default(60)
   antecedencia_cancelamento_hrs Int      @default(2)
   janela_agendamento_dias       Int      @default(30)
+  slogan                        String?  @db.VarChar(160)
+  sobre                         String?  @db.VarChar(600)
+  entrega_ativa                 Boolean  @default(false)
+  aviso_entrega_off             String?  @db.VarChar(300)
+  aviso_entrega_on              String?  @db.VarChar(300)
+  prazo_retirada_dias           Int      @default(5)
+  tolerancia_falta_minutos      Int      @default(20)
+  falta_automatica              Boolean  @default(true) // só para reservas de visitante sem check-in
+  pontos_por_real               Decimal  @default(0.10) @db.Decimal(6, 2)
+  pontos_minimos_evento         Int      @default(5)
+  nivel_prata                   Int      @default(200)
+  nivel_ouro                    Int      @default(500)
+  avaliacao_requer_aprovacao    Boolean  @default(true)
   data_atualizacao              DateTime @updatedAt @db.Timestamptz(3)
 
   @@map("configuracao_salao")
+}
+
+// ───────────── EQUIPE: perfil profissional, recepção e ponto ─────────────
+
+model PerfilProfissional {
+  id_usuario       Int             @id
+  area             AreaAtendimento @default(BARBEARIA)
+  especialidades   String[]        @db.VarChar(60)
+  anos_experiencia Int?
+  certificacoes    String?         @db.VarChar(400)
+  visivel_no_site  Boolean         @default(true)
+
+  usuario Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+
+  @@map("perfil_profissional")
+}
+
+// Dados trabalhistas: documentos cifrados pela aplicação (AES-256-GCM); acesso só ADMIN
+model Funcionario {
+  id_usuario         Int                @id
+  vinculo            VinculoFuncionario @default(CLT)
+  status_contrato    StatusContrato     @default(ATIVO)
+  data_entrada       DateTime?          @db.Date
+  data_saida         DateTime?          @db.Date
+  motivo_saida       String?            @db.VarChar(200)
+  cpf_cifrado        String?            @db.VarChar(300)
+  rg_cifrado         String?            @db.VarChar(300)
+  ctps_cifrado       String?            @db.VarChar(300)
+  pis_cifrado        String?            @db.VarChar(300)
+  cnh_cifrado        String?            @db.VarChar(300)
+  emergencia_cifrado String?            @db.VarChar(500)
+  endereco           String?            @db.VarChar(200)
+  cidade             String?            @db.VarChar(100)
+  uf                 String?            @db.Char(2)
+  cep                String?            @db.VarChar(9)
+  observacoes        String?            @db.VarChar(1000)
+
+  usuario Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+
+  @@map("funcionario")
+}
+
+model RegistroPonto {
+  id_ponto   Int       @id @default(autoincrement())
+  id_usuario Int
+  tipo       TipoPonto
+  em         DateTime  @default(now()) @db.Timestamptz(3)
+  observacao String?   @db.VarChar(200)
+  id_autor   Int?
+
+  usuario Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+
+  @@index([id_usuario, em])
+  @@map("registro_ponto")
+}
+
+// ───────────── PERFIL: redes, favoritos e troca de e-mail ─────────────
+
+model RedeSocialUsuario {
+  id_rede    Int     @id @default(autoincrement())
+  id_usuario Int
+  rede       String  @db.VarChar(20)
+  rotulo     String  @db.VarChar(60)
+  url        String  @db.VarChar(300)
+  publico    Boolean @default(true)
+  ordem      Int     @default(0)
+
+  usuario Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+
+  @@unique([id_usuario, url])
+  @@map("rede_social_usuario")
+}
+
+model FavoritoServico {
+  id_cliente    Int
+  id_servico    Int
+  data_favorito DateTime @default(now()) @db.Timestamptz(3)
+
+  cliente Usuario @relation(fields: [id_cliente], references: [id_usuario], onDelete: Cascade)
+  servico Servico @relation(fields: [id_servico], references: [id_servico], onDelete: Cascade)
+
+  @@id([id_cliente, id_servico])
+  @@index([id_servico])
+  @@map("favorito_servico")
+}
+
+model FavoritoProduto {
+  id_cliente    Int
+  id_produto    Int
+  data_favorito DateTime @default(now()) @db.Timestamptz(3)
+
+  cliente Usuario @relation(fields: [id_cliente], references: [id_usuario], onDelete: Cascade)
+  produto Produto @relation(fields: [id_produto], references: [id_produto], onDelete: Cascade)
+
+  @@id([id_cliente, id_produto])
+  @@index([id_produto])
+  @@map("favorito_produto")
+}
+
+model TrocaEmail {
+  id_troca     Int       @id @default(autoincrement())
+  id_usuario   Int
+  novo_email   String    @db.VarChar(160)
+  token_hash   String    @unique @db.Char(64)
+  expira_em    DateTime  @db.Timestamptz(3)
+  usado_em     DateTime? @db.Timestamptz(3)
+  data_criacao DateTime  @default(now()) @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+
+  @@index([id_usuario])
+  @@map("troca_email")
+}
+
+// ───────────── REDE SOCIAL: publicações, curtidas, comentários, denúncias ─────────────
+
+model Post {
+  id_post          Int             @id @default(autoincrement())
+  id_autor         Int
+  texto            String          @db.VarChar(1000)
+  status_moderacao StatusModeracao @default(PENDENTE)
+  data_criacao     DateTime        @default(now()) @db.Timestamptz(3)
+
+  autor       Usuario          @relation(fields: [id_autor], references: [id_usuario], onDelete: Cascade)
+  midias      PostMidia[]
+  curtidas    PostCurtida[]
+  comentarios PostComentario[]
+  denuncias   Denuncia[]
+
+  @@index([status_moderacao, data_criacao])
+  @@index([id_autor])
+  @@map("post")
+}
+
+model PostMidia {
+  id_post  Int
+  id_midia Int @unique
+  ordem    Int @default(0)
+
+  post  Post  @relation(fields: [id_post], references: [id_post], onDelete: Cascade)
+  midia Midia @relation(fields: [id_midia], references: [id_midia], onDelete: Restrict)
+
+  @@id([id_post, id_midia])
+  @@map("post_midia")
+}
+
+model PostCurtida {
+  id_post    Int
+  id_usuario Int
+  data       DateTime @default(now()) @db.Timestamptz(3)
+
+  post    Post    @relation(fields: [id_post], references: [id_post], onDelete: Cascade)
+  usuario Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+
+  @@id([id_post, id_usuario])
+  @@index([id_usuario])
+  @@map("post_curtida")
+}
+
+model PostComentario {
+  id_comentario    Int             @id @default(autoincrement())
+  id_post          Int
+  id_autor         Int
+  texto            String          @db.VarChar(500)
+  status_moderacao StatusModeracao @default(PENDENTE)
+  data_criacao     DateTime        @default(now()) @db.Timestamptz(3)
+
+  post      Post       @relation(fields: [id_post], references: [id_post], onDelete: Cascade)
+  autor     Usuario    @relation(fields: [id_autor], references: [id_usuario], onDelete: Cascade)
+  denuncias Denuncia[]
+
+  @@index([id_post, data_criacao])
+  @@index([id_autor])
+  @@map("post_comentario")
+}
+
+model Denuncia {
+  id_denuncia   Int       @id @default(autoincrement())
+  id_autor      Int
+  id_post       Int?
+  id_comentario Int?
+  motivo        String    @db.VarChar(300)
+  resolvida_em  DateTime? @db.Timestamptz(3)
+  data_criacao  DateTime  @default(now()) @db.Timestamptz(3)
+
+  autor      Usuario         @relation(fields: [id_autor], references: [id_usuario], onDelete: Cascade)
+  post       Post?           @relation(fields: [id_post], references: [id_post], onDelete: Cascade)
+  comentario PostComentario? @relation(fields: [id_comentario], references: [id_comentario], onDelete: Cascade)
+
+  @@unique([id_autor, id_post])
+  @@unique([id_autor, id_comentario])
+  @@index([resolvida_em])
+  @@map("denuncia")
+}
+
+// ───────────── FIDELIDADE ─────────────
+
+model Recompensa {
+  id_recompensa       Int      @id @default(autoincrement())
+  nome                String   @db.VarChar(80)
+  pontos_minimos      Int
+  desconto_percentual Int
+  consome_pontos      Boolean  @default(true)
+  ativo               Boolean  @default(true)
+  data_criacao        DateTime @default(now()) @db.Timestamptz(3)
+
+  pedidos Pedido[]
+
+  @@map("recompensa")
+}
+
+// Extrato: saldo = soma dos lançamentos (nunca editado)
+model MovimentoPontos {
+  id_movimento Int          @id @default(autoincrement())
+  id_usuario   Int
+  pontos       Int
+  origem       OrigemPontos
+  id_origem    Int? // agendamento ou pedido
+  motivo       String       @db.VarChar(160)
+  id_autor     Int? // quem fez o ajuste manual
+  data         DateTime     @default(now()) @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+
+  @@index([id_usuario, data])
+  @@index([origem, id_origem])
+  @@map("movimento_pontos")
+}
+
+// ───────────── CONTATOS OFICIAIS E AUDITORIA ─────────────
+
+model ContatoOficial {
+  id_contato Int     @id @default(autoincrement())
+  tipo       String  @db.VarChar(20)
+  rotulo     String  @db.VarChar(60)
+  valor      String  @db.VarChar(120)
+  url        String  @db.VarChar(300)
+  publico    Boolean @default(true)
+  ordem      Int     @default(0)
+
+  @@index([publico, ordem])
+  @@map("contato_oficial")
+}
+
+model LogAuditoria {
+  id_log      Int      @id @default(autoincrement())
+  id_autor    Int?
+  acao        String   @db.VarChar(60)
+  entidade    String?  @db.VarChar(40)
+  id_entidade Int?
+  detalhes    Json?
+  data        DateTime @default(now()) @db.Timestamptz(3)
+
+  autor Usuario? @relation(fields: [id_autor], references: [id_usuario], onDelete: SetNull)
+
+  @@index([data])
+  @@index([acao])
+  @@map("log_auditoria")
 }

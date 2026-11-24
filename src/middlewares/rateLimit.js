@@ -65,3 +65,20 @@ export const limiteRecuperacao = limitador({
   chave: ipEmail,
   mensagem: "Muitas solicitações. Aguarde alguns minutos antes de tentar de novo.",
 });
+
+export const limiteReserva = limitador({
+  janelaMin: 60,
+  max: 10,
+  mensagem: "Muitas reservas a partir desta conexão. Tente mais tarde ou fale com o salão.",
+});
+
+export const limiteConsultaReserva = limitador({
+  janelaMin: 15,
+  max: 20,
+  mensagem: "Muitas consultas em pouco tempo. Aguarde alguns minutos.",
+});
+
+export const limitePost = limitador({ janelaMin: 60, max: 10, chave: porUsuario, mensagem: "Muitas publicações em pouco tempo. Tente mais tarde." });
+export const limiteComentario = limitador({ janelaMin: 10, max: 20, chave: porUsuario, mensagem: "Muitos comentários em pouco tempo. Aguarde um pouco." });
+export const limiteCurtida = limitador({ janelaMin: 5, max: 120, chave: porUsuario, mensagem: "Muitas curtidas em pouco tempo. Aguarde um pouco." });
+export const limiteDenuncia = limitador({ janelaMin: 60, max: 15, chave: porUsuario, mensagem: "Muitas denúncias em pouco tempo." });

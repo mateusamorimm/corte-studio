@@ -2,7 +2,7 @@
 import { enviarImagem } from "../api.js";
 import { urlSegura, toast, comCarregamento, escolherImagem, validarArquivoImagem } from "../ui.js";
 
-export function campoImagem({ input, botao, previa }) {
+export function campoImagem({ input, botao, previa, finalidade }) {
   const atualizar = () => {
     const url = urlSegura(input.value.trim());
     if (!previa) return;
@@ -20,7 +20,7 @@ export function campoImagem({ input, botao, previa }) {
     if (erro) return toast(erro, "erro");
     await comCarregamento(botao, async () => {
       try {
-        input.value = await enviarImagem(arquivo);
+        input.value = await enviarImagem(arquivo, { finalidade });
         atualizar();
         toast("Imagem enviada.", "sucesso");
       } catch (err) {

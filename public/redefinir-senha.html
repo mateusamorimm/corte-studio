@@ -6,54 +6,41 @@
   <meta name="referrer" content="no-referrer">
   <title>Nova senha — Studio Corte</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/variables.css">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="css/complementos.css">
 </head>
 <body>
   <div class="login-page">
-    <div class="login-visual">
-      <div class="login-visual-content">
-        <span class="tag">NOVA SENHA</span>
-        <h2>Crie uma nova senha de acesso.</h2>
-        <p>Por segurança, todas as sessões abertas com a senha antiga serão encerradas.</p>
-      </div>
-    </div>
+    <main class="login-card">
+      <a href="index.html" class="logo">Studio<span>Corte</span></a>
+      <h1>Definir nova senha</h1>
+      <p class="subtitle">Por segurança, as sessões abertas com a senha antiga serão encerradas.</p>
 
-    <main class="login-form-side">
-      <div class="login-box">
-        <a href="index.html" class="logo">Studio<span>Corte</span></a>
-        <p class="tagline">Definir nova senha</p>
+      <div id="alerta" class="form-alert" hidden></div>
 
-        <div id="alerta" class="form-alert" hidden></div>
-
-        <form id="redefinirForm" novalidate>
-          <div class="form-group">
-            <label class="form-label" for="senha">Nova senha</label>
-            <div class="input-with-icon">
-              <span class="icon" aria-hidden="true">🔒</span>
-              <input type="password" class="form-input" id="senha" name="senha" autocomplete="new-password" required aria-describedby="dicaSenha">
-              <button type="button" class="toggle-senha" data-toggle-senha="senha" aria-label="Mostrar senha" aria-pressed="false">👁️</button>
-            </div>
-            <small class="form-hint" id="dicaSenha">Mínimo de 8 caracteres, com letras e números.</small>
+      <form id="redefinirForm" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="senha">Nova senha</label>
+          <div class="input-with-icon">
+            <input type="password" class="form-input" id="senha" name="senha" autocomplete="new-password" required aria-describedby="dicaSenha">
+            <button type="button" class="toggle-senha" data-toggle-senha="senha" aria-label="Mostrar senha" aria-pressed="false">👁️</button>
           </div>
+          <small class="form-hint" id="dicaSenha">Mínimo de 8 caracteres, com letras e números.</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="confirmar">Confirmar nova senha</label>
+          <input type="password" class="form-input" id="confirmar" name="confirmar" autocomplete="new-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">Salvar nova senha</button>
+      </form>
 
-          <div class="form-group">
-            <label class="form-label" for="confirmar">Confirmar nova senha</label>
-            <div class="input-with-icon">
-              <span class="icon" aria-hidden="true">🔒</span>
-              <input type="password" class="form-input" id="confirmar" name="confirmar" autocomplete="new-password" required>
-            </div>
-          </div>
-
-          <button type="submit" class="btn btn-primary btn-full">Salvar nova senha</button>
-        </form>
-
-        <p class="login-footer">
-          <a href="recuperar-senha.html">Solicitar um novo link</a>
-        </p>
+      <div class="login-footer">
+        <a href="recuperar-senha.html">Solicitar um novo link</a> · <a href="login.html">Voltar ao login</a>
       </div>
     </main>
   </div>

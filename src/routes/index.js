@@ -6,13 +6,21 @@ import publicoRoutes from "./publico.js";
 import contaRoutes from "./conta.js";
 import adminRoutes from "./admin.js";
 import imagensRoutes from "./imagens.js";
+import midiaRoutes from "./midia.js";
+import feedRoutes from "./feed.js";
+import reservasRoutes from "./reservas.js";
+import { rotinasPorTrafego } from "../services/rotinaService.js";
 
 const router = Router();
 
+router.use(rotinasPorTrafego);
 router.use("/auth", authRoutes);
 router.use("/me", contaRoutes);
 router.use("/admin", adminRoutes);
 router.use("/imagens", imagensRoutes);
+router.use("/midia", midiaRoutes);
+router.use("/feed", feedRoutes);
+router.use("/reservas", reservasRoutes);
 router.use(publicoRoutes);
 
 // Saúde da API e do banco (sem expor detalhes da conexão).

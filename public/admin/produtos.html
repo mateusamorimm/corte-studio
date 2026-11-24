@@ -10,27 +10,16 @@
   <link rel="stylesheet" href="../css/base.css">
   <link rel="stylesheet" href="../css/components.css">
   <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/complementos.css">
 </head>
 <body>
   <div class="admin-layout">
-    <aside class="sidebar" id="sidebar">
-      <a href="../index.html" class="logo">Studio<span>Corte</span></a>
-      <nav class="sidebar-nav" aria-label="Menu do painel">
-        <a href="index.html" class="sidebar-link" data-so-admin>🏠 Dashboard</a>
-        <a href="servicos.html" class="sidebar-link" data-so-admin>✂️ Serviços</a>
-        <a href="clientes.html" class="sidebar-link" data-so-admin>👥 Clientes</a>
-        <a href="produtos.html" class="sidebar-link active" data-so-admin>🛍️ Produtos</a>
-        <a href="pedidos.html" class="sidebar-link" data-so-admin>📦 Pedidos</a>
-        <a href="agendamentos.html" class="sidebar-link">📅 Atendimentos</a>
-        <a href="equipe.html" class="sidebar-link" data-so-admin>💈 Equipe</a>
-        <a href="configuracoes.html" class="sidebar-link" data-so-admin>⚙️ Configurações</a>
-      </nav>
-      <div class="sidebar-footer">
-        <div class="sidebar-user">
-          <span class="avatar avatar-iniciais" aria-hidden="true"></span>
-          <div><div class="name">&nbsp;</div><div class="role">&nbsp;</div></div>
-        </div>
-        <button class="btn btn-ghost btn-sm" data-sair style="width:100%;">Sair da Conta</button>
+    <aside class="admin-sidebar">
+      <a href="../index.html" class="logo" style="display:block;margin-bottom:24px">Studio<span>Corte</span></a>
+      <nav id="adminNav" aria-label="Menu do painel"></nav>
+      <div style="margin-top:auto;padding-top:24px">
+        <div class="sidebar-user"></div>
+        <button type="button" class="btn btn-ghost btn-sm" data-sair style="width:100%">Sair</button>
       </div>
     </aside>
 
@@ -38,7 +27,7 @@
       <div class="admin-header">
         <div>
           <h1>Gerenciamento de Produtos</h1>
-          <p class="sub">Adicione, edite e controle o estoque dos produtos do salão.</p>
+          <p class="text-muted">Adicione, edite e controle o estoque dos produtos do salão.</p>
         </div>
         <button class="btn btn-primary" id="btnNovoProduto">+ Novo Produto</button>
       </div>
@@ -63,8 +52,8 @@
       </div>
 
       <!-- Form novo/editar -->
-      <div class="admin-card" id="formProduto" style="display:none;max-width:480px;">
-        <h3 id="formTitle">Novo Produto</h3>
+      <dialog class="modal " id="formProduto"><div class="modal-body">
+        <h3 class="modal-title" id="formTitle">Novo Produto</h3>
         <form id="produtoForm" novalidate>
           <div id="alertaProduto" class="form-alert" hidden></div>
           <input type="hidden" id="prodId">
@@ -98,7 +87,7 @@
               <input type="url" class="form-input" id="prodImg" name="imagem_url" placeholder="https://..." style="flex:1;">
               <button type="button" class="btn btn-outline btn-sm" id="btnEnviarImg">⬆ Enviar</button>
             </div>
-            <small class="form-hint">Cole uma URL ou envie um arquivo (JPG, PNG ou WebP, até 3 MB).</small>
+            <small class="form-hint">Cole uma URL ou envie um arquivo (JPG, PNG ou WebP; fotos grandes são reduzidas automaticamente).</small>
           </div>
           <div class="form-group">
             <label class="check-item"><input type="checkbox" name="ativo" checked> Ativo (à venda no site)</label>
@@ -108,7 +97,7 @@
             <button type="button" class="btn btn-outline" id="btnCancelar">Cancelar</button>
           </div>
         </form>
-      </div>
+      </div></dialog>
     </main>
   </div>
 

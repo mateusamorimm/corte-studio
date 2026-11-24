@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galeria / Cortes — Studio Corte Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/complementos.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <a href="../index.html" class="logo" style="display:block;margin-bottom:24px">Studio<span>Corte</span></a>
+      <nav id="adminNav" aria-label="Menu do painel"></nav>
+      <div style="margin-top:auto;padding-top:24px">
+        <div class="sidebar-user"></div>
+        <button type="button" class="btn btn-ghost btn-sm" data-sair style="width:100%">Sair</button>
+      </div>
+    </aside>
+    <main class="admin-main">
+      <div class="admin-header">
+        <div>
+          <h1>Galeria / Cortes</h1>
+          <p class="text-muted">A foto é o padrão. O modelo 3D é opcional e só aparece no site quando você adiciona.</p>
+        </div>
+        <button class="btn btn-primary" id="btnNovoCorte">+ Novo corte</button>
+      </div>
+      <div class="admin-card">
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Imagem</th><th>Corte</th><th>Área</th><th>3D</th><th>Favoritos</th><th>Ações</th></tr></thead>
+            <tbody id="galeriaBody"><tr><td colspan="6" class="estado-vazio">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+  <dialog class="modal modal-lg" id="modalCorte" aria-labelledby="tituloCorte">
+    <form class="modal-body" id="formCorte" novalidate>
+      <h3 class="modal-title" id="tituloCorte">Novo corte</h3>
+      <div id="alertaCorte" class="form-alert" hidden></div>
+      <input type="hidden" id="gId">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label" for="gNome">Nome</label><input class="form-input" id="gNome" name="nome_corte" maxlength="100" required></div>
+        <div class="form-group"><label class="form-label" for="gArea">Área</label><select class="form-input" id="gArea" name="area"><option value="BARBEARIA">Barbearia</option><option value="CABELEIREIRO">Cabeleireiro</option><option value="AMBOS">Barbearia e cabeleireiro</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label" for="gImagem">Foto *</label>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <img class="thumb" id="gPrevia" alt="" hidden>
+              <input class="form-input" id="gImagem" name="imagem_url" placeholder="https://..." style="flex:1;min-width:140px">
+              <button type="button" class="btn btn-outline btn-sm" id="btnCorteImg">⬆ Enviar</button>
+            </div>
+      </div>
+      <div class="form-group"><label class="form-label" for="gDesc">Descrição</label><textarea class="form-input" id="gDesc" name="descricao" rows="2" maxlength="500"></textarea></div>
+      <div class="form-row-3">
+        <div class="form-group"><label class="form-label" for="gDur">Duração ref. (min)</label><input class="form-input" id="gDur" name="duracao_ref_minutos" type="number" min="5" max="480"></div>
+        <div class="form-group"><label class="form-label" for="gPreco">A partir de (R$)</label><input class="form-input" id="gPreco" name="preco_ref" type="number" min="0" step="0.01"></div>
+        <div class="form-group"><label class="form-label" for="gOrdem">Ordem</label><input class="form-input" id="gOrdem" name="ordem_exibicao" type="number" min="0" value="0"></div>
+      </div>
+      <details class="form-group" id="bloco3d">
+        <summary class="form-label" style="cursor:pointer">Modelo 3D (opcional)</summary>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
+          <input class="form-input" id="g3d" name="modelo_3d_url" placeholder="Arquivo .glb ou link do Sketchfab" style="flex:1;min-width:140px">
+          <button type="button" class="btn btn-outline btn-sm" id="btn3d">⬆ Enviar .glb</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnSem3d">Remover 3D</button>
+        </div>
+        <small class="form-hint">Arquivo .glb de até 10 MB ou o link de um modelo do Sketchfab. Sem modelo, o site mostra só a foto.</small>
+      </details>
+      <label class="check-item"><input type="checkbox" name="ativo" checked> Visível na galeria</label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline btn-sm" data-fechar>Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+  <script type="module" src="../js/admin/galeria.js"></script>
+</body>
+</html>

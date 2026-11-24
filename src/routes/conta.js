@@ -20,18 +20,30 @@ import {
   quantidadeSchema,
   finalizarPedidoSchema,
   corteEnviadoSchema,
+  privacidadeSchema,
+  redeSocialSchema,
+  usuarioLoginSchema,
+  trocarEmailSchema,
+  feedQuery,
 } from "../validators/dominio.js";
-import { criarAgendamento, cancelarPeloCliente, avaliar, INCLUDE_AGENDAMENTO } from "../services/agendaService.js";
+import { criarAgendamentos, cancelarPeloCliente, INCLUDE_AGENDAMENTO } from "../services/agendaService.js";
+import { alvosAvaliaveis, avaliar } from "../services/avaliacaoService.js";
+import { situacao } from "../services/fidelidadeService.js";
+import { favoritosDe } from "../services/perfilService.js";
+import { listarFeed } from "../services/feedService.js";
+import { registrarLog } from "../services/logService.js";
 import {
   listarCarrinho,
   adicionarAoCarrinho,
   definirQuantidade,
   removerDoCarrinho,
   finalizarPedido,
+  resumoCheckout,
   cancelarPedido,
   INCLUDE_PEDIDO,
 } from "../services/lojaService.js";
-import { hashSenha } from "../services/authService.js";
+import { hashSenha, solicitarTrocaEmail, usuarioLivre } from "../services/authService.js";
+import { urlPertenceAoUsuario } from "../services/midiaService.js";
 import { criarSessao } from "../lib/sessao.js";
 import { emitirCsrf } from "../middlewares/csrf.js";
 
@@ -39,6 +51,13 @@ const router = Router();
 router.use(exigirLogin);
 
 const meuId = (req) => req.usuario.id_usuario;
+
+// Foto, banner e imagens de referência do cliente só podem ser arquivos enviados por ele
+async function exigirMidiaPropria(url, idUsuario) {
+  if (!(await urlPertenceAoUsuario(url, idUsuario))) {
+    throw new AppError(400, "Use uma imagem enviada pelo botão de envio do site.", "MIDIA_ALHEIA");
+  }
+}
 
 // ───────── Perfil ─────────
 
@@ -100,6 +119,7 @@ router.put("/perfil", validar({ body: perfilSchema }), async (req, res) => {
 
 for (const [rota, campo] of [["/avatar", "avatar_url"], ["/capa", "capa_url"]]) {
   router.put(rota, validar({ body: imagemPerfilSchema }), async (req, res) => {
+    await exigirMidiaPropria(req.valid.body.url, meuId(req));
     const usuario = await prisma.usuario.update({
       where: { id_usuario: meuId(req) },
       data: { [campo]: req.valid.body.url ?? null },
@@ -124,7 +144,65 @@ router.put("/senha", limiteSenha, validar({ body: trocarSenhaSchema }), async (r
   });
   // A troca invalida as outras sessões; esta recebe um cookie novo.
   emitirCsrf(res, criarSessao(res, usuario));
+  await registrarLog("conta.senha", { autor: req.usuario, entidade: "usuario", id: meuId(req) });
   res.json({ mensagem: "Senha alterada com sucesso." });
+});
+
+// Nome de login opcional (o e-mail continua valendo).
+router.put("/usuario", limiteSenha, validar({ body: usuarioLoginSchema }), async (req, res) => {
+  const login = req.valid.body.usuario ?? null;
+  if (login) await usuarioLivre(login, meuId(req));
+  const usuario = await prisma.usuario.update({ where: { id_usuario: meuId(req) }, data: { usuario: login }, select: CAMPOS_USUARIO_PUBLICO });
+  await registrarLog("conta.usuario", { autor: req.usuario, entidade: "usuario", id: meuId(req) });
+  res.json({ usuario });
+});
+
+// Troca de e-mail: confirmada por um link enviado ao novo endereço.
+router.post("/email", limiteSenha, validar({ body: trocarEmailSchema }), async (req, res) => {
+  await solicitarTrocaEmail(req.usuario, req.valid.body.novo_email, req.valid.body.senha_atual);
+  res.json({ mensagem: "Enviamos um link de confirmação para o novo e-mail. A troca só vale depois de confirmada." });
+});
+
+router.put("/privacidade", validar({ body: privacidadeSchema }), async (req, res) => {
+  const usuario = await prisma.usuario.update({ where: { id_usuario: meuId(req) }, data: req.valid.body, select: CAMPOS_USUARIO_PUBLICO });
+  await registrarLog("conta.privacidade", { autor: req.usuario, entidade: "usuario", id: meuId(req), detalhes: req.valid.body });
+  res.json({ usuario });
+});
+
+// ───────── Redes sociais ─────────
+
+const minhasRedes = (req) =>
+  prisma.redeSocialUsuario.findMany({ where: { id_usuario: meuId(req) }, orderBy: [{ ordem: "asc" }, { id_rede: "asc" }] });
+
+router.get("/redes", async (req, res) => res.json({ redes: await minhasRedes(req) }));
+
+router.post("/redes", validar({ body: redeSocialSchema }), async (req, res) => {
+  const total = await prisma.redeSocialUsuario.count({ where: { id_usuario: meuId(req) } });
+  if (total >= 30) throw conflict("Limite de 30 redes sociais no perfil.");
+  const repetida = await prisma.redeSocialUsuario.findFirst({ where: { id_usuario: meuId(req), url: req.valid.body.url } });
+  if (repetida) throw conflict("Esta rede já está no seu perfil.", [{ campo: "url", mensagem: "Esta rede já está no seu perfil." }]);
+  await prisma.redeSocialUsuario.create({ data: { ...req.valid.body, id_usuario: meuId(req), ordem: total } });
+  res.status(201).json({ redes: await minhasRedes(req) });
+});
+
+router.put("/redes/:id", validar({ params: idParam, body: redeSocialSchema }), async (req, res) => {
+  const { count } = await prisma.redeSocialUsuario.updateMany({ where: { id_rede: req.valid.params.id, id_usuario: meuId(req) }, data: req.valid.body });
+  if (!count) throw notFound("Rede social não encontrada.");
+  res.json({ redes: await minhasRedes(req) });
+});
+
+router.delete("/redes/:id", validar({ params: idParam }), async (req, res) => {
+  const { count } = await prisma.redeSocialUsuario.deleteMany({ where: { id_rede: req.valid.params.id, id_usuario: meuId(req) } });
+  if (!count) throw notFound("Rede social não encontrada.");
+  res.json({ redes: await minhasRedes(req) });
+});
+
+// ───────── Fidelidade e publicações ─────────
+
+router.get("/fidelidade", async (req, res) => res.json({ fidelidade: await situacao(meuId(req)) }));
+
+router.get("/posts", validar({ query: feedQuery }), async (req, res) => {
+  res.json(await listarFeed({ leitor: req.usuario, soMeus: true, cursor: req.valid.query.cursor, limite: req.valid.query.limite }));
 });
 
 // ───────── Agendamentos ─────────
@@ -141,27 +219,36 @@ router.get("/agendamentos", async (req, res) => {
 
 router.post("/agendamentos", limiteAgendamento, validar({ body: novoAgendamentoSchema }), async (req, res) => {
   const b = req.valid.body;
-  const agendamento = await criarAgendamento({
+  const { reserva, agendamentos } = await criarAgendamentos({
     id_cliente: meuId(req),
-    id_servico: b.id_servico,
+    servicos: b.servicos,
     id_barbeiro: b.id_barbeiro ?? null,
     inicio: b.inicio,
+    pessoas: b.pessoas,
+    cortes: b.cortes,
     observacao: b.observacao ?? null,
   });
-  res.status(201).json({ agendamento });
+  res.status(201).json({ agendamento: agendamentos[0], agendamentos, codigo: reserva.codigo });
 });
 
 router.post("/agendamentos/:id/cancelar", validar({ params: idParam, body: cancelarClienteSchema }), async (req, res) => {
   res.json({ agendamento: await cancelarPeloCliente(req.valid.params.id, meuId(req), req.valid.body.motivo ?? null) });
 });
 
-router.post("/agendamentos/:id/avaliacao", limiteAvaliacao, validar({ params: idParam, body: avaliacaoSchema }), async (req, res) => {
-  const avaliacao = await avaliar(req.valid.params.id, meuId(req), {
-    nota: req.valid.body.nota,
-    comentario: req.valid.body.comentario ?? null,
+// Avaliação do atendimento ou da compra, com nota por critério.
+for (const [base, chave] of [["agendamentos", "id_agendamento"], ["pedidos", "id_pedido"]]) {
+  router.get(`/${base}/:id/avaliacao`, validar({ params: idParam }), async (req, res) => {
+    res.json(await alvosAvaliaveis({ idCliente: meuId(req), [chave]: req.valid.params.id }));
   });
-  res.status(201).json({ avaliacao });
-});
+  router.post(`/${base}/:id/avaliacao`, limiteAvaliacao, validar({ params: idParam, body: avaliacaoSchema }), async (req, res) => {
+    const { nota, notas, comentario } = req.valid.body;
+    const avaliacao = await avaliar({ idCliente: meuId(req), [chave]: req.valid.params.id, nota, notas, comentario: comentario ?? null });
+    res.status(201).json({
+      avaliacao,
+      aviso: avaliacao.status_moderacao === "PENDENTE" ? "Obrigado! Sua avaliação aparece no site depois da aprovação do salão." : null,
+    });
+  });
+}
 
 // ───────── Carrinho e pedidos ─────────
 
@@ -179,6 +266,8 @@ router.delete("/carrinho/:id", validar({ params: idParam }), async (req, res) =>
   res.json(await removerDoCarrinho(meuId(req), req.valid.params.id));
 });
 
+router.get("/checkout", async (req, res) => res.json(await resumoCheckout(meuId(req))));
+
 router.get("/pedidos", async (req, res) => {
   const pedidos = await prisma.pedido.findMany({
     where: { id_cliente: meuId(req) },
@@ -190,26 +279,40 @@ router.get("/pedidos", async (req, res) => {
 });
 
 router.post("/pedidos", validar({ body: finalizarPedidoSchema }), async (req, res) => {
-  res.status(201).json({ pedido: await finalizarPedido(meuId(req), req.valid.body.observacao ?? null) });
+  res.status(201).json({ pedido: await finalizarPedido(meuId(req), req.valid.body) });
 });
 
 router.post("/pedidos/:id/cancelar", validar({ params: idParam }), async (req, res) => {
-  res.json({ pedido: await cancelarPedido(req.valid.params.id, { idCliente: meuId(req) }) });
+  res.json({ pedido: await cancelarPedido(req.valid.params.id, { idCliente: meuId(req), motivo: "Cancelado pelo cliente" }) });
 });
 
 // ───────── Favoritos e cortes enviados ─────────
 
 router.get("/favoritos", async (req, res) => {
-  const [favoritos, enviados] = await Promise.all([
-    prisma.favorito.findMany({
-      where: { id_cliente: meuId(req), corte: { ativo: true } },
-      include: { corte: { select: { id_corte: true, nome_corte: true, imagem_url: true } } },
-      orderBy: { data_favorito: "desc" },
-    }),
+  const [meus, enviados] = await Promise.all([
+    favoritosDe(meuId(req)),
     prisma.corteEnviado.findMany({ where: { id_cliente: meuId(req) }, orderBy: { data_envio: "desc" } }),
   ]);
-  res.json({ favoritos, enviados });
+  res.json({ favoritos: meus.cortes.map((corte) => ({ id_corte: corte.id_corte, corte })), servicos: meus.servicos, produtos: meus.produtos, enviados });
 });
+
+// Favoritos de serviços e produtos
+for (const { rota, tabela, favorito, coluna, erro } of [
+  { rota: "servicos", tabela: "servico", favorito: "favoritoServico", coluna: "id_servico", erro: "Serviço não encontrado." },
+  { rota: "produtos", tabela: "produto", favorito: "favoritoProduto", coluna: "id_produto", erro: "Produto não encontrado." },
+]) {
+  router.put(`/favoritos/${rota}/:id`, validar({ params: idParam }), async (req, res) => {
+    const item = await prisma[tabela].findFirst({ where: { [coluna]: req.valid.params.id, ativo: true }, select: { [coluna]: true } });
+    if (!item) throw notFound(erro);
+    const chave = { id_cliente: meuId(req), [coluna]: req.valid.params.id };
+    await prisma[favorito].upsert({ where: { [`id_cliente_${coluna}`]: chave }, create: chave, update: {} });
+    res.json({ favorito: true });
+  });
+  router.delete(`/favoritos/${rota}/:id`, validar({ params: idParam }), async (req, res) => {
+    await prisma[favorito].deleteMany({ where: { id_cliente: meuId(req), [coluna]: req.valid.params.id } });
+    res.json({ favorito: false });
+  });
+}
 
 router.put("/favoritos/:id", validar({ params: idParam }), async (req, res) => {
   const corte = await prisma.corteGaleria.findFirst({ where: { id_corte: req.valid.params.id, ativo: true } });
@@ -228,6 +331,7 @@ router.delete("/favoritos/:id", validar({ params: idParam }), async (req, res) =
 });
 
 router.post("/cortes-enviados", validar({ body: corteEnviadoSchema }), async (req, res) => {
+  await exigirMidiaPropria(req.valid.body.imagem_url, meuId(req));
   const total = await prisma.corteEnviado.count({ where: { id_cliente: meuId(req) } });
   if (total >= 30) throw conflict("Limite de 30 imagens enviadas. Remova alguma para enviar outra.");
   const corte = await prisma.corteEnviado.create({

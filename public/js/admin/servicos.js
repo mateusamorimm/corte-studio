@@ -1,6 +1,7 @@
 import { get, post, put, del } from "../api.js";
-import { $, html, moeda, toast, alertaForm, comCarregamento, confirmar, mostrarErrosCampos, limparErrosCampos } from "../ui.js";
+import { $, html, moeda, toast, alertaForm, comCarregamento, confirmar, mostrarErrosCampos, limparErrosCampos, abrirModal } from "../ui.js";
 import { iniciarPainel } from "./comum.js";
+import { rotuloArea } from "../cartoes.js";
 
 await iniciarPainel(["ADMIN"]);
 
@@ -23,7 +24,7 @@ function render() {
         .map(
           (s) => html`
       <tr class="${s.ativo ? "" : "inativo"}">
-        <td>${s.icone || "✂️"} ${s.nome_servico}${s.ativo ? "" : html` <span class="badge badge-accent">INATIVO</span>`}
+        <td>${s.icone || "✂️"} ${s.nome_servico}${s.ativo ? "" : html` <span class="badge badge-accent">INATIVO</span>`} <span class="badge">${rotuloArea(s.area)}</span>
           ${s._count.barbeiros ? "" : html`<br><small class="text-muted">⚠ Nenhum profissional atende este serviço</small>`}</td>
         <td style="max-width:320px;">${s.descricao ?? ""}</td>
         <td style="color:var(--accent);font-weight:600;">${s.preco_a_partir_de ? "A partir de " : ""}${moeda(s.preco)}</td>
@@ -52,6 +53,7 @@ function abrir(s = null) {
     form.descricao.value = s.descricao ?? "";
     form.preco.value = Number(s.preco).toFixed(2);
     form.duracao_minutos.value = s.duracao_minutos;
+    form.area.value = s.area;
     form.ordem_exibicao.value = s.ordem_exibicao;
     form.preco_a_partir_de.checked = s.preco_a_partir_de;
     form.ativo.checked = s.ativo;
@@ -59,8 +61,7 @@ function abrir(s = null) {
     form.duracao_minutos.value = 30;
     form.ordem_exibicao.value = servicos.length + 1;
   }
-  caixa.style.display = "block";
-  caixa.scrollIntoView({ behavior: "smooth" });
+  abrirModal(caixa);
 }
 
 const dadosDoForm = (s = {}) => ({
@@ -69,6 +70,7 @@ const dadosDoForm = (s = {}) => ({
   descricao: form.descricao.value,
   preco: form.preco.value,
   duracao_minutos: form.duracao_minutos.value,
+  area: form.area.value,
   ordem_exibicao: form.ordem_exibicao.value || 0,
   preco_a_partir_de: form.preco_a_partir_de.checked,
   ativo: form.ativo.checked,
@@ -76,7 +78,7 @@ const dadosDoForm = (s = {}) => ({
 });
 
 $("#btnNovoServico").addEventListener("click", () => abrir());
-$("#btnCancelar").addEventListener("click", () => (caixa.style.display = "none"));
+$("#btnCancelar").addEventListener("click", () => caixa.close());
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -94,7 +96,7 @@ form.addEventListener("submit", async (e) => {
     try {
       if (id) await put(`/admin/servicos/${id}`, dadosDoForm(atual));
       else await post("/admin/servicos", dadosDoForm());
-      caixa.style.display = "none";
+      caixa.close();
       toast(id ? "Serviço atualizado." : "Serviço criado. Lembre-se de vinculá-lo aos profissionais em Equipe.", "sucesso", 6000);
       await carregar();
     } catch (err) {

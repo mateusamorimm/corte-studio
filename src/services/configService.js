@@ -20,6 +20,19 @@ const PADRAO = {
   antecedencia_minima_minutos: 60,
   antecedencia_cancelamento_hrs: 2,
   janela_agendamento_dias: 30,
+  slogan: null,
+  sobre: null,
+  entrega_ativa: false,
+  aviso_entrega_off: null,
+  aviso_entrega_on: null,
+  prazo_retirada_dias: 5,
+  tolerancia_falta_minutos: 20,
+  falta_automatica: true,
+  pontos_por_real: 0.1,
+  pontos_minimos_evento: 5,
+  nivel_prata: 200,
+  nivel_ouro: 500,
+  avaliacao_requer_aprovacao: true,
 };
 
 export async function obterConfig(cliente = prisma) {
@@ -46,6 +59,12 @@ export function configPublica(c) {
     antecedencia_minima_minutos: c.antecedencia_minima_minutos,
     antecedencia_cancelamento_hrs: c.antecedencia_cancelamento_hrs,
     janela_agendamento_dias: c.janela_agendamento_dias,
+    slogan: c.slogan,
+    sobre: c.sobre,
+    entrega_ativa: c.entrega_ativa,
+    aviso_entrega: (c.entrega_ativa ? c.aviso_entrega_on : c.aviso_entrega_off) ?? null,
+    prazo_retirada_dias: c.prazo_retirada_dias,
+    tolerancia_falta_minutos: c.tolerancia_falta_minutos,
   };
 }
 

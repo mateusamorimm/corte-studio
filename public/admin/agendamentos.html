@@ -9,37 +9,26 @@
   <link rel="stylesheet" href="../css/base.css">
   <link rel="stylesheet" href="../css/components.css">
   <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/complementos.css">
 </head>
 <body>
   <div class="admin-layout">
-    <aside class="sidebar" id="sidebar">
-      <a href="../index.html" class="logo">Studio<span>Corte</span></a>
-      <nav class="sidebar-nav" aria-label="Menu do painel">
-        <a href="index.html" class="sidebar-link" data-so-admin>🏠 Dashboard</a>
-        <a href="servicos.html" class="sidebar-link" data-so-admin>✂️ Serviços</a>
-        <a href="clientes.html" class="sidebar-link" data-so-admin>👥 Clientes</a>
-        <a href="produtos.html" class="sidebar-link" data-so-admin>🛍️ Produtos</a>
-        <a href="pedidos.html" class="sidebar-link" data-so-admin>📦 Pedidos</a>
-        <a href="agendamentos.html" class="sidebar-link active">📅 Atendimentos</a>
-        <a href="equipe.html" class="sidebar-link" data-so-admin>💈 Equipe</a>
-        <a href="configuracoes.html" class="sidebar-link" data-so-admin>⚙️ Configurações</a>
-      </nav>
-      <div class="sidebar-footer">
-        <div class="sidebar-user">
-          <span class="avatar avatar-iniciais" aria-hidden="true"></span>
-          <div><div class="name">&nbsp;</div><div class="role">&nbsp;</div></div>
-        </div>
-        <button class="btn btn-ghost btn-sm" data-sair style="width:100%;">Sair da Conta</button>
+    <aside class="admin-sidebar">
+      <a href="../index.html" class="logo" style="display:block;margin-bottom:24px">Studio<span>Corte</span></a>
+      <nav id="adminNav" aria-label="Menu do painel"></nav>
+      <div style="margin-top:auto;padding-top:24px">
+        <div class="sidebar-user"></div>
+        <button type="button" class="btn btn-ghost btn-sm" data-sair style="width:100%">Sair</button>
       </div>
     </aside>
     <main class="admin-main">
       <div class="admin-header">
         <div>
           <h1>Atendimentos / Agendamentos</h1>
-          <p class="sub">Todos os horários marcados e status em tempo real.</p>
+          <p class="text-muted">Todos os horários marcados e status em tempo real.</p>
         </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;">
-          <button class="btn btn-outline" id="btnBloqueio">⛔ Bloquear horário</button>
+          <button class="btn btn-outline" id="btnBloqueio" data-nao-recepcao>⛔ Bloquear horário</button>
           <button class="btn btn-primary" id="btnNovo">+ Novo Agendamento</button>
         </div>
       </div>
@@ -65,13 +54,13 @@
               <option value="CANCELADO">Cancelado</option>
             </select>
           </div>
-          <div class="form-group" data-so-admin>
+          <div class="form-group" data-balcao>
             <label class="form-label" for="fProf">Profissional</label>
             <select class="form-input" id="fProf" name="profissional"><option value="">Todos</option></select>
           </div>
           <div class="form-group" style="flex:1;">
             <label class="form-label" for="fBusca">Buscar</label>
-            <input type="search" class="form-input" id="fBusca" name="busca" placeholder="Cliente, telefone ou serviço">
+            <input type="search" class="form-input" id="fBusca" name="busca" placeholder="Cliente, telefone, serviço ou código">
           </div>
           <button type="button" class="btn btn-ghost btn-sm" id="btnTodasDatas">Todas as datas</button>
         </form>
@@ -87,7 +76,7 @@
         </div>
       </div>
 
-      <div class="admin-card" style="margin-top:24px;">
+      <div class="admin-card" style="margin-top:24px;" id="cardBloqueios">
         <h3>⛔ Bloqueios de agenda (folgas, férias, compromissos)</h3>
         <div class="table-wrap">
           <table>
@@ -152,12 +141,16 @@
         <label class="form-label" for="nBuscaCliente">Cliente</label>
         <input type="search" class="form-input" id="nBuscaCliente" placeholder="Digite nome, telefone ou e-mail" autocomplete="off">
         <select class="form-input" id="nCliente" name="id_cliente" required><option value="">Busque o cliente acima</option></select>
-        <small class="form-hint">Cliente novo? Cadastre primeiro em <a href="clientes.html" style="color:var(--accent);" data-so-admin>Clientes</a>.</small>
+        <small class="form-hint">Cliente novo? Cadastre primeiro em <a href="clientes.html" style="color:var(--accent);" data-balcao>Clientes</a>.</small>
+      </div>
+      <div class="form-group">
+        <span class="form-label" id="nServicosRotulo">Serviços</span>
+        <div class="ag-check-list" id="nServicos" role="group" aria-labelledby="nServicosRotulo"></div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label" for="nServico">Serviço</label>
-          <select class="form-input" id="nServico" name="id_servico" required></select>
+          <label class="form-label" for="nPessoas">Pessoas</label>
+          <select class="form-input" id="nPessoas" name="pessoas"><option>1</option><option>2</option><option>3</option><option>4</option></select>
         </div>
         <div class="form-group">
           <label class="form-label" for="nProf">Profissional</label>

@@ -5,77 +5,76 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Criar conta — Studio Corte</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/variables.css">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="css/complementos.css">
 </head>
 <body>
   <div class="login-page">
-    <div class="login-visual">
-      <div class="login-visual-content">
-        <span class="tag">NOVA CONTA</span>
-        <h2>Agende em poucos cliques e acompanhe seu histórico.</h2>
-        <p>Com sua conta você escolhe o profissional, o dia e o horário, salva cortes favoritos e acompanha seus pedidos.</p>
-      </div>
-    </div>
+    <main class="login-card" style="max-width:520px">
+      <a href="index.html" class="logo">Studio<span>Corte</span></a>
+      <h1>Criar conta</h1>
+      <p class="subtitle">Agende horários, salve favoritos e acompanhe seu histórico.</p>
 
-    <main class="login-form-side">
-      <div class="login-box login-box--largo">
-        <a href="index.html" class="logo">Studio<span>Corte</span></a>
-        <p class="tagline">Crie sua conta</p>
+      <div id="alerta" class="form-alert" hidden></div>
 
-        <div id="alerta" class="form-alert" hidden></div>
-
-        <form id="cadastroForm" novalidate>
+      <form id="cadastroForm" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="nome_completo">Nome completo *</label>
+          <input type="text" class="form-input" id="nome_completo" name="nome_completo" autocomplete="name" maxlength="120" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="email">E-mail *</label>
+          <input type="email" class="form-input" id="email" name="email" autocomplete="email" maxlength="160" placeholder="seu@email.com" required>
+        </div>
+        <div class="form-row">
           <div class="form-group">
-            <label class="form-label" for="nome_completo">Nome completo</label>
-            <input type="text" class="form-input" id="nome_completo" name="nome_completo" autocomplete="name" maxlength="120" required>
+            <label class="form-label" for="telefone">WhatsApp / Telefone *</label>
+            <input type="tel" class="form-input" id="telefone" name="telefone" autocomplete="tel" inputmode="numeric" placeholder="(11) 99999-0000" required>
           </div>
-
           <div class="form-group">
-            <label class="form-label" for="email">E-mail</label>
-            <input type="email" class="form-input" id="email" name="email" autocomplete="email" maxlength="160" placeholder="seu.email@exemplo.com" required>
+            <label class="form-label" for="data_nascimento">Nascimento (opcional)</label>
+            <input type="date" class="form-input" id="data_nascimento" name="data_nascimento" autocomplete="bday">
           </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="telefone">Telefone / WhatsApp</label>
-              <input type="tel" class="form-input" id="telefone" name="telefone" autocomplete="tel" inputmode="numeric" placeholder="(11) 99999-0000" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="data_nascimento">Nascimento <span class="form-hint">(opcional)</span></label>
-              <input type="date" class="form-input" id="data_nascimento" name="data_nascimento" autocomplete="bday">
-            </div>
-          </div>
-
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="cpf">CPF (opcional)</label>
+          <input type="text" class="form-input" id="cpf" name="cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14">
+        </div>
+        <div class="form-row">
           <div class="form-group">
-            <label class="form-label" for="cpf">CPF <span class="form-hint">(opcional)</span></label>
-            <input type="text" class="form-input" id="cpf" name="cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14">
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="senha">Senha</label>
-              <div class="input-with-icon">
-                <input type="password" class="form-input" id="senha" name="senha" autocomplete="new-password" required aria-describedby="dicaSenha" style="padding-left:16px">
-                <button type="button" class="toggle-senha" data-toggle-senha="senha" aria-label="Mostrar senha" aria-pressed="false">👁️</button>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="confirmar">Confirmar senha</label>
-              <input type="password" class="form-input" id="confirmar" name="confirmar" autocomplete="new-password" required>
+            <label class="form-label" for="senha">Senha *</label>
+            <div class="input-with-icon">
+              <input type="password" class="form-input" id="senha" name="senha" autocomplete="new-password" required aria-describedby="dicaSenha">
+              <button type="button" class="toggle-senha" data-toggle-senha="senha" aria-label="Mostrar senha" aria-pressed="false">👁️</button>
             </div>
           </div>
-          <p class="form-hint" id="dicaSenha" style="margin:-8px 0 20px;">Mínimo de 8 caracteres, com letras e números.</p>
+          <div class="form-group">
+            <label class="form-label" for="confirmar">Confirmar senha *</label>
+            <input type="password" class="form-input" id="confirmar" name="confirmar" autocomplete="new-password" required>
+          </div>
+        </div>
+        <p class="form-hint" id="dicaSenha" style="margin:-8px 0 16px">Mínimo de 8 caracteres, com letras e números.</p>
+        <div class="form-group">
+          <label class="form-label" for="usuario">Nome de usuário (opcional)</label>
+          <input type="text" class="form-input" id="usuario" name="usuario" autocomplete="username" maxlength="30" placeholder="ex.: ana.souza" autocapitalize="none" spellcheck="false">
+          <small class="form-hint">Com ele você também pode entrar sem digitar o e-mail.</small>
+        </div>
+        <div class="form-group">
+          <label class="check-item" style="align-items:flex-start">
+            <input type="checkbox" id="consentimento" name="consentimento">
+            <span style="font-size:0.85rem">Li e aceito a <a href="privacidade.html" target="_blank" style="color:var(--accent)">política de privacidade</a>.</span>
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">Criar conta</button>
+      </form>
 
-          <button type="submit" class="btn btn-primary btn-full">Criar conta</button>
-        </form>
-
-        <p class="login-footer">
-          Já tem conta? <a href="login.html" id="linkLogin">Entrar</a>
-        </p>
+      <div class="login-footer">
+        Já tem conta? <a href="login.html" id="linkLogin">Entrar</a> · <a href="index.html">Voltar ao site</a>
       </div>
     </main>
   </div>

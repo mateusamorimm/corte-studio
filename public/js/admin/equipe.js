@@ -10,8 +10,7 @@ import {
   confirmar,
   mostrarErrosCampos,
   limparErrosCampos,
-  telefoneFormatado,
-} from "../ui.js";
+  telefoneFormatado, abrirModal } from "../ui.js";
 import { regras, validarForm, mascaraTelefone } from "../validacao.js";
 import { iniciarPainel } from "./comum.js";
 import { campoImagem } from "./imagemCampo.js";
@@ -22,7 +21,7 @@ const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sáb
 const CURTO = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const form = $("#equipeForm");
 const caixa = $("#formEquipe");
-const foto = campoImagem({ input: $("#eqFoto"), botao: $("#btnFoto"), previa: $("#eqPrevia") });
+const foto = campoImagem({ input: $("#eqFoto"), botao: $("#btnFoto"), previa: $("#eqPrevia"), finalidade: "EQUIPE" });
 mascaraTelefone(form.telefone);
 
 let equipe = [];
@@ -75,6 +74,7 @@ function render() {
           <td style="font-size:0.85rem;">${resumoSemana(m.disponibilidade)}</td>
           <td>
             <div class="admin-acoes">
+              <a class="btn btn-ghost btn-sm" href="${`profissional-perfil.html?id=${m.id_usuario}`}">Perfil</a>
               <button class="btn btn-ghost btn-sm" data-acao="editar" data-id="${m.id_usuario}">Editar</button>
               ${m.ativo ? html`<button class="btn btn-ghost btn-sm" data-acao="convite" data-id="${m.id_usuario}">${m.tem_acesso ? "Redefinir senha" : "Reenviar convite"}</button>` : ""}
               ${m.id_usuario === eu.id_usuario
@@ -146,6 +146,14 @@ function abrir(m = null) {
   form.tipo_perfil.value = m?.tipo_perfil ?? "BARBEIRO";
   form.avatar_url.value = m?.avatar_url ?? "";
   foto.atualizar();
+  const pp = m?.perfil_profissional;
+  form.usuario.value = m?.usuario ?? "";
+  form.area.value = pp?.area ?? "BARBEARIA";
+  form.especialidades.value = (pp?.especialidades ?? []).join(", ");
+  form.anos_experiencia.value = pp?.anos_experiencia ?? "";
+  form.certificacoes.value = pp?.certificacoes ?? "";
+  form.bio.value = m?.bio ?? "";
+  form.visivel_no_site.checked = pp?.visivel_no_site ?? true;
   $("#eqServicos").innerHTML = servicos.length
     ? servicos
         .map(
@@ -154,12 +162,11 @@ function abrir(m = null) {
         .join("")
     : html`<span class="text-muted">Cadastre serviços primeiro.</span>`.toString();
   montarSemana(m?.disponibilidade ?? []);
-  caixa.style.display = "block";
-  caixa.scrollIntoView({ behavior: "smooth" });
+  abrirModal(caixa);
 }
 
 $("#btnNovo").addEventListener("click", () => abrir());
-$("#btnCancelar").addEventListener("click", () => (caixa.style.display = "none"));
+$("#btnCancelar").addEventListener("click", () => caixa.close());
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -184,11 +191,20 @@ form.addEventListener("submit", async (e) => {
     avatar_url: form.avatar_url.value.trim(),
     servicos: $$("#eqServicos input:checked").map((i) => Number(i.value)),
     disponibilidade,
+    usuario: form.usuario.value,
+    perfil: {
+      area: form.area.value,
+      especialidades: form.especialidades.value.split(",").map((x) => x.trim()).filter(Boolean),
+      anos_experiencia: form.anos_experiencia.value,
+      certificacoes: form.certificacoes.value,
+      bio: form.bio.value,
+      visivel_no_site: form.visivel_no_site.checked,
+    },
   };
   await comCarregamento(form.querySelector("[type=submit]"), async () => {
     try {
       const r = id ? await put(`/admin/equipe/${id}`, dados) : await post("/admin/equipe", dados);
-      caixa.style.display = "none";
+      caixa.close();
       toast(id ? "Profissional atualizado." : "Profissional cadastrado. O convite foi enviado por e-mail.", "sucesso", 6000);
       if (r.aviso) toast(r.aviso, "aviso", 8000);
       await carregar();

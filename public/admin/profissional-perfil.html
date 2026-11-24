@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perfil do profissional — Studio Corte Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/complementos.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <a href="../index.html" class="logo" style="display:block;margin-bottom:24px">Studio<span>Corte</span></a>
+      <nav id="adminNav" aria-label="Menu do painel"></nav>
+      <div style="margin-top:auto;padding-top:24px">
+        <div class="sidebar-user"></div>
+        <button type="button" class="btn btn-ghost btn-sm" data-sair style="width:100%">Sair</button>
+      </div>
+    </aside>
+    <main class="admin-main">
+      <div class="admin-header">
+        <div>
+          <h1>Perfil do profissional</h1>
+          <p class="text-muted">Trabalho, certificações e últimos atendimentos.</p>
+        </div>
+        <a class="btn btn-ghost" href="equipe.html" data-so-admin>← Profissionais</a>
+      </div>
+      <div id="ficha"><p class="estado-vazio">Carregando...</p></div>
+    </main>
+  </div>
+  <dialog class="modal" id="modalPerfil" aria-labelledby="tituloPerfil">
+    <form class="modal-body" id="formPerfil" novalidate>
+      <h3 class="modal-title" id="tituloPerfil">Editar perfil profissional</h3>
+      <div id="alertaPerfil" class="form-alert" hidden></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label" for="ppArea">Área</label><select class="form-input" id="ppArea" name="area"><option value="BARBEARIA">Barbearia</option><option value="CABELEIREIRO">Cabeleireiro</option><option value="AMBOS">Barbearia e cabeleireiro</option></select></div>
+        <div class="form-group"><label class="form-label" for="ppAnos">Anos de experiência</label><input class="form-input" id="ppAnos" name="anos_experiencia" type="number" min="0" max="80"></div>
+      </div>
+      <div class="form-group"><label class="form-label" for="ppEsp">Especialidades</label><input class="form-input" id="ppEsp" name="especialidades" placeholder="Degradê, Barba, Coloração"><small class="form-hint">Separe por vírgula.</small></div>
+      <div class="form-group"><label class="form-label" for="ppCert">Certificações</label><textarea class="form-input" id="ppCert" name="certificacoes" rows="2" maxlength="400"></textarea></div>
+      <div class="form-group"><label class="form-label" for="ppBio">Bio</label><textarea class="form-input" id="ppBio" name="bio" rows="2" maxlength="300"></textarea></div>
+      <label class="check-item" data-so-admin><input type="checkbox" name="visivel_no_site" checked> Aparece no site</label>
+      <div class="modal-actions"><button type="button" class="btn btn-outline btn-sm" data-fechar>Cancelar</button><button type="submit" class="btn btn-primary btn-sm">Salvar</button></div>
+    </form>
+  </dialog>
+  <script type="module" src="../js/admin/profissional-perfil.js"></script>
+</body>
+</html>

@@ -9,34 +9,23 @@
   <link rel="stylesheet" href="../css/base.css">
   <link rel="stylesheet" href="../css/components.css">
   <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/complementos.css">
 </head>
 <body>
   <div class="admin-layout">
-    <aside class="sidebar" id="sidebar">
-      <a href="../index.html" class="logo">Studio<span>Corte</span></a>
-      <nav class="sidebar-nav" aria-label="Menu do painel">
-        <a href="index.html" class="sidebar-link" data-so-admin>🏠 Dashboard</a>
-        <a href="servicos.html" class="sidebar-link" data-so-admin>✂️ Serviços</a>
-        <a href="clientes.html" class="sidebar-link" data-so-admin>👥 Clientes</a>
-        <a href="produtos.html" class="sidebar-link" data-so-admin>🛍️ Produtos</a>
-        <a href="pedidos.html" class="sidebar-link" data-so-admin>📦 Pedidos</a>
-        <a href="agendamentos.html" class="sidebar-link">📅 Atendimentos</a>
-        <a href="equipe.html" class="sidebar-link active" data-so-admin>💈 Equipe</a>
-        <a href="configuracoes.html" class="sidebar-link" data-so-admin>⚙️ Configurações</a>
-      </nav>
-      <div class="sidebar-footer">
-        <div class="sidebar-user">
-          <span class="avatar avatar-iniciais" aria-hidden="true"></span>
-          <div><div class="name">&nbsp;</div><div class="role">&nbsp;</div></div>
-        </div>
-        <button class="btn btn-ghost btn-sm" data-sair style="width:100%;">Sair da Conta</button>
+    <aside class="admin-sidebar">
+      <a href="../index.html" class="logo" style="display:block;margin-bottom:24px">Studio<span>Corte</span></a>
+      <nav id="adminNav" aria-label="Menu do painel"></nav>
+      <div style="margin-top:auto;padding-top:24px">
+        <div class="sidebar-user"></div>
+        <button type="button" class="btn btn-ghost btn-sm" data-sair style="width:100%">Sair</button>
       </div>
     </aside>
     <main class="admin-main">
       <div class="admin-header">
         <div>
           <h1>Equipe</h1>
-          <p class="sub">Profissionais, serviços que cada um realiza e horários de atendimento.</p>
+          <p class="text-muted">Profissionais, serviços que cada um realiza e horários de atendimento.</p>
         </div>
         <button class="btn btn-primary" id="btnNovo">+ Novo Profissional</button>
       </div>
@@ -50,8 +39,8 @@
         </div>
       </div>
 
-      <div class="admin-card" id="formEquipe" style="display:none;max-width:720px;margin-top:24px;">
-        <h3 id="formTitle">Novo Profissional</h3>
+      <dialog class="modal modal-lg" id="formEquipe"><div class="modal-body">
+        <h3 class="modal-title" id="formTitle">Novo Profissional</h3>
         <form id="equipeForm" novalidate>
           <div id="alertaEquipe" class="form-alert" hidden></div>
           <input type="hidden" id="eqId">
@@ -86,6 +75,17 @@
               <button type="button" class="btn btn-outline btn-sm" id="btnFoto">⬆ Enviar</button>
             </div>
           </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label" for="eqUsuario">Nome de usuário (opcional)</label><input class="form-input" id="eqUsuario" name="usuario" maxlength="30" autocapitalize="none"></div>
+            <div class="form-group"><label class="form-label" for="eqArea">Área</label><select class="form-input" id="eqArea" name="area"><option value="BARBEARIA">Barbearia</option><option value="CABELEIREIRO">Cabeleireiro</option><option value="AMBOS">Barbearia e cabeleireiro</option></select></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label" for="eqEsp">Especialidades</label><input class="form-input" id="eqEsp" name="especialidades" placeholder="Degradê, Barba (separe por vírgula)"></div>
+            <div class="form-group"><label class="form-label" for="eqAnos">Anos de experiência</label><input class="form-input" id="eqAnos" name="anos_experiencia" type="number" min="0" max="80"></div>
+          </div>
+          <div class="form-group"><label class="form-label" for="eqCert">Certificações</label><textarea class="form-input" id="eqCert" name="certificacoes" rows="2" maxlength="400"></textarea></div>
+          <div class="form-group"><label class="form-label" for="eqBio">Bio (aparece no perfil público)</label><textarea class="form-input" id="eqBio" name="bio" rows="2" maxlength="300"></textarea></div>
+          <div class="form-group"><label class="check-item"><input type="checkbox" name="visivel_no_site" checked> Aparece no site (se tiver serviços)</label></div>
           <div class="form-group">
             <span class="form-label">Serviços que realiza</span>
             <div class="check-grid" id="eqServicos"></div>
@@ -101,7 +101,7 @@
             <button type="button" class="btn btn-outline" id="btnCancelar">Cancelar</button>
           </div>
         </form>
-      </div>
+      </div></dialog>
     </main>
   </div>
   <script type="module" src="../js/admin/equipe.js"></script>

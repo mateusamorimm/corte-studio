@@ -9,34 +9,23 @@
   <link rel="stylesheet" href="../css/base.css">
   <link rel="stylesheet" href="../css/components.css">
   <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/complementos.css">
 </head>
 <body>
   <div class="admin-layout">
-    <aside class="sidebar" id="sidebar">
-      <a href="../index.html" class="logo">Studio<span>Corte</span></a>
-      <nav class="sidebar-nav" aria-label="Menu do painel">
-        <a href="index.html" class="sidebar-link" data-so-admin>🏠 Dashboard</a>
-        <a href="servicos.html" class="sidebar-link" data-so-admin>✂️ Serviços</a>
-        <a href="clientes.html" class="sidebar-link" data-so-admin>👥 Clientes</a>
-        <a href="produtos.html" class="sidebar-link" data-so-admin>🛍️ Produtos</a>
-        <a href="pedidos.html" class="sidebar-link" data-so-admin>📦 Pedidos</a>
-        <a href="agendamentos.html" class="sidebar-link">📅 Atendimentos</a>
-        <a href="equipe.html" class="sidebar-link" data-so-admin>💈 Equipe</a>
-        <a href="configuracoes.html" class="sidebar-link active" data-so-admin>⚙️ Configurações</a>
-      </nav>
-      <div class="sidebar-footer">
-        <div class="sidebar-user">
-          <span class="avatar avatar-iniciais" aria-hidden="true"></span>
-          <div><div class="name">&nbsp;</div><div class="role">&nbsp;</div></div>
-        </div>
-        <button class="btn btn-ghost btn-sm" data-sair style="width:100%;">Sair da Conta</button>
+    <aside class="admin-sidebar">
+      <a href="../index.html" class="logo" style="display:block;margin-bottom:24px">Studio<span>Corte</span></a>
+      <nav id="adminNav" aria-label="Menu do painel"></nav>
+      <div style="margin-top:auto;padding-top:24px">
+        <div class="sidebar-user"></div>
+        <button type="button" class="btn btn-ghost btn-sm" data-sair style="width:100%">Sair</button>
       </div>
     </aside>
     <main class="admin-main">
       <div class="admin-header">
         <div>
           <h1>Configurações</h1>
-          <p class="sub">Dados do salão, horários e preferências do sistema.</p>
+          <p class="text-muted">Dados do salão, horários e preferências do sistema.</p>
         </div>
       </div>
 
@@ -46,6 +35,14 @@
         <div class="form-group">
           <label class="form-label" for="cfgNome">Nome</label>
           <input class="form-input" id="cfgNome" name="nome_salao" maxlength="100" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="cfgSlogan">Slogan</label>
+          <input class="form-input" id="cfgSlogan" name="slogan" maxlength="160">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="cfgSobre">Sobre (rodapé)</label>
+          <textarea class="form-input" id="cfgSobre" name="sobre" rows="2" maxlength="600"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label" for="cfgEndereco">Endereço</label>
@@ -99,15 +96,56 @@
         <button class="btn btn-primary" type="submit">Salvar regras</button>
       </form>
 
+      <form class="admin-card" style="max-width:560px;margin-top:24px;" id="formReservas" novalidate>
+        <h3 style="margin-bottom:20px;">Reservas, retirada e avaliações</h3>
+        <div id="alertaReservas" class="form-alert" hidden></div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="cfgPrazo">Segurar produtos por (dias)</label>
+            <input class="form-input" id="cfgPrazo" name="prazo_retirada_dias" type="number" min="1" max="60" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cfgTol">Tolerância de atraso (min)</label>
+            <input class="form-input" id="cfgTol" name="tolerancia_falta_minutos" type="number" min="5" max="240" required>
+          </div>
+        </div>
+        <label class="check-item" style="margin-bottom:10px"><input type="checkbox" name="falta_automatica"> Liberar o horário de visitante que não chegou (sem check-in) depois da tolerância</label>
+        <label class="check-item" style="margin-bottom:16px"><input type="checkbox" name="avaliacao_requer_aprovacao"> Aprovar avaliações antes de aparecerem no site</label>
+        <label class="check-item" style="margin-bottom:10px"><input type="checkbox" name="entrega_ativa"> O salão faz entregas (combinadas pelo contato)</label>
+        <div class="form-group"><label class="form-label" for="cfgOn">Aviso quando há entrega</label><input class="form-input" id="cfgOn" name="aviso_entrega_on" maxlength="300" placeholder="Entregamos na região. Combine pelo WhatsApp."></div>
+        <div class="form-group"><label class="form-label" for="cfgOff">Aviso quando não há entrega</label><input class="form-input" id="cfgOff" name="aviso_entrega_off" maxlength="300" placeholder="No momento, só retirada no salão."></div>
+        <button class="btn btn-primary" type="submit">Salvar</button>
+      </form>
+
+      <div class="admin-card" style="max-width:760px;margin-top:24px;">
+        <h3>Contatos oficiais extras <button type="button" class="btn btn-primary btn-sm" id="btnContato">+ Contato</button></h3>
+        <p class="text-muted" style="font-size:0.85rem;margin-bottom:12px">Aparecem no balão de contatos e no rodapé, além de telefone, WhatsApp, e-mail e redes principais.</p>
+        <div id="contatosLista"></div>
+      </div>
+
       <div class="admin-card" style="max-width:560px;margin-top:24px;">
         <h3 style="margin-bottom:12px;">Automação & Conteúdo</h3>
         <p class="text-secondary" style="font-size:0.9rem;margin-bottom:16px;">
-          Edite os textos e a imagem de destaque da página inicial, as redes sociais e o mapa, a galeria de cortes e a moderação das avaliações.
+          Edite os textos e a imagem de destaque da página inicial, as redes sociais e o mapa, e chegue à galeria e às avaliações.
         </p>
         <a class="btn btn-outline" href="conteudo.html">Abrir editor de conteúdo</a>
       </div>
     </main>
   </div>
+  <dialog class="modal" id="modalContato" aria-labelledby="tituloContato">
+    <form class="modal-body" id="formContato" novalidate>
+      <h3 class="modal-title" id="tituloContato">Contato oficial</h3>
+      <div id="alertaContato" class="form-alert" hidden></div>
+      <div class="form-group"><label class="form-label" for="ctUrl">Link, e-mail ou telefone</label><input class="form-input" id="ctUrl" name="url" maxlength="300" required autocapitalize="none"><small class="form-hint" id="ctDetectado"></small></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label" for="ctRotulo">Nome</label><input class="form-input" id="ctRotulo" name="rotulo" maxlength="60" required></div>
+        <div class="form-group"><label class="form-label" for="ctValor">Texto exibido</label><input class="form-input" id="ctValor" name="valor" maxlength="120" required></div>
+      </div>
+      <div class="form-group"><label class="form-label" for="ctOrdem">Ordem</label><input class="form-input" id="ctOrdem" name="ordem" type="number" min="0" max="999" value="0"></div>
+      <label class="check-item"><input type="checkbox" name="publico" checked> Mostrar no site</label>
+      <div class="modal-actions"><button type="button" class="btn btn-outline btn-sm" data-fechar>Cancelar</button><button type="submit" class="btn btn-primary btn-sm">Salvar</button></div>
+    </form>
+  </dialog>
   <script type="module" src="../js/admin/configuracoes.js"></script>
 </body>
 </html>

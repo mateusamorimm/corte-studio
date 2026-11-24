@@ -12,6 +12,8 @@ import {
   dataCurta,
   hora,
   dataHora,
+  nomesServicos,
+  $$,
   telefoneFormatado,
   badgeStatus,
   STATUS_AGENDAMENTO,
@@ -21,8 +23,9 @@ import {
 } from "../ui.js";
 import { iniciarPainel } from "./comum.js";
 
-const usuario = await iniciarPainel(["ADMIN", "BARBEIRO"]);
-const ehAdmin = usuario.tipo_perfil === "ADMIN";
+const usuario = await iniciarPainel(["ADMIN", "BARBEIRO", "RECEPCIONISTA"]);
+const ehAdmin = ["ADMIN", "RECEPCIONISTA"].includes(usuario.tipo_perfil); // vê a agenda de todos
+const recepcao = usuario.tipo_perfil === "RECEPCIONISTA";
 
 let agendamentos = [];
 let servicos = [];
@@ -77,10 +80,10 @@ function render() {
           (a) => html`
       <tr class="${a.status === "CANCELADO" ? "inativo" : ""}">
         <td style="color:var(--accent);font-weight:600;white-space:nowrap;">${dataCurta(a.data_hora_inicio)}<br>${hora(a.data_hora_inicio)}–${hora(a.data_hora_fim)}</td>
-        <td>${a.cliente.nome_completo}${a.cliente.telefone ? html`<br><small class="text-muted">${telefoneFormatado(a.cliente.telefone)}</small>` : ""}</td>
-        <td>${a.servico.nome_servico}${a.observacao_cliente ? html`<br><small class="text-muted" title="${a.observacao_cliente}">💬 ${a.observacao_cliente.slice(0, 40)}${a.observacao_cliente.length > 40 ? "…" : ""}</small>` : ""}</td>
+        <td>${a.cliente.nome_completo}${a.reserva?.visitante ? html` <span class="badge badge-warning">VISITANTE</span>` : ""}${a.cliente.telefone ? html`<br><small class="text-muted">${telefoneFormatado(a.cliente.telefone)}</small>` : ""}${a.reserva ? html`<br><small class="codigo-tag">${a.reserva.codigo}</small>` : ""}</td>
+        <td>${nomesServicos(a)}${a.observacao_cliente ? html`<br><small class="text-muted" title="${a.observacao_cliente}">💬 ${a.observacao_cliente.slice(0, 40)}${a.observacao_cliente.length > 40 ? "…" : ""}</small>` : ""}</td>
         <td>${a.barbeiro.nome_completo}</td>
-        <td>${badgeStatus(STATUS_AGENDAMENTO, a.status)}</td>
+        <td>${badgeStatus(STATUS_AGENDAMENTO, a.status)}${a.chegou_em && ["PENDENTE", "CONFIRMADO"].includes(a.status) ? html`<br><small class="pontos-mais">chegou ${hora(a.chegou_em)}</small>` : ""}${a.falta_automatica ? html`<br><small class="text-muted">falta automática</small>` : ""}</td>
         <td><button class="btn btn-ghost btn-sm" data-alterar="${a.id_agendamento}">Alterar</button></td>
       </tr>`
         )
@@ -97,16 +100,18 @@ $("#body").addEventListener("click", (e) => {
 const opcoesServicos = (sel) =>
   (sel.innerHTML = html`<option value="">Selecione...</option>${servicos.map((s) => html`<option value="${s.id_servico}">${s.nome_servico} (${s.duracao_minutos} min)</option>`)}`.toString());
 
-function opcoesProfissionais(sel, idServico, { qualquer = false } = {}) {
-  const lista = equipe.filter((m) => m.ativo && (!idServico || m.servicos.includes(Number(idServico))));
+function opcoesProfissionais(sel, ids, { qualquer = false } = {}) {
+  const anterior = sel.value;
+  const lista = equipe.filter((m) => m.ativo && (ids ?? []).every((id) => m.servicos.includes(Number(id))));
   sel.innerHTML = html`${qualquer ? html`<option value="">Qualquer disponível</option>` : ""}${lista.map(
     (m) => html`<option value="${m.id_usuario}">${m.nome_completo}</option>`
   )}`.toString();
-  if (!lista.length && !qualquer) sel.innerHTML = '<option value="">Nenhum profissional faz este serviço</option>';
+  if (!lista.length && !qualquer) sel.innerHTML = '<option value="">Nenhum profissional faz estes serviços</option>';
+  if (lista.some((m) => String(m.id_usuario) === anterior)) sel.value = anterior;
 }
 
-async function opcoesHorarios(sel, { servico, data, profissional, ignorar, manter }) {
-  if (!servico || !data) {
+async function opcoesHorarios(sel, { servicos: ids, data, profissional, ignorar, manter, pessoas = 1 }) {
+  if (!ids?.length || !data) {
     sel.innerHTML = '<option value="">—</option>';
     sel.disabled = true;
     return;
@@ -114,7 +119,7 @@ async function opcoesHorarios(sel, { servico, data, profissional, ignorar, mante
   sel.disabled = true;
   sel.innerHTML = '<option value="">Buscando...</option>';
   try {
-    const q = new URLSearchParams({ servico, data });
+    const q = new URLSearchParams({ servicos: ids.join(","), data, pessoas: String(pessoas) });
     if (profissional) q.set("profissional", profissional);
     if (ignorar) q.set("ignorar", ignorar);
     const r = await get(`/agenda/horarios?${q}`);
@@ -155,15 +160,19 @@ function abrirAlteracao(id) {
   $("#tituloAlterar").textContent = `Agendamento #${a.id_agendamento}`;
   $("#detalhesAg").innerHTML = html`
     <div>👤 <strong>${a.cliente.nome_completo}</strong>${a.cliente.telefone ? ` · ${telefoneFormatado(a.cliente.telefone)}` : ""}${a.cliente.email ? ` · ${a.cliente.email}` : ""}</div>
-    <div>✂️ ${a.servico.nome_servico} com ${a.barbeiro.nome_completo} · ${moeda(a.preco_registrado)}</div>
+    ${a.reserva ? html`<div>🎟️ Código <span class="codigo-tag">${a.reserva.codigo}</span>${a.reserva.visitante ? " · visitante" : ""}</div>` : ""}
+    <div>✂️ ${nomesServicos(a)} com ${a.barbeiro.nome_completo} · ${moeda(a.preco_registrado)}</div>
     <div>🕐 ${dataHora(a.data_hora_inicio)} até ${hora(a.data_hora_fim)}</div>
     <div>Status: ${badgeStatus(STATUS_AGENDAMENTO, a.status)}</div>
+    ${a.cortes?.length ? html`<div>🖼️ Referências: ${a.cortes.map((c) => c.corte.nome_corte).join(", ")}</div>` : ""}
+    ${a.chegou_em ? html`<div class="pontos-mais">✔ Chegou às ${hora(a.chegou_em)}</div>` : ""}
     ${a.observacao_cliente ? html`<div>💬 ${a.observacao_cliente}</div>` : ""}
     ${a.motivo_cancelamento ? html`<div class="text-muted">Motivo do cancelamento: ${a.motivo_cancelamento}</div>` : ""}
     ${a.avaliacao ? html`<div>⭐ Avaliação: ${a.avaliacao.nota}/5${a.avaliacao.comentario ? ` — “${a.avaliacao.comentario}”` : ""}</div>` : ""}`.toString();
 
   const passou = new Date(a.data_hora_inicio) <= new Date();
-  $("#acoesStatus").innerHTML = (ACOES[a.status] ?? [])
+  const podeChegar = ["PENDENTE", "CONFIRMADO"].includes(a.status) && !a.chegou_em;
+  $("#acoesStatus").innerHTML = (podeChegar ? html`<button type="button" class="btn btn-outline btn-sm" data-chegada>🙋 Registrar chegada</button>`.toString() : "") + (ACOES[a.status] ?? [])
     .filter(([s]) => !(["CONCLUIDO", "NAO_COMPARECEU"].includes(s) && !passou))
     .map(([s, rotulo, classe]) => html`<button type="button" class="btn ${classe} btn-sm" data-status="${s}">${rotulo}</button>`)
     .join("");
@@ -173,8 +182,10 @@ function abrirAlteracao(id) {
   fr.hidden = !podeRemarcar;
   if (podeRemarcar) {
     opcoesServicos(fr.id_servico);
-    fr.id_servico.value = a.servico.id_servico;
-    opcoesProfissionais(fr.id_barbeiro, a.servico.id_servico);
+    const ids = idsServicos(a);
+    if (ids.length > 1) fr.id_servico.insertAdjacentHTML("afterbegin", html`<option value="manter">Manter: ${nomesServicos(a)}</option>`.toString());
+    fr.id_servico.value = ids.length > 1 ? "manter" : a.servico.id_servico;
+    opcoesProfissionais(fr.id_barbeiro, ids);
     fr.id_barbeiro.value = a.barbeiro.id_usuario;
     fr.data.min = hojeIso();
     fr.data.value = new Date(a.data_hora_inicio).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
@@ -183,18 +194,23 @@ function abrirAlteracao(id) {
   abrirModal($("#modalAlterar"));
 }
 
+const idsServicos = (a) => (a.servicos?.length ? a.servicos.map((s) => s.servico.id_servico) : [a.servico.id_servico]);
+const servicosRemarcar = () => {
+  const v = $("#formRemarcar").id_servico.value;
+  return v === "manter" ? idsServicos(atual) : v ? [Number(v)] : [];
+};
 const atualizarHorariosRemarcar = (manter = null) => {
   const fr = $("#formRemarcar");
   return opcoesHorarios(fr.inicio, {
-    servico: fr.id_servico.value,
+    servicos: servicosRemarcar(),
     data: fr.data.value,
     profissional: fr.id_barbeiro.value,
     ignorar: atual?.id_agendamento,
     manter: manter ? new Date(manter).toISOString() : null,
   });
 };
-$("#formRemarcar").id_servico.addEventListener("change", (e) => {
-  opcoesProfissionais($("#formRemarcar").id_barbeiro, e.target.value);
+$("#formRemarcar").id_servico.addEventListener("change", () => {
+  opcoesProfissionais($("#formRemarcar").id_barbeiro, servicosRemarcar());
   atualizarHorariosRemarcar();
 });
 $("#formRemarcar").id_barbeiro.addEventListener("change", () => atualizarHorariosRemarcar());
@@ -218,7 +234,21 @@ async function mudarStatus(status, motivo = null, botao) {
   }
 }
 
-$("#acoesStatus").addEventListener("click", (e) => {
+$("#acoesStatus").addEventListener("click", async (e) => {
+  const chegada = e.target.closest("[data-chegada]");
+  if (chegada) {
+    await comCarregamento(chegada, async () => {
+      try {
+        const { agendamento } = await post(`/admin/agendamentos/${atual.id_agendamento}/chegada`, {});
+        substituir(agendamento);
+        $("#modalAlterar").close();
+        toast("Chegada registrada.", "sucesso");
+      } catch (err) {
+        alertaForm($("#alertaAlterar"), err.message);
+      }
+    }, "Salvando...");
+    return;
+  }
   const b = e.target.closest("[data-status]");
   if (!b) return;
   if (b.dataset.status === "CANCELADO") {
@@ -237,7 +267,7 @@ $("#formRemarcar").addEventListener("submit", async (e) => {
   await comCarregamento(fr.querySelector("[type=submit]"), async () => {
     try {
       const { agendamento } = await put(`/admin/agendamentos/${atual.id_agendamento}`, {
-        id_servico: Number(fr.id_servico.value),
+        servicos: servicosRemarcar(),
         id_barbeiro: Number(fr.id_barbeiro.value),
         inicio: fr.inicio.value,
       });
@@ -270,12 +300,14 @@ $("#nBuscaCliente").addEventListener("input", (e) => {
   }, 300);
 });
 
+const servicosNovo = () => $$("#nServicos input:checked").map((i) => Number(i.value));
 const atualizarHorariosNovo = () =>
-  opcoesHorarios(fn.inicio, { servico: fn.id_servico.value, data: fn.data.value, profissional: fn.id_barbeiro.value });
-fn.id_servico.addEventListener("change", () => {
-  opcoesProfissionais(fn.id_barbeiro, fn.id_servico.value, { qualquer: ehAdmin });
+  opcoesHorarios(fn.inicio, { servicos: servicosNovo(), data: fn.data.value, profissional: fn.id_barbeiro.value, pessoas: Number(fn.pessoas.value) });
+$("#nServicos").addEventListener("change", () => {
+  opcoesProfissionais(fn.id_barbeiro, servicosNovo(), { qualquer: ehAdmin });
   atualizarHorariosNovo();
 });
+fn.pessoas.addEventListener("change", atualizarHorariosNovo);
 fn.id_barbeiro.addEventListener("change", atualizarHorariosNovo);
 fn.data.addEventListener("change", atualizarHorariosNovo);
 
@@ -283,7 +315,7 @@ $("#btnNovo").addEventListener("click", () => {
   fn.reset();
   alertaForm($("#alertaNovo"), null);
   fn.id_cliente.innerHTML = '<option value="">Busque o cliente acima</option>';
-  opcoesServicos(fn.id_servico);
+  $("#nServicos").innerHTML = servicos.map((s) => html`<label><input type="checkbox" value="${s.id_servico}"> <span>${s.nome_servico} <small class="text-muted">(${s.duracao_minutos} min)</small></span></label>`).join("");
   opcoesProfissionais(fn.id_barbeiro, null, { qualquer: ehAdmin });
   fn.data.min = hojeIso();
   fn.data.value = hojeIso();
@@ -296,13 +328,14 @@ fn.addEventListener("submit", async (e) => {
   const alerta = $("#alertaNovo");
   alertaForm(alerta, null);
   if (!fn.id_cliente.value) return alertaForm(alerta, "Selecione o cliente.");
-  if (!fn.id_servico.value) return alertaForm(alerta, "Selecione o serviço.");
+  if (!servicosNovo().length) return alertaForm(alerta, "Marque pelo menos um serviço.");
   if (!fn.inicio.value) return alertaForm(alerta, "Escolha um horário livre.");
   await comCarregamento(fn.querySelector("[type=submit]"), async () => {
     try {
       await post("/admin/agendamentos", {
         id_cliente: Number(fn.id_cliente.value),
-        id_servico: Number(fn.id_servico.value),
+        servicos: servicosNovo(),
+        pessoas: Number(fn.pessoas.value),
         id_barbeiro: fn.id_barbeiro.value ? Number(fn.id_barbeiro.value) : null,
         inicio: fn.inicio.value,
         status: fn.status.value,
@@ -331,7 +364,7 @@ async function carregarBloqueios() {
           <td>${dataHora(b.data_hora_inicio)}</td>
           <td>${dataHora(b.data_hora_fim)}</td>
           <td>${b.motivo ?? "—"}</td>
-          <td><button class="btn btn-ghost btn-sm" style="color:var(--accent)" data-remover-bloqueio="${b.id_bloqueio}">Remover</button></td>
+          <td>${recepcao ? "" : html`<button class="btn btn-ghost btn-sm" style="color:var(--accent)" data-remover-bloqueio="${b.id_bloqueio}">Remover</button>`}</td>
         </tr>`
           )
           .join("")
@@ -355,7 +388,7 @@ $("#bloqueiosBody").addEventListener("click", async (e) => {
 });
 
 const fb = $("#formBloqueio");
-$("#btnBloqueio").addEventListener("click", () => {
+$("#btnBloqueio")?.addEventListener("click", () => {
   fb.reset();
   alertaForm($("#alertaBloqueio"), null);
   opcoesProfissionais(fb.id_barbeiro, null);
