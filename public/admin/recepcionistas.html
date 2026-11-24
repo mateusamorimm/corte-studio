@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recepcionistas — Studio Corte Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/complementos.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <a href="../index.html" class="logo" style="display:block;margin-bottom:24px">Studio<span>Corte</span></a>
+      <nav id="adminNav" aria-label="Menu do painel"></nav>
+      <div style="margin-top:auto;padding-top:24px">
+        <div class="sidebar-user"></div>
+        <button type="button" class="btn btn-ghost btn-sm" data-sair style="width:100%">Sair</button>
+      </div>
+    </aside>
+    <main class="admin-main">
+      <div class="admin-header">
+        <div>
+          <h1>Recepcionistas</h1>
+          <p class="text-muted">Acesso ao balcão, contrato, documentos (protegidos) e registro de ponto.</p>
+        </div>
+        <button class="btn btn-primary" id="btnNovo">+ Nova recepcionista</button>
+      </div>
+      <div class="admin-card">
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Nome</th><th>Vínculo</th><th>CPF</th><th>Entrada / saída</th><th>Último ponto</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="recepBody"><tr><td colspan="7" class="estado-vazio">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+  <dialog class="modal modal-lg" id="modalRecep" aria-labelledby="tituloRecep">
+    <form class="modal-body" id="formRecep" novalidate>
+      <h3 class="modal-title" id="tituloRecep">Recepcionista</h3>
+      <div id="alertaRecep" class="form-alert" hidden></div>
+      <input type="hidden" id="rcId">
+      <h4 class="form-secao">Acesso</h4>
+      <div class="form-group"><label class="form-label" for="rcNome">Nome completo *</label><input class="form-input" id="rcNome" name="nome_completo" maxlength="120" required></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label" for="rcEmail">E-mail de acesso *</label><input class="form-input" id="rcEmail" name="email" type="email" maxlength="160" required></div>
+        <div class="form-group"><label class="form-label" for="rcUsuario">Nome de usuário</label><input class="form-input" id="rcUsuario" name="usuario" maxlength="30" autocapitalize="none"></div>
+      </div>
+      <h4 class="form-secao">Vínculo e contrato</h4>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label" for="rcVinculo">Vínculo</label><select class="form-input" id="rcVinculo" name="vinculo"><option value="CLT">CLT</option><option value="FREELANCE">Freelance</option><option value="ESTAGIO">Estágio</option></select></div>
+        <div class="form-group"><label class="form-label" for="rcSit">Situação</label><select class="form-input" id="rcSit" name="status_contrato"><option value="ATIVO">Ativo</option><option value="ESTAGIO">Em estágio</option><option value="DESLIGADO">Desligado</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label" for="rcEntrada">Data de entrada</label><input class="form-input" id="rcEntrada" name="data_entrada" type="date"></div>
+        <div class="form-group"><label class="form-label" for="rcSaida">Data de saída</label><input class="form-input" id="rcSaida" name="data_saida" type="date"></div>
+      </div>
+      <div class="form-group"><label class="form-label" for="rcMotivo">Motivo da saída</label><input class="form-input" id="rcMotivo" name="motivo_saida" maxlength="200"></div>
+      <h4 class="form-secao">Documentos 🔒 <small class="text-muted">(gravados com criptografia; só administradores veem)</small></h4>
+      <div class="form-row-3">
+        <div class="form-group"><label class="form-label" for="rcCpf">CPF</label><input class="form-input" id="rcCpf" name="cpf" inputmode="numeric" autocomplete="off"></div>
+        <div class="form-group"><label class="form-label" for="rcRg">RG</label><input class="form-input" id="rcRg" name="rg" maxlength="30" autocomplete="off"></div>
+        <div class="form-group"><label class="form-label" for="rcCtps">CTPS</label><input class="form-input" id="rcCtps" name="ctps" maxlength="40" autocomplete="off"></div>
+        <div class="form-group"><label class="form-label" for="rcPis">PIS</label><input class="form-input" id="rcPis" name="pis" maxlength="20" autocomplete="off"></div>
+        <div class="form-group"><label class="form-label" for="rcCnh">CNH</label><input class="form-input" id="rcCnh" name="cnh" maxlength="20" autocomplete="off"></div>
+      </div>
+      <h4 class="form-secao">Contatos e endereço</h4>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label" for="rcTel">Telefone</label><input class="form-input" id="rcTel" name="telefone" type="tel"></div>
+        <div class="form-group"><label class="form-label" for="rcWa">WhatsApp</label><input class="form-input" id="rcWa" name="whatsapp" type="tel"></div>
+      </div>
+      <div class="form-group"><label class="form-label" for="rcEmerg">Contato de emergência 🔒</label><input class="form-input" id="rcEmerg" name="emergencia" maxlength="160" placeholder="Nome, parentesco e telefone" autocomplete="off"></div>
+      <div class="form-group"><label class="form-label" for="rcEnd">Endereço</label><input class="form-input" id="rcEnd" name="endereco" maxlength="200"></div>
+      <div class="form-row-3">
+        <div class="form-group"><label class="form-label" for="rcCidade">Cidade</label><input class="form-input" id="rcCidade" name="cidade" maxlength="100"></div>
+        <div class="form-group"><label class="form-label" for="rcUf">UF</label><input class="form-input" id="rcUf" name="uf" maxlength="2"></div>
+        <div class="form-group"><label class="form-label" for="rcCep">CEP</label><input class="form-input" id="rcCep" name="cep" maxlength="9" inputmode="numeric"></div>
+      </div>
+      <h4 class="form-secao">Foto e observações</h4>
+      <div class="form-group"><label class="form-label" for="rcFoto">Foto</label>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <img class="thumb" id="rcPrevia" alt="" hidden>
+              <input class="form-input" id="rcFoto" name="avatar_url" placeholder="https://..." style="flex:1;min-width:140px">
+              <button type="button" class="btn btn-outline btn-sm" id="btnRcFoto">⬆ Enviar</button>
+            </div>
+      </div>
+      <div class="form-group"><label class="form-label" for="rcObs">Observações</label><textarea class="form-input" id="rcObs" name="observacoes" rows="2" maxlength="1000"></textarea></div>
+      <p class="form-hint" id="dicaConvite">Ao salvar, enviamos um link para a pessoa criar a própria senha.</p>
+      <div class="modal-actions"><button type="button" class="btn btn-outline btn-sm" data-fechar>Cancelar</button><button type="submit" class="btn btn-primary btn-sm">Salvar</button></div>
+    </form>
+  </dialog>
+  <dialog class="modal modal-lg" id="modalPonto" aria-labelledby="tituloPonto"><div class="modal-body">
+    <h3 class="modal-title" id="tituloPonto">Ponto</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="acoesPonto"></div>
+    <form id="formDesligar" class="card" style="padding:16px;margin-bottom:16px" hidden>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label" for="dData">Data de saída</label><input class="form-input" id="dData" name="data_saida" type="date" required></div>
+        <div class="form-group"><label class="form-label" for="dMotivo">Motivo</label><input class="form-input" id="dMotivo" name="motivo" maxlength="200"></div>
+      </div>
+      <button type="submit" class="btn btn-danger btn-sm">Confirmar desligamento</button>
+    </form>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Data e hora</th><th>Registro</th><th>Observação</th></tr></thead>
+            <tbody id="pontoBody"><tr><td colspan="3" class="estado-vazio">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+    <div class="modal-actions"><button type="button" class="btn btn-outline btn-sm" data-fechar>Fechar</button></div>
+  </div></dialog>
+  <script type="module" src="../js/admin/recepcionistas.js"></script>
+</body>
+</html>

@@ -25,10 +25,20 @@
       <div class="admin-header">
         <div>
           <h1>Pedidos</h1>
-          <p class="text-muted">Compras feitas pelo site: separe, avise a retirada e conclua no pagamento.</p>
+          <p class="text-muted">Separe, avise a retirada e conclua no pagamento. Reservas de visitantes são localizadas pelo código.</p>
         </div>
+        
       </div>
-      <div class="admin-card">
+      <div class="admin-tabs" role="tablist" aria-label="Tipo de pedido">
+        <button type="button" class="chip active" data-aba="cadastrados" aria-pressed="true">Cadastrados</button>
+        <button type="button" class="chip" data-aba="visitantes" aria-pressed="false">Visitantes</button>
+      </div>
+      <form class="search-box" id="buscaCodigo" role="search" style="max-width:420px;margin-bottom:16px">
+        <span aria-hidden="true">🔎</span>
+        <input type="search" name="codigo" class="campo-codigo" maxlength="6" placeholder="Código da reserva" aria-label="Código da reserva" autocomplete="off" style="flex:1;min-width:0">
+        <button type="submit" class="btn btn-primary btn-sm">Buscar</button>
+      </form>
+      <div class="admin-card" id="aba-cadastrados">
         <form class="admin-filtros" id="filtros">
           <div class="form-group">
             <label class="form-label" for="fStatus">Status</label>
@@ -41,19 +51,67 @@
             </select>
           </div>
           <div class="form-group" style="flex:1;">
-            <label class="form-label" for="fBusca">Buscar cliente</label>
-            <input type="search" class="form-input" id="fBusca" name="busca" placeholder="Nome, e-mail ou telefone">
+            <label class="form-label" for="fBusca">Buscar</label>
+            <input type="search" class="form-input" id="fBusca" name="busca" placeholder="Nome, e-mail, telefone ou código">
           </div>
         </form>
         <div class="table-wrap">
-          <table>
-            <thead><tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Status</th><th>Ações</th></tr></thead>
+          <table class="admin-table">
+            <thead><tr><th>Código</th><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Status</th><th>Ações</th></tr></thead>
             <tbody id="pedidosBody"><tr><td colspan="7" class="estado-vazio">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="admin-card" id="aba-visitantes" hidden>
+        <form class="admin-filtros" id="filtrosReserva">
+          <div class="form-group">
+            <label class="form-label" for="rStatus">Situação</label>
+            <select class="form-input" id="rStatus" name="status">
+              <option value="ATIVA">Ativas</option>
+              <option value="">Todas</option>
+              <option value="CONCLUIDA">Concluídas</option>
+              <option value="CANCELADA">Canceladas</option>
+              <option value="EXPIRADA">Expiradas</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label class="form-label" for="rBusca">Buscar</label>
+            <input type="search" class="form-input" id="rBusca" name="busca" placeholder="Código, nome ou telefone">
+          </div>
+        </form>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Código</th><th>Feita em</th><th>Visitante</th><th>Reserva</th><th>Situação</th><th>Ações</th></tr></thead>
+            <tbody id="reservasBody"><tr><td colspan="6" class="estado-vazio">Carregando...</td></tr></tbody>
           </table>
         </div>
       </div>
     </main>
   </div>
+  <dialog class="modal modal-lg" id="modalReserva" aria-labelledby="tituloReserva"><div class="modal-body" id="reservaConteudo"></div></dialog>
+  <dialog class="modal" id="modalCadastrar" aria-labelledby="tituloCadastrar">
+    <form class="modal-body" id="formCadastrar" novalidate>
+      <h3 class="modal-title" id="tituloCadastrar">Cadastrar visitante</h3>
+      <p class="text-muted" style="font-size:0.85rem;margin-bottom:12px">Confirme os dados com a pessoa. Com e-mail, ela recebe um link para criar a própria senha.</p>
+      <div id="alertaCadastrar" class="form-alert" hidden></div>
+      <div class="form-group"><label class="form-label" for="vNome">Nome completo</label><input class="form-input" id="vNome" name="nome_completo" maxlength="120" required></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label" for="vTel">Telefone</label><input class="form-input" id="vTel" name="telefone" type="tel" required></div>
+        <div class="form-group"><label class="form-label" for="vEmail">E-mail</label><input class="form-input" id="vEmail" name="email" type="email" maxlength="160"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label" for="vCpf">CPF (opcional)</label><input class="form-input" id="vCpf" name="cpf" inputmode="numeric"></div>
+        <div class="form-group"><label class="form-label" for="vNasc">Nascimento (opcional)</label><input class="form-input" id="vNasc" name="data_nascimento" type="date"></div>
+      </div>
+      <div class="form-group"><label class="form-label" for="vEnd">Endereço (opcional)</label><input class="form-input" id="vEnd" name="endereco" maxlength="200"></div>
+      <label class="check-item" id="blocoVincular" style="margin-bottom:10px" hidden><input type="checkbox" name="vincular"> <span>É a mesma pessoa: vincular à conta existente com este e-mail</span></label>
+      <label class="check-item"><input type="checkbox" name="concluir" checked> Concluir a reserva agora</label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline btn-sm" data-fechar>Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm">Cadastrar</button>
+      </div>
+    </form>
+  </dialog>
   <script type="module" src="../js/admin/pedidos.js"></script>
 </body>
 </html>

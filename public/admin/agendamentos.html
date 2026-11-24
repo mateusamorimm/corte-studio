@@ -28,7 +28,7 @@
           <p class="text-muted">Todos os horários marcados e status em tempo real.</p>
         </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;">
-          <button class="btn btn-outline" id="btnBloqueio">⛔ Bloquear horário</button>
+          <button class="btn btn-outline" id="btnBloqueio" data-nao-recepcao>⛔ Bloquear horário</button>
           <button class="btn btn-primary" id="btnNovo">+ Novo Agendamento</button>
         </div>
       </div>
@@ -54,13 +54,13 @@
               <option value="CANCELADO">Cancelado</option>
             </select>
           </div>
-          <div class="form-group" data-so-admin>
+          <div class="form-group" data-balcao>
             <label class="form-label" for="fProf">Profissional</label>
             <select class="form-input" id="fProf" name="profissional"><option value="">Todos</option></select>
           </div>
           <div class="form-group" style="flex:1;">
             <label class="form-label" for="fBusca">Buscar</label>
-            <input type="search" class="form-input" id="fBusca" name="busca" placeholder="Cliente, telefone ou serviço">
+            <input type="search" class="form-input" id="fBusca" name="busca" placeholder="Cliente, telefone, serviço ou código">
           </div>
           <button type="button" class="btn btn-ghost btn-sm" id="btnTodasDatas">Todas as datas</button>
         </form>
@@ -76,7 +76,7 @@
         </div>
       </div>
 
-      <div class="admin-card" style="margin-top:24px;">
+      <div class="admin-card" style="margin-top:24px;" id="cardBloqueios">
         <h3>⛔ Bloqueios de agenda (folgas, férias, compromissos)</h3>
         <div class="table-wrap">
           <table>
@@ -141,12 +141,16 @@
         <label class="form-label" for="nBuscaCliente">Cliente</label>
         <input type="search" class="form-input" id="nBuscaCliente" placeholder="Digite nome, telefone ou e-mail" autocomplete="off">
         <select class="form-input" id="nCliente" name="id_cliente" required><option value="">Busque o cliente acima</option></select>
-        <small class="form-hint">Cliente novo? Cadastre primeiro em <a href="clientes.html" style="color:var(--accent);" data-so-admin>Clientes</a>.</small>
+        <small class="form-hint">Cliente novo? Cadastre primeiro em <a href="clientes.html" style="color:var(--accent);" data-balcao>Clientes</a>.</small>
+      </div>
+      <div class="form-group">
+        <span class="form-label" id="nServicosRotulo">Serviços</span>
+        <div class="ag-check-list" id="nServicos" role="group" aria-labelledby="nServicosRotulo"></div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label" for="nServico">Serviço</label>
-          <select class="form-input" id="nServico" name="id_servico" required></select>
+          <label class="form-label" for="nPessoas">Pessoas</label>
+          <select class="form-input" id="nPessoas" name="pessoas"><option>1</option><option>2</option><option>3</option><option>4</option></select>
         </div>
         <div class="form-group">
           <label class="form-label" for="nProf">Profissional</label>

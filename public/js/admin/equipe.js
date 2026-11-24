@@ -74,6 +74,7 @@ function render() {
           <td style="font-size:0.85rem;">${resumoSemana(m.disponibilidade)}</td>
           <td>
             <div class="admin-acoes">
+              <a class="btn btn-ghost btn-sm" href="${`profissional-perfil.html?id=${m.id_usuario}`}">Perfil</a>
               <button class="btn btn-ghost btn-sm" data-acao="editar" data-id="${m.id_usuario}">Editar</button>
               ${m.ativo ? html`<button class="btn btn-ghost btn-sm" data-acao="convite" data-id="${m.id_usuario}">${m.tem_acesso ? "Redefinir senha" : "Reenviar convite"}</button>` : ""}
               ${m.id_usuario === eu.id_usuario
@@ -145,6 +146,14 @@ function abrir(m = null) {
   form.tipo_perfil.value = m?.tipo_perfil ?? "BARBEIRO";
   form.avatar_url.value = m?.avatar_url ?? "";
   foto.atualizar();
+  const pp = m?.perfil_profissional;
+  form.usuario.value = m?.usuario ?? "";
+  form.area.value = pp?.area ?? "BARBEARIA";
+  form.especialidades.value = (pp?.especialidades ?? []).join(", ");
+  form.anos_experiencia.value = pp?.anos_experiencia ?? "";
+  form.certificacoes.value = pp?.certificacoes ?? "";
+  form.bio.value = m?.bio ?? "";
+  form.visivel_no_site.checked = pp?.visivel_no_site ?? true;
   $("#eqServicos").innerHTML = servicos.length
     ? servicos
         .map(
@@ -182,6 +191,15 @@ form.addEventListener("submit", async (e) => {
     avatar_url: form.avatar_url.value.trim(),
     servicos: $$("#eqServicos input:checked").map((i) => Number(i.value)),
     disponibilidade,
+    usuario: form.usuario.value,
+    perfil: {
+      area: form.area.value,
+      especialidades: form.especialidades.value.split(",").map((x) => x.trim()).filter(Boolean),
+      anos_experiencia: form.anos_experiencia.value,
+      certificacoes: form.certificacoes.value,
+      bio: form.bio.value,
+      visivel_no_site: form.visivel_no_site.checked,
+    },
   };
   await comCarregamento(form.querySelector("[type=submit]"), async () => {
     try {

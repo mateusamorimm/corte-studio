@@ -15,11 +15,11 @@ import {
   telefoneFormatado,
   badgeStatus,
   STATUS_AGENDAMENTO,
-  STATUS_PEDIDO, abrirModal } from "../ui.js";
+  STATUS_PEDIDO, abrirModal, nomesServicos } from "../ui.js";
 import { regras, validarForm, mascaraTelefone, mascaraCpf } from "../validacao.js";
 import { iniciarPainel } from "./comum.js";
 
-await iniciarPainel(["ADMIN"]);
+const eu = await iniciarPainel(["ADMIN", "RECEPCIONISTA"]);
 
 const form = $("#clienteForm");
 const caixa = $("#formCliente");
@@ -62,12 +62,13 @@ function render() {
           <td>${c.ultima_visita ? dataCurta(c.ultima_visita) : "—"}</td>
           <td>
             <div class="admin-acoes">
+              <a class="btn btn-ghost btn-sm" href="${`cliente-perfil.html?id=${c.id_usuario}`}">Perfil</a>
               <button class="btn btn-ghost btn-sm" data-acao="editar" data-id="${c.id_usuario}">Editar</button>
               <button class="btn btn-ghost btn-sm" data-acao="historico" data-id="${c.id_usuario}">Histórico</button>
               ${c.email && c.ativo
                 ? html`<button class="btn btn-ghost btn-sm" data-acao="convite" data-id="${c.id_usuario}" title="Enviar link para criar/redefinir a senha">${c.tem_acesso ? "Redefinir senha" : "Enviar acesso"}</button>`
                 : ""}
-              <button class="btn btn-ghost btn-sm" style="color:var(--accent)" data-acao="${c.ativo ? "desativar" : "reativar"}" data-id="${c.id_usuario}">${c.ativo ? "Excluir" : "Reativar"}</button>
+              ${eu.tipo_perfil === "ADMIN" ? html`<button class="btn btn-ghost btn-sm" style="color:var(--accent)" data-acao="${c.ativo ? "desativar" : "reativar"}" data-id="${c.id_usuario}">${c.ativo ? "Excluir" : "Reativar"}</button>` : ""}
             </div>
           </td>
         </tr>`
@@ -152,7 +153,7 @@ async function mostrarHistorico(c) {
         data: a.data_hora_inicio,
         conteudo: html`
           <td>${dataCurta(a.data_hora_inicio)} <span class="text-muted">${hora(a.data_hora_inicio)}</span></td>
-          <td>✂️ ${a.servico.nome_servico}</td>
+          <td>✂️ ${nomesServicos(a)}</td>
           <td>${a.barbeiro.nome_completo}</td>
           <td>${badgeStatus(STATUS_AGENDAMENTO, a.status)}</td>
           <td>${moeda(a.preco_registrado)}</td>`,

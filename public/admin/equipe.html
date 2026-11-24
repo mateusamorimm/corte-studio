@@ -75,6 +75,17 @@
               <button type="button" class="btn btn-outline btn-sm" id="btnFoto">⬆ Enviar</button>
             </div>
           </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label" for="eqUsuario">Nome de usuário (opcional)</label><input class="form-input" id="eqUsuario" name="usuario" maxlength="30" autocapitalize="none"></div>
+            <div class="form-group"><label class="form-label" for="eqArea">Área</label><select class="form-input" id="eqArea" name="area"><option value="BARBEARIA">Barbearia</option><option value="CABELEIREIRO">Cabeleireiro</option><option value="AMBOS">Barbearia e cabeleireiro</option></select></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label" for="eqEsp">Especialidades</label><input class="form-input" id="eqEsp" name="especialidades" placeholder="Degradê, Barba (separe por vírgula)"></div>
+            <div class="form-group"><label class="form-label" for="eqAnos">Anos de experiência</label><input class="form-input" id="eqAnos" name="anos_experiencia" type="number" min="0" max="80"></div>
+          </div>
+          <div class="form-group"><label class="form-label" for="eqCert">Certificações</label><textarea class="form-input" id="eqCert" name="certificacoes" rows="2" maxlength="400"></textarea></div>
+          <div class="form-group"><label class="form-label" for="eqBio">Bio (aparece no perfil público)</label><textarea class="form-input" id="eqBio" name="bio" rows="2" maxlength="300"></textarea></div>
+          <div class="form-group"><label class="check-item"><input type="checkbox" name="visivel_no_site" checked> Aparece no site (se tiver serviços)</label></div>
           <div class="form-group">
             <span class="form-label">Serviços que realiza</span>
             <div class="check-grid" id="eqServicos"></div>

@@ -1,8 +1,40 @@
-import { get } from "../api.js";
-import { $, html, moeda, hora, dataCurta, tempoRelativo, badgeStatus, STATUS_AGENDAMENTO, toast } from "../ui.js";
+import { get, post } from "../api.js";
+import { $, html, moeda, hora, dataCurta, dataHora, nomesServicos, tempoRelativo, badgeStatus, STATUS_AGENDAMENTO, toast } from "../ui.js";
 import { iniciarPainel } from "./comum.js";
 
-await iniciarPainel(["ADMIN"]);
+const usuario = await iniciarPainel(["ADMIN", "RECEPCIONISTA"]);
+const admin = usuario.tipo_perfil === "ADMIN";
+
+// Atalhos e ponto da recepção
+$("#atalhos").innerHTML = [
+  ["agendamentos.html", "📅", "Agenda"],
+  ["pedidos.html", "📦", "Pedidos e reservas"],
+  ["clientes.html", "👥", "Clientes"],
+  ...(admin ? [["posts.html", "📰", "Moderar feed"], ["comentarios.html", "💬", "Avaliações"], ["fidelidade.html", "🎁", "Fidelidade"]] : []),
+]
+  .map(([href, ico, nome]) => html`<a class="atalho" href="${href}"><span class="ico" aria-hidden="true">${ico}</span>${nome}</a>`)
+  .join("");
+
+async function montarPonto() {
+  const { pontos } = await get("/admin/meu-ponto");
+  const aberto = pontos[0]?.tipo === "ENTRADA";
+  $("#pontoCard").hidden = false;
+  $("#pontoCard").innerHTML = html`
+    <h3>Meu ponto</h3>
+    <p class="text-muted" style="font-size:0.9rem;margin-bottom:12px">${pontos[0] ? `Último registro: ${aberto ? "entrada" : "saída"} em ${dataHora(pontos[0].em)}` : "Nenhum registro ainda."}</p>
+    <button type="button" class="btn btn-primary btn-sm" id="btnPonto">${aberto ? "Registrar SAÍDA" : "Registrar ENTRADA"}</button>`.toString();
+  $("#btnPonto").addEventListener("click", async (e) => {
+    e.currentTarget.disabled = true;
+    try {
+      await post("/admin/meu-ponto", { tipo: aberto ? "SAIDA" : "ENTRADA" });
+      toast("Ponto registrado.", "sucesso");
+      await montarPonto();
+    } catch (err) {
+      toast(err.message, "erro");
+    }
+  });
+}
+if (!admin) montarPonto().catch((err) => toast(err.message, "erro"));
 
 $("#formBusca").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -16,7 +48,7 @@ function textoAtividade(a) {
     case "favorito":
       return html`<strong>${a.quem}</strong> curtiu o corte <span class="text-accent">${a.alvo}</span>`;
     case "avaliacao":
-      return html`<strong>${a.quem}</strong> avaliou ${a.alvo} com ${a.nota}★ — ${a.profissional}`;
+      return html`<strong>${a.quem}</strong> avaliou ${a.alvo} com ${a.nota}★${a.profissional ? ` — ${a.profissional}` : ""}`;
     case "agendamento":
       return html`<strong>${a.quem}</strong> agendou ${a.alvo} p/ ${dataCurta(a.inicio)} às ${hora(a.inicio)}`;
     case "pedido":
@@ -36,6 +68,7 @@ function render(d) {
   $("#mClientesDelta").textContent = `▲ +${m.novos_clientes_mes} novo${m.novos_clientes_mes === 1 ? "" : "s"} este mês`;
   $("#mHoje").textContent = String(m.atendimentos_hoje);
   $("#mHojeDelta").textContent = `▲ ${m.confirmados_hoje} confirmado${m.confirmados_hoje === 1 ? "" : "s"}`;
+  $("#mFaturamento").closest(".metric-card").hidden = m.faturamento_mes === null; // recepção não vê faturamento
   $("#mFaturamento").textContent = moeda(m.faturamento_mes);
   const v = m.variacao_faturamento === null ? null : Number(m.variacao_faturamento);
   $("#mFaturamentoDelta").textContent = v === null ? "Sem base no mês anterior" : `${v >= 0 ? "▲ +" : "▼ "}${v.toLocaleString("pt-BR")}% vs mês anterior`;
@@ -50,7 +83,7 @@ function render(d) {
       <tr>
         <td style="color:var(--accent);font-weight:600;">${hora(a.data_hora_inicio)}</td>
         <td>${a.cliente.nome_completo}</td>
-        <td>${a.servico.nome_servico}</td>
+        <td>${nomesServicos(a)}</td>
         <td>${a.barbeiro.nome_completo}</td>
         <td>${badgeStatus(STATUS_AGENDAMENTO, a.status)}</td>
       </tr>`
@@ -105,7 +138,16 @@ function render(d) {
 
   // Notificações
   const n = d.notificacoes;
-  const total = n.agendamentos_pendentes + n.pedidos_pendentes;
+  const avisos = [
+    ["📅", "agendamentos.html?status=PENDENTE", n.agendamentos_pendentes, "agendamento(s) aguardando confirmação"],
+    ["🛍️", "pedidos.html?status=PENDENTE", n.pedidos_pendentes, "pedido(s) para separar"],
+    ["🎟️", "pedidos.html?aba=visitantes", n.reservas_visitante, "reserva(s) de visitantes"],
+    ["⭐", "comentarios.html?status=PENDENTE", n.avaliacoes_pendentes, "avaliação(ões) para aprovar"],
+    ["📰", "posts.html?filtro=PENDENTE", n.posts_pendentes, "publicação(ões) para aprovar"],
+    ["💬", "comentarios.html?aba=feed&status=PENDENTE", n.comentarios_pendentes, "comentário(s) para aprovar"],
+    ["⚑", "posts.html?filtro=DENUNCIADO", n.denuncias, "denúncia(s) aberta(s)"],
+  ].filter((a) => a[2] !== undefined);
+  const total = avisos.reduce((t, a) => t + a[2], 0);
   const btn = $("#btnNotif");
   if (total) {
     const c = document.createElement("span");
@@ -116,8 +158,7 @@ function render(d) {
   }
   $("#painelNotif").innerHTML = html`
     <h3 style="margin-bottom:12px;">Pendências</h3>
-    <div class="atividade-item"><span>📅</span><div><a href="agendamentos.html?status=PENDENTE">${n.agendamentos_pendentes} agendamento(s) aguardando confirmação</a></div></div>
-    <div class="atividade-item"><span>🛍️</span><div><a href="pedidos.html?status=PENDENTE">${n.pedidos_pendentes} pedido(s) para separar</a></div></div>`.toString();
+    ${avisos.map(([ico, href, qtd, texto]) => html`<div class="atividade-item"><span aria-hidden="true">${ico}</span><div><a href="${href}">${qtd} ${texto}</a></div></div>`)}`.toString();
 }
 
 $("#btnNotif").addEventListener("click", (e) => {

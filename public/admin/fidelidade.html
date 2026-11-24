@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fidelidade — Studio Corte Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/complementos.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <a href="../index.html" class="logo" style="display:block;margin-bottom:24px">Studio<span>Corte</span></a>
+      <nav id="adminNav" aria-label="Menu do painel"></nav>
+      <div style="margin-top:auto;padding-top:24px">
+        <div class="sidebar-user"></div>
+        <button type="button" class="btn btn-ghost btn-sm" data-sair style="width:100%">Sair</button>
+      </div>
+    </aside>
+    <main class="admin-main">
+      <div class="admin-header">
+        <div>
+          <h1>Fidelidade</h1>
+          <p class="text-muted">Descontos por pontos e saldo dos clientes. Os pontos entram sozinhos quando um atendimento ou pedido é concluído.</p>
+        </div>
+        
+      </div>
+      <div class="admin-card">
+        <h3>Recompensas <button class="btn btn-primary btn-sm" id="btnNova">+ Nova</button></h3>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Nome</th><th>Pontos mínimos</th><th>Desconto</th><th>Consome pontos?</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="recompensasBody"><tr><td colspan="6" class="estado-vazio">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <form class="admin-card" style="margin-top:24px" id="formRegras" novalidate>
+        <h3>Regras</h3>
+        <div id="alertaRegras" class="form-alert" hidden></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label" for="fPorReal">Pontos por real</label><input class="form-input" id="fPorReal" name="pontos_por_real" type="number" min="0" step="0.01" required><small class="form-hint">0,10 = 1 ponto a cada R$ 10. Zero desliga os pontos.</small></div>
+          <div class="form-group"><label class="form-label" for="fMin">Mínimo por atendimento/pedido</label><input class="form-input" id="fMin" name="pontos_minimos_evento" type="number" min="0" required></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label" for="fPrata">Nível Prata a partir de</label><input class="form-input" id="fPrata" name="nivel_prata" type="number" min="1" required></div>
+          <div class="form-group"><label class="form-label" for="fOuro">Nível Ouro a partir de</label><input class="form-input" id="fOuro" name="nivel_ouro" type="number" min="2" required></div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Salvar regras</button>
+      </form>
+      <div class="admin-card" style="margin-top:24px">
+        <h3>Pontos dos clientes</h3>
+        <div class="search-box" style="max-width:360px;margin-bottom:16px"><span aria-hidden="true">🔍</span><input type="search" id="buscaPontos" placeholder="Nome ou e-mail" aria-label="Buscar cliente" style="flex:1;min-width:0"></div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Cliente</th><th>Pontos</th><th>Nível</th><th>Desconto atual</th><th>Ajuste</th></tr></thead>
+            <tbody id="pontosBody"><tr><td colspan="5" class="estado-vazio">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+  <dialog class="modal" id="modalRecompensa" aria-labelledby="tituloRecompensa">
+    <form class="modal-body" id="formRecompensa" novalidate>
+      <h3 class="modal-title" id="tituloRecompensa">Recompensa</h3>
+      <div id="alertaRecompensa" class="form-alert" hidden></div>
+      <div class="form-group"><label class="form-label" for="rNome">Nome</label><input class="form-input" id="rNome" name="nome" maxlength="80" required></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label" for="rPontos">Pontos mínimos</label><input class="form-input" id="rPontos" name="pontos_minimos" type="number" min="1" required></div>
+        <div class="form-group"><label class="form-label" for="rDesc">Desconto (%)</label><input class="form-input" id="rDesc" name="desconto_percentual" type="number" min="1" max="90" required></div>
+      </div>
+      <label class="check-item" style="margin-bottom:8px"><input type="checkbox" name="consome_pontos" checked> Gasta os pontos ao usar</label>
+      <label class="check-item"><input type="checkbox" name="ativo" checked> Ativa</label>
+      <div class="modal-actions"><button type="button" class="btn btn-outline btn-sm" data-fechar>Cancelar</button><button type="submit" class="btn btn-primary btn-sm">Salvar</button></div>
+    </form>
+  </dialog>
+  <dialog class="modal modal-sm" id="modalAjuste" aria-labelledby="tituloAjuste">
+    <form class="modal-body" id="formAjuste" novalidate>
+      <h3 class="modal-title" id="tituloAjuste">Ajustar pontos</h3>
+      <div id="alertaAjuste" class="form-alert" hidden></div>
+      <div class="form-group"><label class="form-label" for="jPontos">Pontos (use − para retirar)</label><input class="form-input" id="jPontos" name="pontos" type="number" step="1" required></div>
+      <div class="form-group"><label class="form-label" for="jMotivo">Motivo</label><input class="form-input" id="jMotivo" name="motivo" maxlength="160" required><small class="form-hint">Fica no extrato do cliente e na auditoria.</small></div>
+      <div class="modal-actions"><button type="button" class="btn btn-outline btn-sm" data-fechar>Cancelar</button><button type="submit" class="btn btn-primary btn-sm">Aplicar</button></div>
+    </form>
+  </dialog>
+  <script type="module" src="../js/admin/fidelidade.js"></script>
+</body>
+</html>
